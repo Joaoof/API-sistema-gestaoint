@@ -4,55 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #0f172a;
-      color: #e2e8f0;
-      margin: 0;
-      padding: 2rem;
-    }
-    a {
-      color: #38bdf8;
-      text-decoration: none;
-    }
-    h1, h2, h3 {
-      color: #f8fafc;
-    }
-    .logo {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-    .logo img {
-      width: 50px;
-    }
-    .centered {
-      text-align: center;
-    }
-    .badges img {
-      margin: 0.3rem;
-    }
-    .section {
-      margin-bottom: 2.5rem;
-    }
-    .code-block {
-      background-color: #1e293b;
-      border-radius: 0.5rem;
-      padding: 1rem;
-      font-family: monospace;
-      overflow-x: auto;
-    }
-    ul {
-      padding-left: 1.5rem;
-    }
-    li {
-      margin-bottom: 0.5rem;
-    }
-    hr {
-      border-color: #334155;
-      margin: 3rem 0;
-    }
-  </style>
 </head>
 <body>
   <div class="logo">
