@@ -8,7 +8,7 @@
 <body>
   <div class="logo">
     <a href="https://nestjs.com/" target="_blank">
-      <img src="https://nestjs.com/img/logo-small.svg" alt="NestJS Logo">
+      <img src="https://nestjs.com/img/logo-small.svg" width="30px" alt="NestJS Logo">
     </a>
   </div>
 
