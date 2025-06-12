@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Documentação NestJS</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     body {
@@ -25,7 +24,7 @@
       margin-bottom: 2rem;
     }
     .logo img {
-      width: 100px;
+      width: 50px;
     }
     .centered {
       text-align: center;
@@ -129,6 +128,7 @@ npm install
 # Rodar em modo desenvolvimento
 
 npm run start:dev</pre>
+
 </div>
 
   </div>
@@ -142,6 +142,7 @@ docker-compose build
 # Subir aplicação
 
 docker-compose up</pre>
+
 </div>
 
   </div>
