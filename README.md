@@ -58,3 +58,16 @@ src/
 ├── main.ts                     # Entry point da aplicação
 └── app.module.ts               # Módulo raiz da aplicação
 ```
+
+🚀 Primeiros Passos
+bash
+Copiar
+Editar
+
+# Instalar dependências
+
+npm install
+
+# Rodar o projeto em desenvolvimento
+
+npm run start:dev
