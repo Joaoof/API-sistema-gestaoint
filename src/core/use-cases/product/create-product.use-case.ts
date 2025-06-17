@@ -4,11 +4,12 @@ import { ProductsRepository } from 'src/core/ports/product.repository';
 import { CreateProductDto } from 'src/modules/product/dtos/create-product.dto';
 import { ProductMapper } from 'src/modules/product/mapper/product.mapper';
 import { MailService } from 'src/core/ports/mail.service';
+import { EmailQueueService } from 'src/infra/queues/email-queue.service';
 
 export class CreateProductUseCase {
     constructor(
         private readonly productsRepository: ProductsRepository,
-        private readonly mailService: MailService
+        private emailQueue: EmailQueueService
     ) { }
 
     async execute(dto: CreateProductDto): Promise<Product> {
@@ -16,11 +17,11 @@ export class CreateProductUseCase {
         await this.productsRepository.create(product);
 
         // Notificação por e-mail (ex: para admin ou fornecedor)
-        await this.mailService.sendMailProduct(
-            'admin@seusistema.com',
-            'Novo Produto Criado',
-            `<p>O produto <strong>${product.name}</strong> foi adicionado ao sistema.</p>`
-        );
+        await this.emailQueue.addEmailJob({
+            to: 'admin@example.com',
+            subject: 'Produto criado',
+            html: `<p>O produto ${product.name} foi criado.</p>`
+        });
 
         return product;
     }
