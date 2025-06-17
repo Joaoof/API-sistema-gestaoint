@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { GiftController } from './controllers/gift.controller';
-import { CreateGiftUseCase } from '@/core/use-cases/gift/create-gift.use-case';
-import { PrismaGiftsRepository } from '@/core/adapters/gift.prisma.repository';
-import { Gift } from '@/core/entities/gift';
+import { CreateGiftUseCase } from 'src/core/use-cases/create-gift.use-case';
+import { Gift } from 'src/core/entities/gifts.entity';
+import { PrismaGiftsRepository } from 'src/infra/database/implementations/gift.prisma.repository';
 
 @Module({
     controllers: [GiftController],

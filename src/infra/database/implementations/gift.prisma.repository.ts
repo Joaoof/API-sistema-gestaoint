@@ -1,6 +1,6 @@
-import { Gift } from '@/core/entities/gift';
-import { PrismaService } from '@/infrastructure/database/prisma/prisma.service';
-import { GiftsRepository } from '@/core/repositories/gift.repository';
+import { Gift } from 'src/core/entities/gifts.entity';
+import { PrismaService } from '../../../../prisma/prisma.service';
+import { GiftsRepository } from '../../../core/ports/gift.repository';
 
 export class PrismaGiftsRepository implements GiftsRepository {
     constructor(private prisma: PrismaService) { }
@@ -11,11 +11,11 @@ export class PrismaGiftsRepository implements GiftsRepository {
 
     async findById(id: string): Promise<Gift | null> {
         const data = await this.prisma.gift.findUnique({ where: { id } });
-        return data ? new Gift(data) : null;
+        return data ? Gift.fromPrisma(data) : null;
     }
 
     async findAll(): Promise<Gift[]> {
         const gifts = await this.prisma.gift.findMany();
-        return gifts.map((g) => new Gift(g));
+        return gifts.map((data) => Gift.fromPrisma(data));
     }
 }
