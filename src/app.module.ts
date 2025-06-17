@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { BullModule } from '@nestjs/bull';
+import { ProductModule } from './modules/product/product.module';
 
 @Module({
   imports: [
@@ -11,14 +12,12 @@ import { BullModule } from '@nestjs/bull';
       limit: 100
     }]),
     BullModule.forRoot({
-      redis: {
-        host: process.env.REDIS_URL,
-        port: process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : undefined
-      },
+      url: process.env.REDIS_URL,
     }),
     BullModule.registerQueue({
       name: 'email',
     }),
+    ProductModule
   ],
   controllers: [AppController],
   providers: [AppService],

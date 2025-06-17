@@ -1,6 +1,6 @@
 // src/services/email-queue.service.ts
 import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
+import { Queue } from 'bullmq';
 
 export class EmailQueueService {
     constructor(
