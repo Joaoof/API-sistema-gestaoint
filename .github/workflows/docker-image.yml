@@ -1,15 +1,15 @@
-name: Docker Image CI
+# name: Docker Image CI
 
-on:
-  push:
-    branches: ['master']
-  pull_request:
-    branches: ['master']
+# on:
+#   push:
+#     branches: ['master']
+#   pull_request:
+#     branches: ['master']
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
 
-    steps:
-      - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+#     steps:
+#       - name: Build the Docker image
+#         run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
