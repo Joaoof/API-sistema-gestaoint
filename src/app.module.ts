@@ -20,6 +20,7 @@ import { CacheModule } from '@nestjs/cache-manager';
       name: 'email',
     }),
     ProductModule,
+    CategoryModule
   ],
   controllers: [AppController],
   providers: [AppService],

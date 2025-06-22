@@ -11,6 +11,9 @@ export class CreateCategoryUseCase {
 
         await this.categoriesRepository.create(category)
 
+        console.log(category);
+
+
         return category;
     }
 }

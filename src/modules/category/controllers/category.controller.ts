@@ -39,18 +39,12 @@ export class CategoryController {
         description: 'Dados inválidos',
     })
     async create(@Body() dto: CreateCategoryDto) {
-        // Valida manualmente com Zod
+
         const result = CreateCategorySchema.safeParse(dto);
         if (!result.success) {
-            throw new Error('Dados inválidos');
-        }
-
-        return {
-            id: 'cat_001',
-            ...result.data,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        };
+            console.error(JSON.stringify(result.error.issues, null, 2));
+        }   
+        return result
     }
 
     @UseInterceptors(CacheInterceptor)

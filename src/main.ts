@@ -3,24 +3,11 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { CategoriesSchemas, ProductSchemas } from './shared/swagger/utils';
+import { CreateCategorySchema } from './modules/category/dtos/create-category.dto';
 import * as compression from 'compression';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-
 
 async function bootstrap() {
-
-  const httpOptions = {
-    http2: true,
-    https: {
-      key: readFileSync(join(__dirname, '..', 'secrets', 'localhost.key')),
-      cert: readFileSync(join(__dirname, '..', 'secrets', 'localhost.crt')),
-    }
-
-  }
-  console.log(httpOptions);
-
-  const adapter = new FastifyAdapter(httpOptions);
+  const adapter = new FastifyAdapter();
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter, {
     cors: true,
   });
