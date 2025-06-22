@@ -16,7 +16,9 @@ async function bootstrap() {
       key: readFileSync(join(__dirname, '..', 'secrets', 'localhost.key')),
       cert: readFileSync(join(__dirname, '..', 'secrets', 'localhost.crt')),
     }
+
   }
+  console.log(httpOptions);
 
   const adapter = new FastifyAdapter(httpOptions);
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter, {
