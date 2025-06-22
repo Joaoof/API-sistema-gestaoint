@@ -4,6 +4,10 @@ import {
     Post,
     Body,
     HttpStatus,
+    UseInterceptors,
+    Get,
+    Param,
+    NotFoundException,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -14,6 +18,8 @@ import {
 
 import { CreateCategorySwaggerDto } from '../dtos/category/category-swagger.dto';
 import { CreateCategoryDto, CreateCategorySchema } from '../dtos/create-category.dto';
+import { CacheInterceptor } from '@nestjs/cache-manager';
+import { CategoryMapper } from '../mappers/category.mapper';
 
 @ApiTags('categories')
 @Controller('categories')
@@ -45,5 +51,14 @@ export class CategoryController {
             createdAt: new Date(),
             updatedAt: new Date(),
         };
+    }
+
+    @UseInterceptors(CacheInterceptor)
+    @Get(':id')
+    async findOne(@Param('id') id: string) {
+        const category = await this.findOne(id);
+        if (!category) throw new NotFoundException('Categoria não encontrada');
+
+        return CategoryMapper.toJSON(category);
     }
 }
