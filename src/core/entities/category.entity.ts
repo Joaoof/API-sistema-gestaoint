@@ -1,14 +1,12 @@
-// src/core/entities/product.entity.ts
-import { Prisma } from '@prisma/client';
+// src/core/entities/category.entity.ts
+import { CategoryStatus, Prisma } from "@prisma/client";
 
-export class Product {
+export class Category {
     constructor(
         public readonly id: string,
         public name: string,
         public description: string | null,
-        public price: number,
-        public categoryId: string,
-        public supplierId: string,
+        public status: CategoryStatus,
         public readonly createdAt: Date = new Date(),
         public updatedAt: Date = new Date()
     ) {
@@ -17,23 +15,15 @@ export class Product {
 
     private validate(): void {
         if (!this.id) {
-            throw new Error('Product ID is required.');
-        }
-
-        if (!this.name || this.name.trim().length === 0) {
-            throw new Error('Product name is required.');
-        }
-
-        if (this.price < 0) {
-            throw new Error('Product price must be greater than or equal to zero.');
-        }
-
-        if (!this.categoryId) {
             throw new Error('Category ID is required.');
         }
 
-        if (!this.supplierId) {
-            throw new Error('Supplier ID is required.');
+        if (!this.name || this.name.trim().length === 0) {
+            throw new Error('Category name is required.');
+        }
+
+        if (!this.status) {
+            throw new Error('Category status is required.');
         }
 
         if (!(this.createdAt instanceof Date) || isNaN(this.createdAt.getTime())) {
@@ -45,12 +35,10 @@ export class Product {
         }
     }
 
-    update(name: string, description: string | null, price: number, categoryId: string, supplierId: string): void {
+    update(name: string, description: string | null, status: CategoryStatus): void {
         this.name = name;
         this.description = description;
-        this.price = price;
-        this.categoryId = categoryId;
-        this.supplierId = supplierId;
+        this.status = status;
         this.updatedAt = new Date();
 
         this.validate();
@@ -61,22 +49,18 @@ export class Product {
             id: this.id,
             name: this.name,
             description: this.description,
-            price: this.price,
-            categoryId: this.categoryId,
-            supplierId: this.supplierId,
+            status: this.status,
             createdAt: this.createdAt.toISOString(),
             updatedAt: this.updatedAt.toISOString()
         };
     }
 
-    static fromPrisma(data: Prisma.ProductGetPayload<{}>): Product {
-        return new Product(
+    static fromPrisma(data: Prisma.CategoryGetPayload<{}>): Category {
+        return new Category(
             data.id,
             data.name,
             data.description,
-            data.price.toNumber(),
-            data.categoryId,
-            data.supplierId,
+            data.status,
             data.createdAt,
             data.updatedAt
         );

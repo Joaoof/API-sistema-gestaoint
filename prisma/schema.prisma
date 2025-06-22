@@ -9,6 +9,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum CategoryStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model Gift {
   id          String   @id @default(uuid())
   name        String
@@ -46,6 +51,8 @@ model Product {
 model Category {
   id        String    @id @default(cuid())
   name      String    @unique
+  description String?
+  status CategoryStatus
   products  Product[]
   createdAt DateTime  @default(now())
 }
