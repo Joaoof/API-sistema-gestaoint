@@ -2,7 +2,8 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
-import { ProductSchemas } from './shared/swagger/utils';
+import { CategoriesSchemas, ProductSchemas } from './shared/swagger/utils';
+import { CreateCategorySchema } from './modules/category/dtos/create-category.dto';
 
 async function bootstrap() {
   const adapter = new FastifyAdapter();
@@ -19,6 +20,7 @@ async function bootstrap() {
     .setVersion('1.0')
     .addTag('products', 'Produtos')
     .addTag('gifts', 'Presentes')
+    .addTag('categories', 'Categorias')
     .build();
 
   const document = SwaggerModule.createDocument(app, config, {
@@ -26,6 +28,7 @@ async function bootstrap() {
       schemas: {
         // Adicione aqui os schemas convertidos
         CreateProductDto: ProductSchemas.CreateProductDto,
+        CreateCategoryDto: CategoriesSchemas.CreateCategoryDto
       },
     }
   });
