@@ -6,17 +6,28 @@ import { CreateCategoryUseCase } from 'src/core/use-cases/category/create-catego
 import { PrismaService } from 'prisma/prisma.service';
 import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { FindAllCategoriesUseCase } from 'src/core/use-cases/category/find-all-categories.use.case';
+import { PrismaCategoriesRepository } from 'src/infra/database/implementations/category/category.prisma.repository';
+import { RedisService } from 'src/infra/cache/redis.service';
+import { RedisModule } from 'src/infra/cache/redis.module';
+import { PrismaModule } from 'prisma/prisma.module';
 
 @Module({
-    imports: [CategoryModule, CacheModule.register({
+    imports: [CacheModule.register({
         ttl: 5,
         max: 100
     }),
+        RedisModule,
+        PrismaModule
     ],
     controllers: [CategoryController],
     providers: [
-        PrismaService,
         CreateCategoryUseCase,
+        FindAllCategoriesUseCase,
+        {
+            provide: 'CategoriesRepository',
+            useClass: PrismaCategoriesRepository,
+        },
         {
             provide: APP_INTERCEPTOR,
             useClass: CacheInterceptor,
@@ -25,6 +36,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
     ],
     exports: [
         CreateCategoryUseCase,
+        FindAllCategoriesUseCase
     ]
 })
 export class CategoryModule { }

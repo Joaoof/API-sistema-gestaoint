@@ -23,7 +23,7 @@ import { PrismaProductsRepository } from 'src/infra/database/implementations/pro
     exports: [
         CreateProductUseCase,
         FindAllProductsUseCase,
-        FindProductByIdUseCase,
+        FindProductByIdUseCase, 
     ]
 })
 export class ProductModule { }

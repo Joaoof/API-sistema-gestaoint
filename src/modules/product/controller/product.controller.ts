@@ -36,7 +36,7 @@ export class ProductController {
     @ApiOperation({ summary: 'Cria um novo produto' }) // Sumário da rota
     @ApiBody({
         schema: {
-            $ref: '/home/joaoof/sistema-gestao/jc/src/modules/product/dtos/create-produ ct.dto.ts', // ← Referência exata
+            $ref: '/home/joaoof/sistema-gestao/jc/src/modules/product/dtos/create-product.dto.ts', // ← Referência exata
         },
     }) // Documenta o payload
     @ApiResponse({
