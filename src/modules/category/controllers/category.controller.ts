@@ -20,14 +20,14 @@ import { CreateCategorySwaggerDto } from '../dtos/category/category-swagger.dto'
 import { CreateCategoryDto, CreateCategorySchema } from '../dtos/create-category.dto';
 import { CacheInterceptor } from '@nestjs/cache-manager';
 import { CategoryMapper } from '../mappers/category.mapper';
-import { CreateProductUseCase } from 'src/core/use-cases/product/create-product.use-case';
 import { FindAllCategoriesUseCase } from 'src/core/use-cases/category/find-all-categories.use.case';
+import { CreateCategoryUseCase } from 'src/core/use-cases/category/create-category.use-case';
 
 @ApiTags('categories')
 @Controller('categories')
 export class CategoryController {
     constructor(
-        // private readonly createProductUseCase: CreateProductUseCase,
+        private readonly createCategoryUseCase: CreateCategoryUseCase,
         private readonly findAllCategoriesUseCase: FindAllCategoriesUseCase,
         // private readonly findCategoryByIdUseCase: FindCategoryByIdUseCase
     ) { }
@@ -47,9 +47,9 @@ export class CategoryController {
     })
     async create(@Body() dto: CreateCategoryDto) {
 
-        const result = CreateCategorySchema.safeParse(dto);
-        if (!result.success) {
-            console.error(JSON.stringify(result.error.issues, null, 2));
+        const result = await this.createCategoryUseCase.execute(dto);
+        if (!result) {
+            console.error(JSON.stringify(result, null, 2));
         }
         return result
     }
@@ -60,6 +60,6 @@ export class CategoryController {
         const categories = await this.findAllCategoriesUseCase.execute();
         console.log(categories);
 
-        return categories.map(CategoryMapper.toJSON);
+        return categories.map(CategoryMapper.toResponseJSON);
     }
 }

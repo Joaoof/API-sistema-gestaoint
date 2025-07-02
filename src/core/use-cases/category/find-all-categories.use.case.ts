@@ -13,8 +13,6 @@ export class FindAllCategoriesUseCase {
 
     async execute(): Promise<Category[]> {
         const findAll = await this.categoriesRepository.findAll();
-        console.log('FindAllCategoriesUseCase executed:', findAll);
-
         return findAll;
     }
 }

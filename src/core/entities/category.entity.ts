@@ -1,5 +1,6 @@
 // src/core/entities/category.entity.ts
 import { CategoryStatus, Prisma } from "@prisma/client";
+import { formatDateTimeBR } from "../../shared/utils/format-date.utils";
 
 export class Category {
     constructor(
@@ -26,13 +27,13 @@ export class Category {
             throw new Error('Category status is required.');
         }
 
-        if (!(this.createdAt instanceof Date) || isNaN(this.createdAt.getTime())) {
-            throw new Error('Invalid createdAt date.');
-        }
+        // if (!(this.createdAt instanceof Date) || isNaN(this.createdAt.getTime())) {
+        //     throw new Error('Invalid createdAt date.');
+        // }
 
-        if (!(this.updatedAt instanceof Date) || isNaN(this.updatedAt.getTime())) {
-            throw new Error('Invalid updatedAt date.');
-        }
+        // if (!(this.updatedAt instanceof Date) || isNaN(this.updatedAt.getTime())) {
+        //     throw new Error('Invalid updatedAt date.');
+        // }
     }
 
     update(name: string, description: string | null, status: CategoryStatus): void {
@@ -54,6 +55,15 @@ export class Category {
             updatedAt: this.updatedAt.toISOString()
         };
     }
+
+    toResponseJSON() {
+        return {
+            ...this,
+            createdAt: formatDateTimeBR(this.createdAt),
+            updatedAt: formatDateTimeBR(this.updatedAt)
+        };
+    }
+
 
     static fromPrisma(data: Prisma.CategoryGetPayload<{}>): Category {
         return new Category(

@@ -2,6 +2,7 @@ import { Category } from "src/core/entities/category.entity";
 import { CreateCategoryDto, CreateCategorySchema } from "../dtos/create-category.dto";
 import { z } from "zod";
 import { CategoryStatus } from "@prisma/client";
+import { formatDateTimeBR } from "src/shared/utils/format-date.utils";
 
 export class CategoryMapper {
     /**
@@ -38,6 +39,15 @@ export class CategoryMapper {
     static toJSON(category: Category): any {
         return category.toJSON(); // usa o método toJSON da entidade
     }
+
+    static toResponseJSON(category: Category) {
+        return {
+            ...category, // usa o método toJSON da entidade
+            createdAt: formatDateTimeBR(category.createdAt),
+            updatedAt: formatDateTimeBR(category.updatedAt)
+        };
+    }
+
 
     /**
      * Valida e converte um payload bruto usando Zod

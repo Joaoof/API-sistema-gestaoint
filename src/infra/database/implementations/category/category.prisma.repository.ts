@@ -49,7 +49,7 @@ export class PrismaCategoriesRepository implements CategoriesRepository {
         if (cached) return JSON.parse(cached).map(Category.fromPrisma);
 
         const data = await this.prisma.category.findMany();
-        await this.redis.setex('categories:all', 30, JSON.stringify(data));
+        await this.redis.setex('categories:all', 60, JSON.stringify(data));
         return data.map(Category.fromPrisma);
     }
 }
