@@ -9,12 +9,16 @@ export class ProductMapper {
      */
     static toDomain(dto: CreateProductDto): Product {
         return new Product(
+            crypto.randomUUID(), // ou receba de um ID gerado externamente
             dto.name,
-            dto.description ?? '',
-            dto.price.toString(),
-            Number(dto.categoryId),
-            dto.supplierId,
-            new Date().toISOString()
+            dto.categoryName ?? null,
+            dto.quantity ?? 0,
+            dto.costPrice,
+            dto.salePrice,
+            dto.supplierName ?? null,
+            dto.description ?? null,
+            dto.createdAt ?? new Date(),
+            dto.updatedAt ?? new Date()
         );
     }
 
@@ -24,12 +28,15 @@ export class ProductMapper {
     static toDomainFromPrisma(data: any): Product {
         return new Product(
             data.id,
-            data.name,
-            data.description,
-            data.price.toNumber(),
-            data.categoryId,
-            data.supplierId,
-            data.createdAt
+            data.nameProduct, // Ajuste para o novo campo nameProduct
+            data.categoryName ?? null,
+            data.quantity ?? 0,
+            data.costPrice.toNumber(),
+            data.salePrice.toNumber(),
+            data.supplierName ?? null,
+            data.description ?? null,
+            data.createdAt,
+            data.updatedAt
         );
     }
 
@@ -39,11 +46,12 @@ export class ProductMapper {
     static toJSON(product: Product): any {
         return {
             id: product.id,
-            name: product.name,
+            nameProduct: product.nameProduct,
             description: product.description,
-            price: product.price,
-            categoryId: product.categoryId,
-            supplierId: product.supplierId,
+            costPrice: product.costPrice,
+            salePrice: product.salePrice,
+            categoryName: product.categoryName,
+            supplierName: product.supplierName,
             createdAt: product.createdAt.toISOString(),
         };
     }

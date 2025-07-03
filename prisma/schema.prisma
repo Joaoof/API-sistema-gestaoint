@@ -22,30 +22,25 @@ model Gift {
   imageUrl    String?
   status      String   @default("available") // available, reserved
   reservedBy  String?  // Nome de quem reservou
-  createdAt   DateTime @default(now())
+  createdAt   DateTime @default(now())    
 }
 
 model Product {
   id          String       @id @default(uuid())
-  name        String       @unique
+  nameProduct String       @unique
+  categoryName String? @map("category_name") // Nome da categoria, opcional
+  quantity   Int          @default(0)
+  costPrice  Decimal      @default(0.0)
+  salerPrice  Decimal      @default(0.0)
+  supplierName String? @map("supplier_name") // Nome do fornecedor, opcional
   description String?
-  price       Decimal      @default(0.0)
-  status      ProductStatus @default(ACTIVE)
-  categoryId  String
-  supplierId  String
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   deletedAt   DateTime?
 
-  category   Category   @relation(fields: [categoryId], references: [id])
-  supplier   Supplier   @relation(fields: [supplierId], references: [id])
   inventory  Inventory?
 
-  @@index([categoryId])
-  @@index([supplierId])
-  @@index([name])
-  @@index([categoryId, status])
-  @@index([supplierId, createdAt])
+  @@index([nameProduct])
 }
 
 model Category {
@@ -58,7 +53,6 @@ model Category {
 
     @@index([name], map: "idx_category_name")
     @@index([status], map: "idx_category_status")
-    Product Product[]
 }
 
 model Supplier {
@@ -67,7 +61,6 @@ model Supplier {
   email     String?   @unique
   phone     String?
   address   String?
-  products  Product[]
   createdAt DateTime  @default(now())
 }
 

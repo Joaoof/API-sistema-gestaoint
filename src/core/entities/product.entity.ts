@@ -1,14 +1,17 @@
 // src/core/entities/product.entity.ts
 import { Prisma } from '@prisma/client';
+import { DomainValidationError } from '../exceptions/domain.exception';
 
 export class Product {
     constructor(
         public readonly id: string,
-        public name: string,
+        public nameProduct: string,
+        public categoryName: string | null,
+        public quantity: number,
+        public costPrice: number,
+        public salePrice: number,
+        public supplierName: string | null,
         public description: string | null,
-        public price: number,
-        public categoryId: string,
-        public supplierId: string,
         public readonly createdAt: Date = new Date(),
         public updatedAt: Date = new Date()
     ) {
@@ -16,41 +19,56 @@ export class Product {
     }
 
     private validate(): void {
+        const errors: { field: string; message: string }[] = [];
+
         if (!this.id) {
-            throw new Error('Product ID is required.');
+            errors.push({ field: 'id', message: 'ID do produto é obrigatório.' });
         }
 
-        if (!this.name || this.name.trim().length === 0) {
-            throw new Error('Product name is required.');
+        if (!this.nameProduct || this.nameProduct.trim().length === 0) {
+            errors.push({ field: 'nameProduct', message: 'Nome do produto é obrigatório.' });
         }
 
-        if (this.price < 0) {
-            throw new Error('Product price must be greater than or equal to zero.');
+        if (!this.categoryName) {
+            errors.push({ field: 'categoryName', message: 'Categoria é obrigatória.' });
         }
 
-        if (!this.categoryId) {
-            throw new Error('Category ID is required.');
+        if (this.quantity < 0) {
+            errors.push({ field: 'quantity', message: 'Quantidade não pode ser negativa.' });
         }
 
-        if (!this.supplierId) {
-            throw new Error('Supplier ID is required.');
+        if (this.costPrice < 0) {
+            errors.push({ field: 'costPrice', message: 'Preço de custo não pode ser negativo.' });
+        }
+
+        if (this.salePrice < 0) {
+            errors.push({ field: 'salePrice', message: 'Preço de venda não pode ser negativo.' });
+        }
+
+        if (!this.supplierName) {
+            errors.push({ field: 'supplierName', message: 'Fornecedor é obrigatório.' });
         }
 
         if (!(this.createdAt instanceof Date) || isNaN(this.createdAt.getTime())) {
-            throw new Error('Invalid createdAt date.');
+            errors.push({ field: 'createdAt', message: 'Data de criação inválida.' });
         }
 
         if (!(this.updatedAt instanceof Date) || isNaN(this.updatedAt.getTime())) {
-            throw new Error('Invalid updatedAt date.');
+            errors.push({ field: 'updatedAt', message: 'Data de atualização inválida.' });
+        }
+
+        if (errors.length > 0) {
+            throw new DomainValidationError(errors);
         }
     }
 
-    update(name: string, description: string | null, price: number, categoryId: string, supplierId: string): void {
-        this.name = name;
+
+    update(nameProduct, description, quantity, categoryName, supplierName): void {
+        this.nameProduct = nameProduct;
         this.description = description;
-        this.price = price;
-        this.categoryId = categoryId;
-        this.supplierId = supplierId;
+        this.quantity = quantity;
+        this.categoryName = categoryName;
+        this.supplierName = supplierName;
         this.updatedAt = new Date();
 
         this.validate();
@@ -59,11 +77,12 @@ export class Product {
     toJSON() {
         return {
             id: this.id,
-            name: this.name,
+            nameProduct: this.nameProduct,
             description: this.description,
-            price: this.price,
-            categoryId: this.categoryId,
-            supplierId: this.supplierId,
+            costPrice: this.costPrice,
+            salePrice: this.salePrice,
+            categoryName: this.categoryName,
+            supplierName: this.supplierName,
             createdAt: this.createdAt.toISOString(),
             updatedAt: this.updatedAt.toISOString()
         };
@@ -72,13 +91,15 @@ export class Product {
     static fromPrisma(data: Prisma.ProductGetPayload<{}>): Product {
         return new Product(
             data.id,
-            data.name,
-            data.description,
-            data.price.toNumber(),
-            data.categoryId,
-            data.supplierId,
+            data.nameProduct,
+            data.categoryName ?? null,
+            data.quantity ?? 0,
+            data.costPrice.toNumber(),
+            data.salerPrice.toNumber(),
+            data.supplierName ?? null,
+            data.description ?? null,
             data.createdAt,
-            data.updatedAt
+            data.updatedAt,
         );
     }
 }
