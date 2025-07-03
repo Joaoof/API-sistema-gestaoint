@@ -1,4 +1,3 @@
-// src/modules/product/mappers/product.mapper.ts
 import { z } from 'zod';
 import { Product } from 'src/core/entities/product.entity';
 import { CreateProductDto, CreateProductSchema } from '../dtos/create-product.dto';
@@ -9,13 +8,13 @@ export class ProductMapper {
      */
     static toDomain(dto: CreateProductDto): Product {
         return new Product(
-            crypto.randomUUID(), // ou receba de um ID gerado externamente
+            crypto.randomUUID(),
             dto.nameProduct,
-            dto.categoryName ?? null,
             dto.quantity ?? 0,
             dto.costPrice,
             dto.salePrice,
-            dto.supplierName ?? null,
+            dto.categoryId,
+            dto.supplierId,
             dto.description ?? null,
             dto.createdAt ?? new Date(),
             dto.updatedAt ?? new Date()
@@ -28,12 +27,12 @@ export class ProductMapper {
     static toDomainFromPrisma(data: any): Product {
         return new Product(
             data.id,
-            data.nameProduct, // Ajuste para o novo campo nameProduct
-            data.categoryName ?? null,
+            data.nameProduct,
             data.quantity ?? 0,
             data.costPrice.toNumber(),
-            data.salePrice.toNumber(),
-            data.supplierName ?? null,
+            data.salerPrice.toNumber(),
+            data.categoryId,
+            data.supplierId,
             data.description ?? null,
             data.createdAt,
             data.updatedAt
@@ -46,13 +45,15 @@ export class ProductMapper {
     static toJSON(product: Product): any {
         return {
             id: product.id,
-            nameProduct: product.nameProduct,
+            name: product.name,
             description: product.description,
             costPrice: product.costPrice,
-            salePrice: product.salePrice,
-            categoryName: product.categoryName,
-            supplierName: product.supplierName,
+            salePrice: product.salerPrice,
+            quantity: product.quantity,
+            categoryId: product.categoryId,
+            supplierId: product.supplierId,
             createdAt: product.createdAt.toISOString(),
+            updatedAt: product.updatedAt.toISOString()
         };
     }
 

@@ -1,37 +1,44 @@
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
-import { CreateProductUseCase } from 'src/core/use-cases/product/create-product.use-case';
-import { Product } from '../../core/entities/product.entity';
 import { Injectable } from '@nestjs/common';
+import { CreateProductUseCase } from 'src/core/use-cases/product/create-product.use-case';
+import { FindAllProductsUseCase } from 'src/core/use-cases/product/find-all-products.use.case';
+import { ProductResponseDto } from 'src/modules/product/dtos/response-product.dto';
+import { ProductMapper } from 'src/modules/product/mapper/product.mapper';
 
-@Resolver(() => Product)
+@Resolver(() => ProductResponseDto)
 @Injectable()
 export class ProductResolver {
-  constructor(private readonly createProductUseCase: CreateProductUseCase) { }
+  constructor(
+    private readonly createProductUseCase: CreateProductUseCase,
+    private readonly findAllProductsUseCase: FindAllProductsUseCase
+  ) { }
 
-  @Query(() => [Product])
-  async products() {
-    // Para listar, precisaria implementar use case de listar, aqui só exemplo simples
-    throw new Error('Implementar findAll use case');
+  @Query(() => [ProductResponseDto], { name: 'products' })
+  async findAll() {
+    const products = await this.findAllProductsUseCase.execute();
+    return products.map(ProductMapper.toJSON);
   }
 
-  @Mutation(() => Product)
+  @Mutation(() => ProductResponseDto, { name: 'createProduct' })
   async createProduct(
-    @Args('name') nameProduct: string,
-    @Args('category') categoryName: string,
+    @Args('nameProduct') nameProduct: string,
+    @Args('categoryId') categoryId: string,
     @Args('quantity') quantity: number,
     @Args('costPrice') costPrice: number,
     @Args('salePrice') salePrice: number,
-    @Args('supplier', { nullable: true }) supplierName?: string,
+    @Args('supplierId', { nullable: true }) supplierId?: string,
     @Args('description', { nullable: true }) description?: string,
   ) {
-    return this.createProductUseCase.execute({
-      nameProduct: nameProduct,
-      categoryName,
+    const product = await this.createProductUseCase.execute({
+      nameProduct,
       quantity,
       costPrice,
       salePrice,
-      supplierName: supplierName ?? undefined,
-      description: description || undefined,
+      categoryId,
+      supplierId: supplierId ?? '',
+      description,
     });
+
+    return ProductMapper.toJSON(product);
   }
 }

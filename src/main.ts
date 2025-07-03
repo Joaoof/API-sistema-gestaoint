@@ -5,6 +5,8 @@ import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify
 import { CategoriesSchemas, ProductSchemas } from './shared/swagger/utils';
 import { CreateCategorySchema } from './modules/category/dtos/create-category.dto';
 import * as compression from 'compression';
+import helmet from 'helmet';
+
 
 async function bootstrap() {
   const adapter = new FastifyAdapter();
@@ -36,6 +38,7 @@ async function bootstrap() {
   SwaggerModule.setup('api-docs', app, document);
 
   app.use(compression())
+  app.use(helmet());
 
   await app.listen(3000);
 }

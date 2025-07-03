@@ -1,17 +1,18 @@
-// src/core/entities/product.entity.ts
 import { Prisma } from '@prisma/client';
 import { DomainValidationError } from '../exceptions/domain.exception';
+
+type ValidationError = { field: string; message: string };
 
 export class Product {
     constructor(
         public readonly id: string,
-        public nameProduct: string,
-        public categoryName: string | null,
+        public name: string,
         public quantity: number,
         public costPrice: number,
-        public salePrice: number,
-        public supplierName: string | null,
-        public description: string | null,
+        public salerPrice: number,
+        public readonly categoryId: string,
+        public readonly supplierId: string,
+        public description: string | null = null,
         public readonly createdAt: Date = new Date(),
         public updatedAt: Date = new Date()
     ) {
@@ -19,18 +20,14 @@ export class Product {
     }
 
     private validate(): void {
-        const errors: { field: string; message: string }[] = [];
+        const errors: ValidationError[] = [];
 
         if (!this.id) {
             errors.push({ field: 'id', message: 'ID do produto é obrigatório.' });
         }
 
-        if (!this.nameProduct || this.nameProduct.trim().length === 0) {
-            errors.push({ field: 'nameProduct', message: 'Nome do produto é obrigatório.' });
-        }
-
-        if (!this.categoryName) {
-            errors.push({ field: 'categoryName', message: 'Categoria é obrigatória.' });
+        if (!this.name || this.name.trim().length === 0) {
+            errors.push({ field: 'name', message: 'Nome do produto é obrigatório.' });
         }
 
         if (this.quantity < 0) {
@@ -41,12 +38,16 @@ export class Product {
             errors.push({ field: 'costPrice', message: 'Preço de custo não pode ser negativo.' });
         }
 
-        if (this.salePrice < 0) {
+        if (this.salerPrice < 0) {
             errors.push({ field: 'salePrice', message: 'Preço de venda não pode ser negativo.' });
         }
 
-        if (!this.supplierName) {
-            errors.push({ field: 'supplierName', message: 'Fornecedor é obrigatório.' });
+        if (!this.categoryId) {
+            errors.push({ field: 'categoryId', message: 'Categoria é obrigatória.' });
+        }
+
+        if (!this.supplierId) {
+            errors.push({ field: 'supplierId', message: 'Fornecedor é obrigatório.' });
         }
 
         if (!(this.createdAt instanceof Date) || isNaN(this.createdAt.getTime())) {
@@ -62,44 +63,51 @@ export class Product {
         }
     }
 
-
-    update(nameProduct, description, quantity, categoryName, supplierName): void {
-        this.nameProduct = nameProduct;
+    update(
+        name: string,
+        description: string | null,
+        quantity: number,
+        categoryId: string,
+        supplierId: string
+    ): void {
+        this.name = name;
         this.description = description;
         this.quantity = quantity;
-        this.categoryName = categoryName;
-        this.supplierName = supplierName;
         this.updatedAt = new Date();
-
+        (this as any).categoryId = categoryId;
+        (this as any).supplierId = supplierId;
         this.validate();
     }
 
     toJSON() {
         return {
             id: this.id,
-            nameProduct: this.nameProduct,
+            name: this.name,
             description: this.description,
+            quantity: this.quantity,
             costPrice: this.costPrice,
-            salePrice: this.salePrice,
-            categoryName: this.categoryName,
-            supplierName: this.supplierName,
+            salePrice: this.salerPrice,
+            categoryId: this.categoryId,
+            supplierId: this.supplierId,
             createdAt: this.createdAt.toISOString(),
             updatedAt: this.updatedAt.toISOString()
         };
     }
 
-    static fromPrisma(data: Prisma.ProductGetPayload<{}>): Product {
+    static fromPrisma(data: Prisma.ProductGetPayload<{
+        include?: { category?: true, supplier?: true }
+    }>): Product {
         return new Product(
             data.id,
             data.nameProduct,
-            data.categoryName ?? null,
             data.quantity ?? 0,
             data.costPrice.toNumber(),
-            data.salerPrice.toNumber(),
-            data.supplierName ?? null,
+            data.salePrice.toNumber(),
+            data.categoryId!,
+            data.supplierId!,
             data.description ?? null,
             data.createdAt,
-            data.updatedAt,
+            data.updatedAt
         );
     }
 }

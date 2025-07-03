@@ -10,7 +10,7 @@ export class FindProductByIdUseCase {
         const product = await this.productsRepository.findById(id);
         if (!product) {
             throw new NotFoundError(`Product with not found`, id);
-        }
+        }   
         return product;
     }
 }

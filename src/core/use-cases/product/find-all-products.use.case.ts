@@ -10,4 +10,4 @@ export class FindAllProductsUseCase {
     async execute(): Promise<Product[]> {
         return this.productsRepository.findAll();
     }
-}
+}   

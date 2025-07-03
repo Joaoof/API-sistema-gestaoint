@@ -9,7 +9,20 @@ export class PrismaProductsRepository implements ProductsRepository {
     constructor(private readonly prisma: PrismaService) { }
 
     async create(product: Product): Promise<void> {
-        await this.prisma.product.create({ data: product });
+        await this.prisma.product.create({
+            data: {
+                id: product.id,
+                nameProduct: product.name,
+                quantity: product.quantity,
+                costPrice: product.costPrice,
+                salePrice: product.salerPrice,
+                description: product.description,
+                categoryId: product.categoryId, // aqui você liga o produto à categoria
+                supplierId: product.supplierId, // mesma ideia para fornecedor
+                createdAt: product.createdAt,
+                updatedAt: product.updatedAt,
+            },
+        });
     }
 
     async findById(id: string): Promise<Product | null> {

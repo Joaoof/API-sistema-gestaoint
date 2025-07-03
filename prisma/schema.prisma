@@ -26,22 +26,33 @@ model Gift {
 }
 
 model Product {
-  id          String       @id @default(uuid())
-  nameProduct String       @unique
-  categoryName String? @map("category_name") // Nome da categoria, opcional
-  quantity   Int          @default(0)
-  costPrice  Decimal      @default(0.0)
-  salerPrice  Decimal      @default(0.0)
-  supplierName String? @map("supplier_name") // Nome do fornecedor, opcional
-  description String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  deletedAt   DateTime?
+  id            String     @id @default(uuid())
+  nameProduct          String     @unique
+  quantity      Int        @default(0)
+  costPrice     Decimal    @default(0.0)
+  salePrice     Decimal    @default(0.0)
+  status        ProductStatus @default(ACTIVE)
 
-  inventory  Inventory?
+  categoryId    String?
+  category      Category?  @relation(fields: [categoryId], references: [id])
+
+  supplierId    String?
+  supplier      Supplier?  @relation(fields: [supplierId], references: [id])
+  
+  description   String?
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  deletedAt     DateTime?
+
+  inventory     Inventory?
 
   @@index([nameProduct])
+  @@index([status])
+  @@index([categoryId])
+  @@index([supplierId])
 }
+
 
 model Category {
     id String @id @default(uuid())
@@ -53,6 +64,7 @@ model Category {
 
     @@index([name], map: "idx_category_name")
     @@index([status], map: "idx_category_status")
+    Product Product[]
 }
 
 model Supplier {
@@ -62,6 +74,8 @@ model Supplier {
   phone     String?
   address   String?
   createdAt DateTime  @default(now())
+
+  Product Product[]
 }
 
 model Inventory {
