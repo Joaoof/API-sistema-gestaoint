@@ -5,7 +5,6 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { BullModule } from '@nestjs/bull';
 import { ProductModule } from './modules/product/product.module';
 import { CategoryModule } from './modules/category/category.module';
-import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -20,7 +19,7 @@ import { CacheModule } from '@nestjs/cache-manager';
       name: 'email',
     }),
     ProductModule,
-    CategoryModule
+    CategoryModule  
   ],
   controllers: [AppController],
   providers: [AppService],

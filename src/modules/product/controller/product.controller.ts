@@ -20,8 +20,8 @@ import { FindProductByIdUseCase } from 'src/core/use-cases/product/find-product-
 import { ProductMapper } from '../mapper/product.mapper';
 import { NotFoundError } from 'src/core/exceptions/api.exception';
 import { CreateProductDto } from '../dtos/create-product.dto';
-import { CreateProductSchema } from '../dtos/create-product.dto';
 import { ProductResponseDto } from '../dtos/response-product.dto';
+import { ProductSwaggerDto } from '../dtos/product/product.swagger';
 
 @ApiTags('products') // ← Tag que aparecerá no Swagger
 @Controller('products')
@@ -34,20 +34,20 @@ export class ProductController {
 
     @Post()
     @ApiOperation({ summary: 'Cria um novo produto' }) // Sumário da rota
-    @ApiBody({
-        schema: {
-            $ref: '/home/joaoof/sistema-gestao/jc/src/modules/product/dtos/create-product.dto.ts', // ← Referência exata
-        },
-    }) // Documenta o payload
+    @ApiBody({ type: ProductSwaggerDto }) // Documenta o payload
     @ApiResponse({
         status: 201,
         description: 'Produto criado com sucesso',
         type: ProductResponseDto
     })
     @ApiResponse({ status: 400, description: 'Dados inválidos' })
-    async create(@Body() dto: CreateProductDto): Promise<ProductResponseDto> {
+    async create(@Body() dto: CreateProductDto) {
         const product = await this.createProductUseCase.execute(dto);
-        return ProductMapper.toJSON(product);
+        if (!product) {
+            console.error(JSON.stringify(product, null, 2));
+        }
+
+        return product;
     }
 
     @Get()

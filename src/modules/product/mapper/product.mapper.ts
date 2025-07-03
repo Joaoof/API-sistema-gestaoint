@@ -10,7 +10,7 @@ export class ProductMapper {
     static toDomain(dto: CreateProductDto): Product {
         return new Product(
             crypto.randomUUID(), // ou receba de um ID gerado externamente
-            dto.name,
+            dto.nameProduct,
             dto.categoryName ?? null,
             dto.quantity ?? 0,
             dto.costPrice,

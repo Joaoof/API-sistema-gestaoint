@@ -16,22 +16,22 @@ export class ProductResolver {
 
   @Mutation(() => Product)
   async createProduct(
-    @Args('name') name: string,
-    @Args('category') category: string,
+    @Args('name') nameProduct: string,
+    @Args('category') categoryName: string,
     @Args('quantity') quantity: number,
     @Args('costPrice') costPrice: number,
     @Args('salePrice') salePrice: number,
-    @Args('supplier', { nullable: true }) supplier?: string,
+    @Args('supplier', { nullable: true }) supplierName?: string,
     @Args('description', { nullable: true }) description?: string,
   ) {
     return this.createProductUseCase.execute({
-      name,
-      categoryId,
+      nameProduct: nameProduct,
+      categoryName,
       quantity,
       costPrice,
       salePrice,
-      supplier,
-      description,
+      supplierName: supplierName ?? undefined,
+      description: description || undefined,
     });
   }
 }

@@ -24,7 +24,7 @@ import { PrismaModule } from 'prisma/prisma.module';
     providers: [
         CreateCategoryUseCase,
         FindAllCategoriesUseCase,
-        {
+            {
             provide: 'CategoriesRepository',
             useClass: PrismaCategoriesRepository,
         },

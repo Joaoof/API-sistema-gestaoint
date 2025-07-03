@@ -5,10 +5,7 @@ import { CategoriesRepository } from "src/core/ports/category.repository";
 
 @Injectable()
 export class FindAllCategoriesUseCase {
-    constructor(@Inject('CategoriesRepository') private readonly categoriesRepository: CategoriesRepository) {
-        console.log('categoriesRepository:', categoriesRepository); // Deve mostrar o objeto
-
-    }
+    constructor(@Inject('CategoriesRepository') private readonly categoriesRepository: CategoriesRepository) { }
 
 
     async execute(): Promise<Category[]> {

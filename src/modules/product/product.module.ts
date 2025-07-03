@@ -5,14 +5,22 @@ import { CreateProductUseCase } from 'src/core/use-cases/product/create-product.
 import { FindAllProductsUseCase } from 'src/core/use-cases/product/find-all-products.use.case';
 import { FindProductByIdUseCase } from 'src/core/use-cases/product/find-product-by-id.use-case';
 import { PrismaProductsRepository } from 'src/infra/database/implementations/product/product.prisma.repository';
+import { PrismaModule } from 'prisma/prisma.module';
+import { EmailQueueService } from 'src/infra/queues/email-queue.service';
+import { QueuesModule } from 'src/infra/queues/queue.module';
 
-@Module({
+@Module({   
+    imports: [
+        PrismaModule,
+        QueuesModule
+    ],
     controllers: [ProductController],
     providers: [
         // Use Cases
         CreateProductUseCase,
         FindAllProductsUseCase,
         FindProductByIdUseCase,
+        EmailQueueService,
 
         // Repository
         {
@@ -23,7 +31,8 @@ import { PrismaProductsRepository } from 'src/infra/database/implementations/pro
     exports: [
         CreateProductUseCase,
         FindAllProductsUseCase,
-        FindProductByIdUseCase, 
+        FindProductByIdUseCase,
+        EmailQueueService
     ]
 })
 export class ProductModule { }
