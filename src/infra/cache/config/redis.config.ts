@@ -2,9 +2,7 @@
 import Redis from 'ioredis';
 
 export const redisClient = new Redis({
-    host: "viable-ewe-10712.upstash.io",
-    port: 6379,
-    username: "default",
-    password: "ASnYAAIjcDFjNzYxYzM0NTEwNmI0YjdkYjZjYmM5N2QxNWJjNWRjMHAxMA",
+    host: "redis://localhost:6379",
+    password: "",
     tls: {}
 });

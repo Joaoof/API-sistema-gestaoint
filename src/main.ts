@@ -3,7 +3,6 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { CategoriesSchemas, ProductSchemas } from './shared/swagger/utils';
-import { CreateCategorySchema } from './modules/category/dtos/create-category.dto';
 import * as compression from 'compression';
 import helmet from 'helmet';
 

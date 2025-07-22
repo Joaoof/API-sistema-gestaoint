@@ -6,9 +6,13 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgres://user:pass@db:5432/mydb
+      DATABASE_URL: postgres://joao:Senha123%40@db:5432/gestao
+      REDIS_URL: redis://redis_db:6379
     depends_on:
       - db
+      - redis
+    networks:
+      - app_net
 
   db:
     image: postgres
@@ -19,7 +23,27 @@ services:
       POSTGRES_PASSWORD: Senha123@
       POSTGRES_DB: gestao
     ports:
-      - 5433:5432  # Porta do PostgreSQL
+      - 5433:5432
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - app_net
+
+  redis:
+    image: redis:alpine
+    container_name: redis_db
+    command: redis-server --appendonly yes
+    ports:
+      - 6379:6379
+    volumes:
+      - ./data:/data
+    restart: always
+    networks:
+      - app_net
+
+networks:
+  app_net:
+    driver: bridge
 
 volumes:
   db-data:
