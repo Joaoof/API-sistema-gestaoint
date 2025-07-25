@@ -6,6 +6,7 @@ import { BullModule } from '@nestjs/bull';
 import { ProductModule } from './modules/product/product.module';
 import { CategoryModule } from './modules/category/category.module';
 import { APP_GUARD } from '@nestjs/core';
+import { RedisModule } from './infra/cache/redis.module';
 
 @Module({
   imports: [
@@ -20,10 +21,11 @@ import { APP_GUARD } from '@nestjs/core';
       name: 'email',
     }),
     ProductModule,
-    CategoryModule
+    CategoryModule,
+    RedisModule
   ],
-  controllers: [AppController],
-  providers: [AppService, {
+  controllers: [],
+  providers: [{
     provide: APP_GUARD,
     useClass: ThrottlerGuard
   }],

@@ -1,10 +1,8 @@
-// src/infra/database/implementations/category.prisma.repository.ts
-
 import { Category } from '../../../../core/entities/category.entity';
 import { PrismaService } from '../../../../../prisma/prisma.service';
 import { CategoriesRepository } from 'src/core/ports/category.repository';
 import { Injectable } from '@nestjs/common';
-import { RedisService } from 'src/infra/cache/redis.service'; // você precisa criar esse serviço
+import { RedisService } from 'src/infra/cache/redis.service';
 
 @Injectable()
 export class PrismaCategoriesRepository implements CategoriesRepository {

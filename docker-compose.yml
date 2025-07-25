@@ -15,15 +15,15 @@ services:
       - app_net
 
   db:
-    image: postgres
+    image: bitnami/postgresql:latest
     restart: always
     shm_size: 128mb
     environment:
       POSTGRES_USER: joao
-      POSTGRES_PASSWORD: Senha123@
+      POSTGRES_PASSWORD: Senha123!
       POSTGRES_DB: gestao
     ports:
-      - 5433:5432
+      - 5432:5432
     volumes:
       - db-data:/var/lib/postgresql/data
     networks:

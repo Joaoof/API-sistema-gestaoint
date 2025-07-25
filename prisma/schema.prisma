@@ -90,6 +90,46 @@ model Inventory {
   @@index([quantity])
 }
 
+model Companies {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  email     String?   @unique
+  phone     String?
+  address   String?
+  createdAt DateTime  @default(now())
+
+  Users Users[]
+}
+
+model Modules {
+  id        String    @id @default(cuid())
+  name      String
+  module_key String
+  description String
+}
+
+
+model PlanModules {
+  id    String  @id @default(cuid())
+  plan_type String
+  module_key String
+  is_active Boolean
+  permission String[] 
+}
+
+model Users {
+  id    String @id @default(cuid())
+  email String
+  password_hash String
+  name String
+  company_id  String
+  role String
+  is_active Boolean
+  createdAt DateTime  @default(now())
+  
+  company Companies @relation(fields: [company_id], references: [id])
+}
+
 enum ProductStatus {
   ACTIVE
   INACTIVE
