@@ -5,18 +5,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { BullModule } from '@nestjs/bull';
 import { ProductModule } from './modules/product/product.module';
 import { CategoryModule } from './modules/category/category.module';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { SupplierModule } from './modules/supplier/supplier.module';
-import { GraphQLModule } from '@nestjs/graphql';
-import { ApolloDriver } from '@nestjs/apollo';
-import { join } from 'path';
-import { ApolloServerPluginLandingPageLocalDefault, ApolloServerPluginLandingPageProductionDefault } from 'apollo-server-core';
-import { GqlThrottlerGuard } from './shared/guards/gql-throttler.guard';
-import { FastifyReply, FastifyRequest } from 'fastify';
-import { GqlCacheInterceptor } from './shared/guards/gql-cache-interceptor.guard';
-import { CacheModule } from '@nestjs/cache-manager';
-import { QueuesModule } from './infra/queues/queue.module';
-
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -53,20 +42,12 @@ import { QueuesModule } from './infra/queues/queue.module';
       name: 'email',
     }),
     ProductModule,
-    CategoryModule,
-    SupplierModule,
-    QueuesModule
+    CategoryModule
   ],
   controllers: [AppController],
-  providers: [AppService,
-    {
-      provide: APP_GUARD,
-      useClass: GqlThrottlerGuard, // Aqui usa o guard customizado
-    },
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: GqlCacheInterceptor
-    }
-  ],
+  providers: [AppService, {
+    provide: APP_GUARD,
+    useClass: ThrottlerGuard
+  }],
 })
 export class AppModule { }

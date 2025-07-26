@@ -26,14 +26,6 @@ export class Category {
         if (!this.status) {
             throw new Error('Category status is required.');
         }
-
-        // if (!(this.createdAt instanceof Date) || isNaN(this.createdAt.getTime())) {
-        //     throw new Error('Invalid createdAt date.');
-        // }
-
-        // if (!(this.updatedAt instanceof Date) || isNaN(this.updatedAt.getTime())) {
-        //     throw new Error('Invalid updatedAt date.');
-        // }
     }
 
     update(name: string, description: string | null, status: CategoryStatus): void {
