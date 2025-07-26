@@ -2,9 +2,7 @@
 
 export class ProductCreatedEvent {
     constructor(
-        public readonly productId: string,
-        public readonly name: string,
-        public readonly price: number,
-        public readonly createdAt: Date,
-    ) {}
+        public readonly id: string,
+        public readonly nameProduct: string,
+    ) { }
 }

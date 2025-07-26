@@ -14,7 +14,6 @@ import {
     ApiBody,
 } from '@nestjs/swagger';
 
-import { CreateProductUseCase } from 'src/core/use-cases/product/create-product.use-case';
 import { FindAllProductsUseCase } from 'src/core/use-cases/product/find-all-products.use.case';
 import { FindProductByIdUseCase } from 'src/core/use-cases/product/find-product-by-id.use-case';
 import { ProductMapper } from '../mapper/product.mapper';
@@ -22,12 +21,13 @@ import { NotFoundError } from 'src/core/exceptions/api.exception';
 import { CreateProductDto } from '../dtos/create-product.dto';
 import { ProductResponseDto } from '../dtos/response-product.dto';
 import { ProductSwaggerDto } from '../dtos/product/product.swagger';
+import { CommandBus } from '@nestjs/cqrs';
 
 @ApiTags('products') // ← Tag que aparecerá no Swagger
 @Controller('products')
 export class ProductController {
     constructor(
-        private readonly createProductUseCase: CreateProductUseCase,
+        private readonly commandBus: CommandBus,
         private readonly findAllProductsUseCase: FindAllProductsUseCase,
         private readonly findProductByIdUseCase: FindProductByIdUseCase
     ) { }
@@ -42,7 +42,7 @@ export class ProductController {
     })
     @ApiResponse({ status: 400, description: 'Dados inválidos' })
     async create(@Body() dto: CreateProductDto) {
-        const product = await this.createProductUseCase.execute(dto);
+        const product = await this.commandBus.execute(dto);
         if (!product) {
             console.error(JSON.stringify(product, null, 2));
         }
@@ -74,6 +74,7 @@ export class ProductController {
     async getById(@Param('id') id: string): Promise<ProductResponseDto> {
         try {
             const product = await this.findProductByIdUseCase.execute(id);
+            console.log('Produto criado:', product);
             return ProductMapper.toJSON(product);
         } catch (error) {
             if (error instanceof NotFoundError) {

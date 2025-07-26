@@ -1,22 +1,16 @@
-// main.ts
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { CategoriesSchemas, ProductSchemas } from './shared/swagger/utils';
-import { CreateCategorySchema } from './modules/category/dtos/create-category.dto';
-import * as compression from 'compression';
-import helmet from 'helmet';
-
 
 async function bootstrap() {
-  const adapter = new FastifyAdapter();
+  const adapter = new FastifyAdapter({ trustProxy: true });
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter, {
     cors: true,
   });
 
-  // Configuração padrão do Swagger
+  // Swagger setup (sem alterações aqui)
   const { SwaggerModule, DocumentBuilder } = require('@nestjs/swagger');
-
   const config = new DocumentBuilder()
     .setTitle('Gestão JC - API')
     .setDescription('Documentação da API do sistema de gestão')
@@ -29,7 +23,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config, {
     components: {
       schemas: {
-        // Adicione aqui os schemas convertidos
         CreateProductDto: ProductSchemas.CreateProductDto,
         CreateCategoryDto: CategoriesSchemas.CreateCategoryDto
       },
@@ -37,8 +30,34 @@ async function bootstrap() {
   });
   SwaggerModule.setup('api-docs', app, document);
 
-  app.use(compression())
-  app.use(helmet());
+  // Registra os plugins Fastify em vez de usar app.use()
+  await app.register(require('@fastify/compress'));
+  await app.register(require('@fastify/helmet'));
+
+
+  // Para adicionar headers customizados:
+  const fastifyInstance = app.getHttpAdapter().getInstance();
+
+  fastifyInstance.addHook('onSend', async (request, reply, payload) => {
+    reply.header(
+      'Content-Security-Policy',
+      "default-src 'self'; " +
+      "img-src 'self' data: http://cdn.jsdelivr.net http://cdn.apollographql.com; " +
+      "script-src 'self' http://cdn.jsdelivr.net http://cdn.apollographql.com 'unsafe-inline'; " +
+      "style-src 'self' 'unsafe-inline' http://cdn.jsdelivr.net http://fonts.googleapis.com; " +
+      "font-src 'self' http://fonts.gstatic.com;"
+    );
+
+    return payload;
+  });
+
+
+
+  app.use((req, res, next) => {
+    console.log('Middleware req.ip:', req.ip);
+    console.log('Middleware res.header?', typeof res.header);
+    next();
+  });
 
   await app.listen(3000);
 }

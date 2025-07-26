@@ -1,22 +1,25 @@
 // src/infra/database/implementations/prisma-supplier.repository.ts
 
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../../prisma/prisma.service';
 import { Supplier } from 'src/core/entities/supplier.entity';
 import { SuppliersRepository } from 'src/core/ports/supplier.repository';
 import { LoggerService } from 'src/core/ports/logger.service';
+import { LOGGER_SERVICE } from 'src/core/token/token';
 
 @Injectable()
 export class PrismaSupplierRepository implements SuppliersRepository {
     constructor(
         private readonly prisma: PrismaService,
-        private readonly logger: LoggerService,
+        @Inject(LOGGER_SERVICE) private readonly logger: LoggerService,
     ) { }
     async create(supplier: Supplier): Promise<void> {
-        await this.prisma.$executeRaw`
-        INSERT INTO suppliers (id, name, email, phone, address, created_at)
-        VALUES (${supplier.id}, ${supplier.name}, ${supplier.email}, ${supplier.phone}, ${supplier.address}, ${supplier.createdAt})
-    `;
+        await this.prisma.$transaction([
+            this.prisma.$executeRaw`
+      INSERT INTO "Supplier" (id, name, email, phone, address)
+      VALUES (${supplier.id}, ${supplier.name}, ${supplier.email}, ${supplier.phone}, ${supplier.address})
+    `,
+        ])
 
         // Log opcional, pode ser removido em produção
         this.logger.log?.(`Supplier created successfully: ${supplier.id}`);

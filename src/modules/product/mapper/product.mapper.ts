@@ -45,10 +45,10 @@ export class ProductMapper {
     static toJSON(product: Product): any {
         return {
             id: product.id,
-            name: product.name,
+            name: product.nameProduct,
             description: product.description,
             costPrice: product.costPrice,
-            salePrice: product.salerPrice,
+            salePrice: product.salePrice,
             quantity: product.quantity,
             categoryId: product.categoryId,
             supplierId: product.supplierId,

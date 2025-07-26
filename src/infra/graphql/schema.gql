@@ -1,0 +1,51 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type CategoryType {
+  active: Boolean!
+  color: String!
+  createdAt: String!
+  description: String
+  id: ID!
+  name: String!
+  updatedAt: String!
+}
+
+input CreateCategoryInput {
+  active: Boolean!
+  color: String!
+  description: String
+  name: String!
+}
+
+input CreateProductInput {
+  categoryId: String!
+  costPrice: Float!
+  description: String
+  nameProduct: String!
+  quantity: Int!
+  salePrice: Float!
+  supplierId: String
+}
+
+type Mutation {
+  createCategory(input: CreateCategoryInput!): CategoryType!
+  createProduct(dto: CreateProductInput!): ProductResponseDto!
+}
+
+type ProductResponseDto {
+  categoryId: String!
+  costPrice: Float!
+  description: String
+  id: String!
+  nameProduct: String!
+  quantity: Int!
+  salePrice: Float!
+  supplierId: String
+}
+
+type Query {
+  categories: [CategoryType!]!
+  products: [ProductResponseDto!]!
+}

@@ -8,6 +8,7 @@ export class EmailQueueService {
     ) { }
 
     async addEmailJob(data: { to: string; subject: string; html: string }) {
+        console.log('[EMAIL QUEUE] Chamado com:', data);
         await this.emailQueue.add('send', data);
     }
 }  

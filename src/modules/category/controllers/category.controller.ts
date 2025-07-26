@@ -18,10 +18,10 @@ import {
 
 import { CreateCategorySwaggerDto } from '../dtos/category/category-swagger.dto';
 import { CreateCategoryDto, CreateCategorySchema } from '../dtos/create-category.dto';
-import { CacheInterceptor } from '@nestjs/cache-manager';
 import { CategoryMapper } from '../mappers/category.mapper';
 import { FindAllCategoriesUseCase } from 'src/core/use-cases/category/find-all-categories.use.case';
 import { CreateCategoryUseCase } from 'src/core/use-cases/category/create-category.use-case';
+import { GqlCacheInterceptor } from 'src/shared/guards/gql-cache-interceptor.guard';
 
 @ApiTags('categories')
 @Controller('categories')
@@ -54,7 +54,7 @@ export class CategoryController {
         return result
     }
 
-    @UseInterceptors(CacheInterceptor)
+    @UseInterceptors(GqlCacheInterceptor)
     @Get()
     async findAll() {
         const categories = await this.findAllCategoriesUseCase.execute();
