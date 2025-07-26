@@ -3,7 +3,6 @@ export class User {
         public email: string,
         public password_hash: string,
         public name: string,
-        public company: string,
         public company_id: string,
         public role: string,
         public is_active: boolean = true,

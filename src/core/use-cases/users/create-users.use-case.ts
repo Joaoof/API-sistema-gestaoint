@@ -1,5 +1,5 @@
 import { UserRepository } from "src/core/ports/user.repository";
-import { CreateUserDto } from "src/modules/user/dtos/create-users.dto";
+import { CreateUserDto } from "src/modules/user/dtos/create-user.dto";
 import { User } from "src/core/entities/user.entity";
 
 export class CreateUsersUseCase {
