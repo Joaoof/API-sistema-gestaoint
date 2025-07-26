@@ -1,10 +1,10 @@
-import { Auth } from "../entities/user.entity";
+import { User } from "../entities/user.entity";
 
 export interface UserRepository {
-    create(auth: Auth): Promise<void>;
-    findAll(): Promise<Auth[]>;
-    findById(id: string): Promise<Auth | null>;
-    findByEmail(email: string): Promise<Auth | null>;
-    update(auth: Auth): Promise<void>;
+    create(user: User): Promise<void>;
+    findAll(): Promise<User[]>;
+    findById(id: string): Promise<User | null>;
+    findByEmail(email: string): Promise<User | null>;
+    update(user: User): Promise<void>;
     delete(id: string): Promise<void>;
 }

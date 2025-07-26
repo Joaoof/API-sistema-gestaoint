@@ -15,6 +15,9 @@ export class UserResponseDto {
     name: string;
 
     @Field()
+    company_id: string;
+
+    @Field()
     role: string;
 
     @Field()

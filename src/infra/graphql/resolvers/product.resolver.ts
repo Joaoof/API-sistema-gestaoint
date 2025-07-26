@@ -61,7 +61,7 @@ export class ProductResolver {
       description: input.description
     }
 
-    const product = await this.createProductUseCase.execute(new CreateProductCommand(dto));
+    const product = await this.   createProductUseCase.execute(new CreateProductCommand(dto));
 
     return product;
   }

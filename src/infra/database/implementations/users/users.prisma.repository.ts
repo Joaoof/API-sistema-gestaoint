@@ -1,36 +1,41 @@
+import { Injectable } from "@nestjs/common";
 import { PrismaService } from "prisma/prisma.service";
-import { Auth } from "src/core/entities/user.entity";
-import { AuthRepository } from "src/core/ports/user.repository";
+import { User } from "src/core/entities/user.entity";
+import { UserRepository } from "src/core/ports/user.repository";
 import { RedisService } from "src/infra/cache/redis.service";
 
-export class PrismaAuthRepository implements AuthRepository {
+@Injectable()
+export class PrismaUserRepository implements UserRepository {
 
     constructor(private readonly prisma: PrismaService,
         private readonly redis: RedisService
     ) { }
 
-    async create(auth: Auth): Promise<void> {
-        await this.prisma.users.create({
+    async create(auth: User): Promise<void> {
+        const teste = await this.prisma.users.create({
             data: {
                 name: auth.name,
                 email: auth.email,
                 password_hash: auth.password_hash,
+                company_id: auth.company_id,
                 is_active: auth.is_active,
                 role: auth.role,
-                company: auth.company as any
             }
         });
+
+        console.log('teste', teste);
+
     }
-    async findAll(): Promise<Auth[]> {
+    async findAll(): Promise<User[]> {
         throw new Error("Method not implemented.");
     }
-    async findById(id: string): Promise<Auth | null> {
+    async findById(id: string): Promise<User | null> {
         throw new Error("Method not implemented.");
     }
-    async findByEmail(email: string): Promise<Auth | null> {
+    async findByEmail(email: string): Promise<User | null> {
         throw new Error("Method not implemented.");
     }
-    async update(auth: Auth): Promise<void> {
+    async update(user: User): Promise<void> {
         throw new Error("Method not implemented.");
     }
     async delete(id: string): Promise<void> {

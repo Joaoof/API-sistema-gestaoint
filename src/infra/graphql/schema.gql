@@ -29,9 +29,19 @@ input CreateProductInput {
   supplierId: String
 }
 
+input CreateUserInput {
+  company_id: String!
+  email: String!
+  is_active: Boolean!
+  name: String!
+  password_hash: String!
+  role: String!
+}
+
 type Mutation {
   createCategory(input: CreateCategoryInput!): CategoryType!
   createProduct(dto: CreateProductInput!): ProductResponseDto!
+  createUser(dto: CreateUserInput!): UserResponseDto!
 }
 
 type ProductResponseDto {
@@ -48,4 +58,14 @@ type ProductResponseDto {
 type Query {
   categories: [CategoryType!]!
   products: [ProductResponseDto!]!
+}
+
+type UserResponseDto {
+  company_id: String!
+  email: String!
+  id: String!
+  is_active: Boolean!
+  name: String!
+  password_hash: String!
+  role: String!
 }

@@ -96,6 +96,7 @@ model Companies {
   email     String?   @unique
   phone     String?
   address   String?
+  cpnj    String?   @unique
   createdAt DateTime  @default(now())
 
   Users Users[]
