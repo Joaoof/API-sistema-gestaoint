@@ -14,7 +14,7 @@ import { GqlThrottlerGuard } from './shared/guards/gql-throttler.guard';
 import { GqlCacheInterceptor } from './shared/guards/gql-cache-interceptor.guard';
 import { CacheModule } from '@nestjs/cache-manager';
 import { QueuesModule } from './infra/queues/queue.module';
-import { UserModule } from './modules/user/user.module';
+// import { UserModule } from './modules/user/user.module';
 
 
 @Module({
@@ -55,7 +55,7 @@ import { UserModule } from './modules/user/user.module';
     CategoryModule,
     SupplierModule,
     QueuesModule,
-    UserModule
+    // UserModule
   ],
   controllers: [AppController],
   providers: [AppService,

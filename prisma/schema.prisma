@@ -6,7 +6,7 @@ generator client {
 
 datasource db {
   provider = "postgresql" // ou "mysql", "sqlite", etc.
-  url = env("DATABASE_URL")
+  url = env("BANCO_URL")
 }
 
 enum CategoryStatus {
@@ -90,7 +90,7 @@ model Inventory {
   @@index([quantity])
 }
 
-model Companies {
+model Company {
   id        String    @id @default(cuid())
   name      String    @unique
   email     String?   @unique
@@ -100,6 +100,7 @@ model Companies {
   createdAt DateTime  @default(now())
 
   Users Users[]
+  company CompanyPlan?
 }
 
 model Modules {
@@ -128,7 +129,49 @@ model Users {
   is_active Boolean
   createdAt DateTime  @default(now())
   
-  company Companies @relation(fields: [company_id], references: [id])
+  company Company? @relation(fields: [company_id], references: [id])
+}
+
+model Plan {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  description  String?
+  createdAt DateTime @default(now())
+
+  module PlanModule[]
+  companyPlans CompanyPlan[]
+}
+
+model Module {
+  id       String  @id @default(cuid())
+  name     String
+  module_key String   @unique
+  description String?
+
+
+  planModule PlanModule[]
+}
+
+model PlanModule {
+  id         String   @id @default(cuid())
+  planId     String
+  moduleId   String
+  isActive   Boolean  @default(true)
+  permission String[] // Ex: ["READ", "WRITE"]
+
+  plan   Plan   @relation(fields: [planId], references: [id])
+  module Module @relation(fields: [moduleId], references: [id])
+}
+
+model CompanyPlan {
+  id         String   @id @default(cuid())
+  company_id  String   @unique
+  planId     String
+  startDate  DateTime @default(now())
+  endDate    DateTime?
+
+  company Company @relation(fields: [company_id], references: [id])
+  plan    Plan    @relation(fields: [planId], references: [id])
 }
 
 enum ProductStatus {
