@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client'
-import { permission } from 'process'
+import * as argon2 from "argon2"
 const prisma = new PrismaClient()
 
 async function main() {
@@ -28,7 +28,8 @@ async function main() {
     console.log(allModules);
 
 
-    const getModule = (key: string) => allModules.find(m => m.module_key = key)!
+    const getModule = (key: string) => allModules.find(m => m.module_key === key)!
+
 
     const planModulesData = [
         { planId: basicPlan.id, moduleId: getModule('dashboard').id, permission: ['READ'] },
@@ -48,9 +49,9 @@ async function main() {
     // 4. Criar uma empresa
     const company = await prisma.company.create({
         data: {
-            id: 'empresa-xpto-1',
-            name: 'Empresa XPTO testando',
-            email: 'contato@xpto.com',
+            id: 'empresa-the9',
+            name: 'the9',
+            email: 'the9@gmail.com',
             cpnj: '1234567890001',
             phone: '11999999999',
             address: 'Rua das Empresas, 123'
@@ -71,9 +72,9 @@ async function main() {
     // 6. Criar um usuário admin
     await prisma.users.create({
         data: {
-            name: 'Admin XPTO | JC',
-            email: 'admin@xpto.com',
-            password_hash: 'senha-hash-aqui', // gera hash real na produção
+            name: 'Admin the9',
+            email: 'thiago-the9@gmail.com',
+            password_hash: await argon2.hash("Senha123"), // gera hash real na produção
             role: 'ADMIN',
             is_active: true,
             company_id: company.id

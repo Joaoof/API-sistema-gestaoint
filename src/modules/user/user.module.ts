@@ -1,26 +1,23 @@
-// import { Module } from "@nestjs/common";
-// import { PrismaModule } from "prisma/prisma.module";
-// import { UserController } from "./controller/user.controller";
-// import { CreateUserCommandHandler } from "src/core/use-cases/users/create-users/create-user.handler";
-// import { CommandBus } from "@nestjs/cqrs";
-// import { PrismaUserRepository } from "src/infra/database/implementations/users/users.prisma.repository";
-// import { UserResolver } from "src/infra/graphql/resolvers/user.resolver";
-// import { RedisModule } from "src/infra/cache/redis.module";
+import { Module } from "@nestjs/common";
+import { PrismaModule } from "prisma/prisma.module";
+import { CommandBus } from "@nestjs/cqrs";
+import { RedisModule } from "src/infra/cache/redis.module";
+import { PrismaUserRepository } from "src/infra/database/implementations/users/users.prisma.repository";
+import { AuthService } from "src/infra/services/auth/auth.service";
+import { JwtService } from "@nestjs/jwt";
 
-// @Module({
-//     imports: [PrismaModule, RedisModule],
-//     // controllers: [UserController],
-//     providers: [CreateUserCommandHandler,
-//         CommandBus,
-//         UserResolver,
-//         {
-//             provide: 'UsersRepository',
-//             useClass: PrismaUserRepository, // Ensure this is the correct implementation
-//         }
-//     ],
-//     exports: [
-//         CreateUserCommandHandler,
-//     ]
-// })
+@Module({
+    imports: [PrismaModule, RedisModule],
+    providers: [
+        CommandBus,
+        {
+            provide: 'UsersRepository',
+            useClass: PrismaUserRepository, // Ensure this is the correct implementation
+        },
+        AuthService,
+        JwtService
+    ],
+    exports: [AuthService]
+})
 
-// export class UserModule { }
+export class UserModule { }

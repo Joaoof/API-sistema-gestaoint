@@ -2,6 +2,15 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type AuthPayload {
+  accessToken: String!
+  company: CompanyDto!
+  expiresIn: String!
+  module: ModuleDto
+  plan: PlanDto
+  user: UserDto!
+}
+
 type CategoryType {
   active: Boolean!
   color: String!
@@ -10,6 +19,14 @@ type CategoryType {
   id: ID!
   name: String!
   updatedAt: String!
+}
+
+type CompanyDto {
+  address: String
+  email: String
+  id: String!
+  name: String!
+  phone: String
 }
 
 input CreateCategoryInput {
@@ -29,9 +46,35 @@ input CreateProductInput {
   supplierId: String
 }
 
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+input LoginUserInput {
+  email: String!
+  password_hash: String!
+}
+
+type ModuleDto {
+  description: String
+  isActive: Boolean!
+  module_key: String!
+  name: String!
+  permission: [String!]!
+}
+
 type Mutation {
   createCategory(input: CreateCategoryInput!): CategoryType!
   createProduct(dto: CreateProductInput!): ProductResponseDto!
+  login(loginUserInput: LoginUserInput!): AuthPayload!
+}
+
+type PlanDto {
+  description: String
+  id: String!
+  modules: [ModuleDto!]!
+  name: String!
 }
 
 type ProductResponseDto {
@@ -48,4 +91,15 @@ type ProductResponseDto {
 type Query {
   categories: [CategoryType!]!
   products: [ProductResponseDto!]!
+}
+
+type UserDto {
+  company: CompanyDto!
+  company_id: String!
+  createdAt: DateTime!
+  email: String!
+  id: String!
+  name: String
+  plan: PlanDto
+  role: String!
 }

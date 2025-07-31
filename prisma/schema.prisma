@@ -100,7 +100,7 @@ model Company {
   createdAt DateTime  @default(now())
 
   Users Users[]
-  company CompanyPlan?
+  companyPlan CompanyPlan?
 }
 
 model Modules {
@@ -110,18 +110,9 @@ model Modules {
   description String
 }
 
-
-model PlanModules {
-  id    String  @id @default(cuid())
-  plan_type String
-  module_key String
-  is_active Boolean
-  permission String[] 
-}
-
 model Users {
   id    String @id @default(cuid())
-  email String
+  email String @unique
   password_hash String
   name String
   company_id  String
@@ -137,6 +128,7 @@ model Plan {
   name      String   @unique
   description  String?
   createdAt DateTime @default(now())
+  isActive   Boolean  @default(true)
 
   module PlanModule[]
   companyPlans CompanyPlan[]
@@ -172,6 +164,8 @@ model CompanyPlan {
 
   company Company @relation(fields: [company_id], references: [id])
   plan    Plan    @relation(fields: [planId], references: [id])
+
+  isActive   Boolean  @default(true)
 }
 
 enum ProductStatus {

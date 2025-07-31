@@ -14,11 +14,17 @@ import { GqlThrottlerGuard } from './shared/guards/gql-throttler.guard';
 import { GqlCacheInterceptor } from './shared/guards/gql-cache-interceptor.guard';
 import { CacheModule } from '@nestjs/cache-manager';
 import { QueuesModule } from './infra/queues/queue.module';
+import { UserModule } from './modules/user/user.module';
+import { AuthModule } from './modules/auth/auth.module';
 // import { UserModule } from './modules/user/user.module';
+import { ConfigModule } from '@nestjs/config';
 
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true
+    }),
     GraphQLModule.forRoot({
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/infra/graphql/schema.gql'),
@@ -55,6 +61,8 @@ import { QueuesModule } from './infra/queues/queue.module';
     CategoryModule,
     SupplierModule,
     QueuesModule,
+    UserModule,
+    AuthModule
     // UserModule
   ],
   controllers: [AppController],
