@@ -1,26 +1,58 @@
 version: "3.8"
 
+networks:
+  proxy_network:
+    external: true
+  app_net:
+    driver: bridge
+
+volumes:
+  db-data:
+
 services:
-  api:
-    build: .
+  nginx-proxy:
+    image: nginx
+    container_name: nginx-proxy
     ports:
-      - "3000:3000"
+      - 80:80
+      - 443:443
+    networks:
+      - proxy_network
+      - app_net          # conecta o nginx nas duas redes pra poder acessar a API internamente
+    volumes:
+        - ./nginx.conf:/etc/nginx-proxy/nginx.conf
+        - ./certs/ca.pem:/etc/ssl/ca.pem
+        - ./certs/ca.key:/etc/ssl/ca.key
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"
     environment:
-      DATABASE_URL: postgres://joao:Senha123%40@db:5432/gestao
+      DATABASE_URL: postgresql://joao:Senha123!@db:5432/gestao?schema=public
       REDIS_URL: redis://redis_db:6379
     depends_on:
       - db
       - redis
     networks:
       - app_net
+    command: ["wait-for-it.sh", "db:5432", "--", "node", "dist/src/main.js"]
+
 
   db:
     image: bitnami/postgresql:latest
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U joao"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     restart: always
     shm_size: 128mb
     environment:
       POSTGRES_USER: joao
-      POSTGRES_PASSWORD: Senha123!
+      POSTGRES_PASSWORD: 'Senha123!'
       POSTGRES_DB: gestao
     ports:
       - 5432:5432
@@ -40,10 +72,3 @@ services:
     restart: always
     networks:
       - app_net
-
-networks:
-  app_net:
-    driver: bridge
-
-volumes:
-  db-data:

@@ -1,19 +1,42 @@
 FROM node:20-alpine AS builder
-WORKDIR /app
+
+WORKDIR /usr/src/app
+
 COPY package*.json ./
-RUN npm audit fix
+
 RUN npm install
-RUN npm install -g npm@11.4.2
-RUN npm install glob@^9
+
+COPY prisma ./prisma/
+RUN npx prisma generate
+
+COPY .env ./
+
+RUN apk add --no-cache bash
+
+COPY wait-for-it.sh /usr/local/bin/wait-for-it.sh
+RUN chmod +x /usr/local/bin/wait-for-it.sh
+
 COPY . .
 RUN npm run build
 
 FROM node:20-alpine
+
 WORKDIR /app
+
 COPY package*.json ./
-RUN npm audit fix
-RUN npm install -g npm@11.4.2
-RUN npm install glob@^9
 RUN npm install --production
-COPY --from=builder /app/dist ./dist
-CMD ["node", "dist/main.js"]
+
+COPY prisma ./prisma/
+RUN npx prisma generate
+
+COPY .env ./
+
+RUN apk add --no-cache bash
+
+COPY wait-for-it.sh /usr/local/bin/wait-for-it.sh
+RUN chmod +x /usr/local/bin/wait-for-it.sh
+
+COPY dist /app/dist
+
+CMD ["node", "dist/src/main.js"]
+

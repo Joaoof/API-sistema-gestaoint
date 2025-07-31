@@ -1,20 +1,26 @@
-APP_NAME=gestao-api
-IMAGE_NAME=joaoof/$(APP_NAME)
-STACK_NAME=gestao-stack
-COMPOSE_FILE=docker-compose.yml
+.PHONY: certs clean_certs up stop restart key
 
-.PHONY: build deploy update logs clean
+HOST = 127.0.0.1.nip.io
+CA_PEM = ca.pem
 
-build:
-	docker build -t $(IMAGE_NAME):latest .
+certs:
+	# <-- essa linha TEM que começar com TAB, não espaços
+	mkdir -p certs
+	openssl genrsa -out certs/ca.key 4096
+	openssl req -new -x509 -key certs/ca.key -out certs/ca.crt -days 3650 -subj "/C=BR/ST=Tocantins/L=Araguaína/O=GitLab/OU=CA/CN=GitLab CA"
+	openssl req -new -key certs/ca.key -out certs/ca.csr -subj "/C=BR/ST=Tocantins/L=Araguaína/O=GitLab/OU=Server/CN=$(HOST)"
+	openssl x509 -req -in certs/ca.csr -CA certs/ca.crt -CAkey certs/ca.key -CAcreateserial -out certs/$(CA_PEM) -days 3650
 
-deploy:
-	docker stack deploy -c $(COMPOSE_FILE) $(STACK_NAME)
+clean_certs:
+	rm -rf certs
 
-update: build deploy
+up:
+	docker-compose up -d
 
-logs:
-	docker service logs -f $(STACK_NAME)_api
+stop:
+	docker-compose down
 
-clean:
-	docker stack rm $(STACK_NAME)
+restart: stop up
+
+key:
+	head -c 32 /dev/urandom | base64

@@ -88,9 +88,6 @@ export class AuthService {
             },
         });
 
-        console.log(user);
-
-
         if (!user) {
             throw new HttpException("Usuário não encontrado", HttpStatus.UNAUTHORIZED);
         }
