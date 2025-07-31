@@ -8,7 +8,7 @@ import { Injectable } from '@nestjs/common';
 export class PrismaProductsRepository implements ProductsRepository {
     constructor(private readonly prisma: PrismaService) { }
 
-    async create(product: Product): Promise<Product> {
+    async create(product: Product, userId: string): Promise<Product> {
         const createdProduct = await this.prisma.product.create({
             data: {
                 id: product.id,
@@ -19,6 +19,7 @@ export class PrismaProductsRepository implements ProductsRepository {
                 description: product.description,
                 categoryId: product.categoryId ?? '', // aqui você liga o produto à categoria
                 supplierId: product.supplierId ?? '', // mesma ideia para fornecedor
+                createdById: userId ?? '',
                 createdAt: product.createdAt ?? '',
                 updatedAt: product.updatedAt ?? '',
             },

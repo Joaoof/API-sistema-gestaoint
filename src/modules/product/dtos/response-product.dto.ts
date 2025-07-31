@@ -23,6 +23,9 @@ export class ProductResponseDto {
     @Field({ nullable: true })
     supplierId?: string;
 
+    @Field()
+    createdById: string;
+
     @Field({ nullable: true })
     description?: string;
 }

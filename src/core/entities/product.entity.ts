@@ -13,6 +13,7 @@ export class Product {
         public salePrice: number,
         public readonly categoryId: string,
         public readonly supplierId: string,
+        public readonly createdById: string,
         public description: string | null = null,
         public readonly createdAt: Date = new Date(),
         public updatedAt: Date = new Date()
@@ -105,7 +106,8 @@ export class Product {
             data.costPrice.toNumber(),
             data.salePrice.toNumber(),
             data.categoryId ?? '',      // evita undefined, usa string vazia ou null se seu construtor aceitar
-            data.supplierId ?? '',    // se for opcional, usa null
+            data.supplierId ?? '',
+            data.createdById ?? '',    // se for opcional, usa null
             data.description ?? null,
             data.createdAt,
             data.updatedAt,

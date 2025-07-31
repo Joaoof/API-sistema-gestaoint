@@ -38,7 +38,10 @@ model Product {
 
   supplierId    String?
   supplier      Supplier?  @relation(fields: [supplierId], references: [id])
-  
+
+  createdById   String?
+  createdBy     Users?      @relation(fields: [createdById], references: [id])
+
   description   String?
 
   createdAt     DateTime   @default(now())
@@ -121,6 +124,8 @@ model Users {
   createdAt DateTime  @default(now())
   
   company Company? @relation(fields: [company_id], references: [id])
+
+  Product Product[]
 }
 
 model Plan {

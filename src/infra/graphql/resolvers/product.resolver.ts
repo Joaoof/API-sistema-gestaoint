@@ -6,6 +6,8 @@ import { ProductResponseDto } from 'src/modules/product/dtos/response-product.dt
 import { ProductMapper } from 'src/modules/product/mapper/product.mapper';
 import { CreateProductCommand } from 'src/core/use-cases/product/create-product/create-product.command';
 import { InputType, Field, Float, Int } from '@nestjs/graphql';
+import { Users } from '@prisma/client';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
 @InputType()
 export class CreateProductInput {
@@ -26,6 +28,9 @@ export class CreateProductInput {
 
   @Field({ nullable: true })
   supplierId?: string;
+
+  @Field()
+  createdById?: string;
 
   @Field({ nullable: true })
   description?: string;
@@ -48,7 +53,8 @@ export class ProductResolver {
 
   @Mutation(() => ProductResponseDto, { name: 'createProduct' })
   async createProduct(
-    @Args('dto') input: CreateProductInput
+    @Args('dto') input: CreateProductInput,
+    @CurrentUser() user: Users
   ) {
 
     const dto = {
@@ -56,13 +62,13 @@ export class ProductResolver {
       quantity: input.quantity,
       costPrice: input.costPrice,
       salePrice: input.salePrice,
-      categoryId: input.categoryId,
+      createdById: input.createdById ?? '',
+      categoryId: input.categoryId ?? '',
       supplierId: input.supplierId ?? '',
       description: input.description
     }
 
-    const product = await this.   createProductUseCase.execute(new CreateProductCommand(dto));
-
+    const product = await this.createProductUseCase.execute(new CreateProductCommand(dto, user.id));
     return product;
   }
 }

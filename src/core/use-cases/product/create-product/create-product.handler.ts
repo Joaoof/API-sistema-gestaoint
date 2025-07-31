@@ -19,11 +19,18 @@ export class CreateProductCommandHandler implements ICommandHandler<CreateProduc
     ) { }
 
     async execute(command: CreateProductCommand): Promise<Product> {
-        const product = ProductMapper.toDomain(command.dto);
+        const { dto, userId } = command; // ✅ userId vem do command, não do DTO
+
+        const productData = {
+            ...dto,
+            createdById: userId, // ✅ Adiciona quem criou
+        };
+
+        const product = ProductMapper.toDomain(productData);
         const retryPolicy = Policy.handleAll().retry().attempts(3)
 
         const savedProduct = await retryPolicy.execute(async () => {
-            return await this.productsRepository.create(product);
+            return await this.productsRepository.create(product, userId);
         });
 
         this.eventEmitter.emit('product.created', new ProductCreatedEvent(product.id, product.nameProduct))
