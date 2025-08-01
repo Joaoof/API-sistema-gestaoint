@@ -8,6 +8,7 @@ export const CreateProductSchema = z.object({
     salePrice: z.number().positive().default(0),
     categoryId: z.string(),
     supplierId: z.string(),
+    createdById: z.string(),
     description: z.string().optional(),
     createdAt: z.date().optional(),
     updatedAt: z.date().optional(),

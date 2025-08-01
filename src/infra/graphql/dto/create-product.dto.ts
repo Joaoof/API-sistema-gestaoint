@@ -1,10 +1,11 @@
 // src/modules/product/dtos/create-product.input.ts
 import { InputType, Field, Int } from '@nestjs/graphql';
+import { UserDto } from './user.dto';
 
 @InputType()
 export class CreateProductInput {
     @Field(() => String)
-    nameProduct: string;
+    name: string;
 
     @Field(() => Int)
     quantity: number;
@@ -23,4 +24,8 @@ export class CreateProductInput {
 
     @Field(() => String, { nullable: true })
     supplierId?: string;
+
+    // Se você tem o DTO do usuário
+    @Field(() => UserDto, { nullable: true })
+    createdBy?: UserDto;
 }

@@ -158,13 +158,13 @@ export class AuthService {
 
 
         return {
-            accessToken: token.Authorization,
+            accessToken: token.accessToken,
             expiresIn: process.env.JWT_EXPIRES_IN || '3600s',
             user: userDto
         };
     }
 
-    private _createToken(user: Users): { expiresIn: string; Authorization: string } {
+    private _createToken(user: Users): { expiresIn: string; accessToken: string } {
         const payload: JwtPayload = {
             sub: user.id,
             email: user.email,
@@ -172,11 +172,11 @@ export class AuthService {
             company_id: user.company_id,
         };
 
-        const Authorization = this.jwtService.sign(payload);
+        const accessToken = this.jwtService.sign(payload);
 
         return {
             expiresIn: process.env.EXPIRESIN || '3600s',
-            Authorization,
+            accessToken,
         };
     }
 

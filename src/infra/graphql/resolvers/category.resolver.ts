@@ -1,9 +1,10 @@
 // src/infra/graphql/resolvers/categories.resolver.ts
-import { Resolver, Query, Mutation, Args, ArgsType, InputType, Field } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ArgsType, InputType, Field, ObjectType, ID } from '@nestjs/graphql';
 import { Category } from 'src/core/entities/category.entity';
 import { FindAllCategoriesUseCase } from 'src/core/use-cases/category/find-all-categories.use.case';
 import { CreateCategoryUseCase } from 'src/core/use-cases/category/create-category.use-case';
 import { CategoryType } from '../dto/category.dto';
+import { FindActiveCategoriesUseCase } from 'src/core/use-cases/category/find-by-active-categories.use-case';
 
 @InputType()
 export class CreateCategoryInput {
@@ -20,11 +21,26 @@ export class CreateCategoryInput {
     active: boolean;
 }
 
+
+@ObjectType()
+export class CategoryDto {
+    @Field(() => ID)
+    id: string;
+
+    @Field()
+    name: string;
+
+    @Field()
+    status: string;
+}
+
+
 @Resolver(() => Category)
 export class CategoriesResolver {
     constructor(
         private readonly findAllCategoriesUseCase: FindAllCategoriesUseCase,
-        private readonly createCategoryUseCase: CreateCategoryUseCase
+        private readonly createCategoryUseCase: CreateCategoryUseCase,
+        private readonly findActiveCategoriesUseCase: FindActiveCategoriesUseCase
     ) { }
 
     @Query(() => [CategoryType])
@@ -59,5 +75,10 @@ export class CategoriesResolver {
             createdAt: category.createdAt.toISOString(),
             updatedAt: category.updatedAt.toISOString()
         };
+    }
+
+    @Query(() => [CategoryDto], { name: 'categoriesActive' })
+    async categoriesActive() {
+        return this.findActiveCategoriesUseCase.execute()
     }
 }

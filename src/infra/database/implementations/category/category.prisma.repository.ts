@@ -28,20 +28,6 @@ export class PrismaCategoriesRepository implements CategoriesRepository {
         return category;
     }
 
-    // async findAll(page: number = 1, limit: number = 20): Promise<Category[]> {
-    //     const key = `categories:all:page${page}:limit${limit}`;
-    //     const cached = await this.redis.get(key);
-    //     if (cached) return JSON.parse(cached).map(Category.fromPrisma);
-
-    //     const data = await this.prisma.category.findMany({
-    //         skip: (page - 1) * limit,
-    //         take: limit
-    //     });
-
-    //     await this.redis.setex(key, 30, JSON.stringify(data));
-    //     return data.map(Category.fromPrisma);
-    // }
-
     async findAll(): Promise<Category[]> {
         const cached = await this.redis.get('categories:all');
         if (cached) return JSON.parse(cached).map(Category.fromPrisma);
@@ -49,5 +35,16 @@ export class PrismaCategoriesRepository implements CategoriesRepository {
         const data = await this.prisma.category.findMany();
         await this.redis.setex('categories:all', 60, JSON.stringify(data));
         return data.map(Category.fromPrisma);
+    }
+
+    async findActiveCategories() {
+        return this.prisma.category.findMany({
+            where: { status: 'ACTIVE' },
+            select: {
+                id: true,
+                name: true,
+                status: true
+            }
+        })
     }
 }

@@ -1,5 +1,5 @@
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UseGuards } from '@nestjs/common';
 import { CreateProductCommandHandler } from 'src/core/use-cases/product/create-product/create-product.handler';
 import { FindAllProductsUseCase } from 'src/core/use-cases/product/find-all-products.use.case';
 import { ProductResponseDto } from 'src/modules/product/dtos/response-product.dto';
@@ -8,6 +8,7 @@ import { CreateProductCommand } from 'src/core/use-cases/product/create-product/
 import { InputType, Field, Float, Int } from '@nestjs/graphql';
 import { Users } from '@prisma/client';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { GqlAuthGuard } from 'src/auth/guards/auth.guard';
 
 @InputType()
 export class CreateProductInput {
@@ -27,10 +28,7 @@ export class CreateProductInput {
   categoryId: string;
 
   @Field({ nullable: true })
-  supplierId?: string;
-
-  @Field()
-  createdById?: string;
+  supplierId: string;
 
   @Field({ nullable: true })
   description?: string;
@@ -51,24 +49,14 @@ export class ProductResolver {
     return products.map(ProductMapper.toJSON);
   }
 
-  @Mutation(() => ProductResponseDto, { name: 'createProduct' })
+  @UseGuards(GqlAuthGuard)
+  @Mutation(() => ProductResponseDto)
   async createProduct(
     @Args('dto') input: CreateProductInput,
     @CurrentUser() user: Users
   ) {
-
-    const dto = {
-      nameProduct: input.nameProduct,
-      quantity: input.quantity,
-      costPrice: input.costPrice,
-      salePrice: input.salePrice,
-      createdById: input.createdById ?? '',
-      categoryId: input.categoryId ?? '',
-      supplierId: input.supplierId ?? '',
-      description: input.description
-    }
-
-    const product = await this.createProductUseCase.execute(new CreateProductCommand(dto, user.id));
-    return product;
+    const command = new CreateProductCommand(input, user.id);
+    const product = await this.createProductUseCase.execute(command);
+    return ProductMapper.toJSON(product);
   }
 }

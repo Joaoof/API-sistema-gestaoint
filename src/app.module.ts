@@ -33,7 +33,11 @@ import { ConfigModule } from '@nestjs/config';
       server: {
         landingPageDisabled: true,
       },
-      context: ({ req, reply }) => ({ req, reply })
+      context: ({ request, reply }: { request: any; reply: any }) => ({
+        req: request,
+        reply,
+        user: request?.user, // <- aqui, com "safe access"
+      }),
     }),
     CacheModule.register({
       ttl: 60, // segundos

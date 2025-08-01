@@ -27,6 +27,7 @@ export class CreateProductCommandHandler implements ICommandHandler<CreateProduc
         };
 
         const product = ProductMapper.toDomain(productData);
+
         const retryPolicy = Policy.handleAll().retry().attempts(3)
 
         const savedProduct = await retryPolicy.execute(async () => {

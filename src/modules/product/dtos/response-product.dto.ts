@@ -28,4 +28,11 @@ export class ProductResponseDto {
 
     @Field({ nullable: true })
     description?: string;
+
+    @Field(() => Date)
+    createdAt: Date;
+
+    @Field(() => Date)
+    updatedAt: Date;
 }
+

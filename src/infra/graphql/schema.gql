@@ -11,6 +11,12 @@ type AuthPayload {
   user: UserDto!
 }
 
+type CategoryDto {
+  id: ID!
+  name: String!
+  status: String!
+}
+
 type CategoryType {
   active: Boolean!
   color: String!
@@ -80,16 +86,20 @@ type PlanDto {
 type ProductResponseDto {
   categoryId: String!
   costPrice: Float!
+  createdAt: DateTime!
+  createdById: String!
   description: String
   id: String!
   nameProduct: String!
   quantity: Int!
   salePrice: Float!
   supplierId: String
+  updatedAt: DateTime!
 }
 
 type Query {
   categories: [CategoryType!]!
+  categoriesActive: [CategoryDto!]!
   products: [ProductResponseDto!]!
 }
 

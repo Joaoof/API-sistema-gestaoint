@@ -11,6 +11,7 @@ import { RedisModule } from 'src/infra/cache/redis.module';
 import { PrismaModule } from 'prisma/prisma.module';
 import { CategoriesResolver } from 'src/infra/graphql/resolvers/category.resolver';
 import { GqlCacheInterceptor } from 'src/shared/guards/gql-cache-interceptor.guard';
+import { FindActiveCategoriesUseCase } from 'src/core/use-cases/category/find-by-active-categories.use-case';
 
 @Module({
     imports: [CacheModule.register({
@@ -24,6 +25,7 @@ import { GqlCacheInterceptor } from 'src/shared/guards/gql-cache-interceptor.gua
     providers: [
         CreateCategoryUseCase,
         FindAllCategoriesUseCase,
+        FindActiveCategoriesUseCase,
         {
             provide: 'CategoriesRepository',
             useClass: PrismaCategoriesRepository,
@@ -37,7 +39,8 @@ import { GqlCacheInterceptor } from 'src/shared/guards/gql-cache-interceptor.gua
     ],
     exports: [
         CreateCategoryUseCase,
-        FindAllCategoriesUseCase
+        FindAllCategoriesUseCase,
+        FindActiveCategoriesUseCase
     ]
 })
 export class CategoryModule { }

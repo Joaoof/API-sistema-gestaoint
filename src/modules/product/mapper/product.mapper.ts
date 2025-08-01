@@ -15,6 +15,7 @@ export class ProductMapper {
             dto.salePrice,
             dto.categoryId,
             dto.supplierId,
+            dto.createdById,
             dto.description ?? null,
             dto.createdAt ?? new Date(),
             dto.updatedAt ?? new Date()
@@ -45,13 +46,14 @@ export class ProductMapper {
     static toJSON(product: Product): any {
         return {
             id: product.id,
-            name: product.nameProduct,
+            nameProduct: product.nameProduct,
             description: product.description,
             costPrice: product.costPrice,
             salePrice: product.salePrice,
             quantity: product.quantity,
             categoryId: product.categoryId,
             supplierId: product.supplierId,
+            createdById: product.createdById, // não pode ser null
             createdAt: product.createdAt.toISOString(),
             updatedAt: product.updatedAt.toISOString()
         };

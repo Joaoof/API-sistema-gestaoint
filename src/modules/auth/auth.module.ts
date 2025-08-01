@@ -23,6 +23,7 @@ import { JwtService } from '@nestjs/jwt';
         AuthResolver,
         AuthService,
         PrismaService,
+        JwtStrategy
     ],
     exports: [AuthService],
 })

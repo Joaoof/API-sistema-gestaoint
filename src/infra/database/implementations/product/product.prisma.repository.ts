@@ -19,7 +19,7 @@ export class PrismaProductsRepository implements ProductsRepository {
                 description: product.description,
                 categoryId: product.categoryId ?? '', // aqui você liga o produto à categoria
                 supplierId: product.supplierId ?? '', // mesma ideia para fornecedor
-                createdById: userId ?? '',
+                createdById: userId,
                 createdAt: product.createdAt ?? '',
                 updatedAt: product.updatedAt ?? '',
             },
