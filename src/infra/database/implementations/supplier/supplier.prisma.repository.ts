@@ -43,6 +43,16 @@ export class PrismaSupplierRepository implements SuppliersRepository {
         return emailSearch ? Supplier.fromPrisma(emailSearch) : null;
     }
 
+    async findByNameSupplier(name: string) {
+        return await this.prisma.supplier.findMany({
+            where: { name },
+            select: {
+                id: true,
+                name: true
+            }
+        })
+    }
+
     async update(supplier: Supplier): Promise<void> {
         await this.prisma.supplier.update({
             where: { id: supplier.id },

@@ -101,6 +101,12 @@ type Query {
   categories: [CategoryType!]!
   categoriesActive: [CategoryDto!]!
   products: [ProductResponseDto!]!
+  suppliers: [SupplierOutput!]!
+}
+
+type SupplierOutput {
+  id: ID!
+  name: String!
 }
 
 type UserDto {

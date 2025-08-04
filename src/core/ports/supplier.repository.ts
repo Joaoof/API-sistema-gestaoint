@@ -6,7 +6,7 @@ export interface SuppliersRepository {
     findAll(): Promise<Supplier[]>;
     findById(id: string): Promise<Supplier | null>;
     findByEmail(email: string): Promise<Supplier | null>
-
+    findByNameSupplier(name: string)
     withTransaction<T>(callback: () => Promise<T>): Promise<T>;
 
 }
