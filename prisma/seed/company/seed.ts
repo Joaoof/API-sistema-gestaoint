@@ -52,7 +52,7 @@ async function main() {
             id: 'empresa-the9',
             name: 'the9',
             email: 'the9@gmail.com',
-            cpnj: '1234567890001',
+            cpnj: '123456789000231',
             phone: '11999999999',
             address: 'Rua das Empresas, 123'
         }
