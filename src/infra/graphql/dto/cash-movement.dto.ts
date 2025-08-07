@@ -19,8 +19,8 @@ export class CashMovementGraphQL {
     @Field(() => String)
     description: string;
 
-    @Field(() => Date)
-    createdAt: Date;
+    @Field(() => Date, { nullable: true })
+    date: Date;
 
     @Field(() => String)
     user_id: string;

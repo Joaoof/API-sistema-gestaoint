@@ -22,7 +22,7 @@ enum CashMovementCategory {
 
 type CashMovementGraphQL {
   category: CashMovementCategory!
-  createdAt: DateTime!
+  date: DateTime
   description: String!
   id: String!
   type: CashMovementType!
@@ -88,6 +88,16 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+input FindAllCashMovementInput {
+  category: String
+  dateFrom: DateTime
+  dateTo: DateTime
+  search: String
+  type: String
+  valueMax: Float
+  valueMin: Float
+}
+
 input LoginUserInput {
   email: String!
   password_hash: String!
@@ -130,10 +140,10 @@ type ProductResponseDto {
 }
 
 type Query {
+  cashMovements(input: FindAllCashMovementInput): [CashMovementGraphQL!]!
   categories: [CategoryType!]!
   categoriesActive: [CategoryDto!]!
   company(id: String!): CompanyDto!
-  entryMovement: [CashMovementGraphQL!]!
   products: [ProductResponseDto!]!
   suppliers: [SupplierOutput!]!
 }
