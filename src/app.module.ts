@@ -20,7 +20,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { GraphQLExceptionFilter } from './infra/filters/gql-exception.filter';
 import { CompanyModule } from './modules/company/company.module';
-import { EntryMovementModule } from './modules/entryMovement/entry-movement.module';
+import { CashMovementModule } from './modules/cashMovement/cash-movement.module';
 
 
 @Module({
@@ -71,7 +71,7 @@ import { EntryMovementModule } from './modules/entryMovement/entry-movement.modu
     UserModule,
     AuthModule,
     CompanyModule,
-    EntryMovementModule
+    CashMovementModule
     // UserModule
   ],
   controllers: [AppController],

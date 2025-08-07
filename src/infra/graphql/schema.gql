@@ -11,6 +11,30 @@ type AuthPayload {
   user: UserDto!
 }
 
+enum CashMovementCategory {
+  CHANGE
+  EXPENSE
+  OTHER_IN
+  PAYMENT
+  SALE
+  WITHDRAWAL
+}
+
+type CashMovementGraphQL {
+  category: CashMovementCategory!
+  createdAt: DateTime!
+  description: String!
+  id: String!
+  type: CashMovementType!
+  user_id: String!
+  value: Float!
+}
+
+enum CashMovementType {
+  ENTRY
+  EXIT
+}
+
 type CategoryDto {
   id: ID!
   name: String!
@@ -35,17 +59,18 @@ type CompanyDto {
   phone: String
 }
 
+input CreateCashMovementInput {
+  category: String!
+  description: String!
+  type: String!
+  value: Float!
+}
+
 input CreateCategoryInput {
   active: Boolean!
   color: String!
   description: String
   name: String!
-}
-
-input CreateEntryMovementInput {
-  description: String
-  typeEntry: EntryTypeClient!
-  value: Int!
 }
 
 input CreateProductInput {
@@ -63,21 +88,6 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
-type EntryMovementGraphQL {
-  createdAt: DateTime!
-  description: String
-  id: ID!
-  typeEntry: EntryTypeClient!
-  user_id: String!
-  value: Float!
-}
-
-enum EntryTypeClient {
-  Change
-  Others
-  Sale
-}
-
 input LoginUserInput {
   email: String!
   password_hash: String!
@@ -92,8 +102,8 @@ type ModuleDto {
 }
 
 type Mutation {
+  createCashMovement(input: CreateCashMovementInput!): CashMovementGraphQL!
   createCategory(input: CreateCategoryInput!): CategoryType!
-  createEntryMovement(input: CreateEntryMovementInput!): EntryMovementGraphQL!
   createProduct(dto: CreateProductInput!): ProductResponseDto!
   login(loginUserInput: LoginUserInput!): AuthPayload!
 }
@@ -123,7 +133,7 @@ type Query {
   categories: [CategoryType!]!
   categoriesActive: [CategoryDto!]!
   company(id: String!): CompanyDto!
-  entryMovement: [EntryMovementGraphQL!]!
+  entryMovement: [CashMovementGraphQL!]!
   products: [ProductResponseDto!]!
   suppliers: [SupplierOutput!]!
 }
