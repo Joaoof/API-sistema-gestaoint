@@ -3,7 +3,10 @@ import * as argon2 from "argon2"
 const prisma = new PrismaClient()
 
 async function main() {
-    const module = await prisma.module.createMany({
+    console.log("🌱 Rodando seed...");
+
+    // 1. Criar os módulos
+    await prisma.module.createMany({
         data: [
             { name: 'Dashboard', module_key: 'dashboard', description: 'Visão geral da empresa' },
             { name: 'Estoque', module_key: 'estoque', description: 'Registro de entrada' },
@@ -12,6 +15,7 @@ async function main() {
         skipDuplicates: true
     })
 
+    // 2. Criar plano básico
     const basicPlan = await prisma.plan.upsert({
         where: { name: 'Basic' },
         update: {},
@@ -21,22 +25,21 @@ async function main() {
         }
     })
 
-
-
+    // 3. Buscar todos os módulos
     const allModules = await prisma.module.findMany()
 
-    console.log(allModules);
+    const getModule = (key: string) => {
+        const found = allModules.find(m => m.module_key === key)
+        if (!found) throw new Error(`❌ Módulo com chave '${key}' não encontrado.`)
+        return found
+    }
 
-
-    const getModule = (key: string) => allModules.find(m => m.module_key === key)!
-
-
+    // 4. Vincular plano aos módulos
     const planModulesData = [
         { planId: basicPlan.id, moduleId: getModule('dashboard').id, permission: ['READ'] },
         { planId: basicPlan.id, moduleId: getModule('estoque').id, permission: ['READ', 'WRITE'] },
         { planId: basicPlan.id, moduleId: getModule('vendas').id, permission: ['READ', 'WRITE'] }
     ]
-
 
     await prisma.planModule.createMany({
         data: planModulesData.map(pm => ({
@@ -46,47 +49,69 @@ async function main() {
         skipDuplicates: true
     })
 
-    // 4. Criar uma empresa
-    const company = await prisma.company.create({
+    // 5. Criar empresa se não existir
+    const companyId = 'empresa-the9'
+    const existingCompany = await prisma.company.findUnique({ where: { id: companyId } })
+
+    const company = existingCompany || await prisma.company.create({
         data: {
-            id: 'empresa-the9',
+            id: companyId,
             name: 'the9',
             email: 'the9@gmail.com',
-            cpnj: '123456789000231',
+            cnpj: '123456789000231',
             phone: '11999999999',
             address: 'Rua das Empresas, 123'
         }
     })
 
-    // 5. Criar associação da empresa com o plano premium
-    await prisma.companyPlan.create({
-        data: {
+    // 6. Associar empresa ao plano
+    const existingCompanyPlan = await prisma.companyPlan.findFirst({
+        where: {
             company_id: company.id,
             planId: basicPlan.id
         }
     })
 
-    console.log('Empresa criada com ID:', company.id)
+    if (!existingCompanyPlan) {
+        await prisma.companyPlan.create({
+            data: {
+                company_id: company.id,
+                planId: basicPlan.id
+            }
+        })
+    }
 
+    console.log('🏢 Empresa OK:', company.id)
 
-    // 6. Criar um usuário admin
-    await prisma.users.create({
-        data: {
-            name: 'Admin the9',
-            email: 'thiago-the9@gmail.com',
-            password_hash: await argon2.hash("Senha123"), // gera hash real na produção
-            role: 'ADMIN',
-            is_active: true,
-            company_id: company.id
-        }
+    // 7. Criar usuário admin se não existir
+    const adminEmail = 'thiago-the9@gmail.com'
+    const existingUser = await prisma.users.findUnique({
+        where: { email: adminEmail }
     })
 
-    console.log('Seed finalizado com sucesso 🚀')
+    if (!existingUser) {
+        await prisma.users.create({
+            data: {
+                name: 'Admin the9',
+                email: adminEmail,
+                password_hash: await argon2.hash("Senha123"),
+                role: 'ADMIN',
+                is_active: true,
+                company_id: company.id
+            }
+        })
+
+        console.log(`👤 Usuário admin criado: ${adminEmail}`)
+    } else {
+        console.log(`⚠️ Usuário admin já existe: ${adminEmail}`)
+    }
+
+    console.log('✅ Seed finalizado com sucesso 🚀')
 }
 
 main()
     .catch(e => {
-        console.error(e)
+        console.error('❌ Erro no seed:', e)
         process.exit(1)
     })
     .finally(() => prisma.$disconnect())

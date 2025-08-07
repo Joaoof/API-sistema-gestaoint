@@ -1,7 +1,9 @@
-// src/core/exceptions/BaseError.ts
 export class BaseError extends Error {
-    constructor(public message: string, public statusCode: number = 500) {
+    constructor(
+        public readonly message: string,
+        public readonly code: string,
+        public readonly statusCode: number
+    ) {
         super(message);
-        this.name = 'BaseError';
     }
 }

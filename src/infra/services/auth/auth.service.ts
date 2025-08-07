@@ -8,6 +8,11 @@ import * as argon2 from 'argon2';
 import { ObjectType, Field } from '@nestjs/graphql';
 import { PlanDto } from 'src/infra/graphql/dto/plan.dto';
 import { CompanyDto } from 'src/infra/graphql/dto/company.dto';
+import { UnauthorizedError } from 'src/core/exceptions/api.exception';
+import { ForbiddenError } from '@nestjs/apollo';
+import { InvalidCredentialsError } from 'src/core/exceptions/invalid-credentials.exception';
+import { CompanyWithoutPlanError } from 'src/core/exceptions/company-without-plan.exception';
+import { DomainValidationError } from 'src/core/exceptions/domain.exception';
 
 @ObjectType()
 export class UserDto {
@@ -57,10 +62,12 @@ export class AuthService {
         const { email, password_hash } = loginUserDto;
         const parsed = LoginUserSchema.safeParse(loginUserDto);
         if (!parsed.success) {
-            throw new HttpException(
-                parsed.error.errors,
-                HttpStatus.BAD_REQUEST
-            );
+            const validationErrors = parsed.error.errors.map(err => ({
+                field: err.path.join('.'), // ex: "email" ou "password_hash"
+                message: err.message,
+            }));
+
+            throw new DomainValidationError(validationErrors); // ✅
         }
 
         const user = await this.prisma.users.findUnique({
@@ -87,25 +94,26 @@ export class AuthService {
                 },
             },
         });
-
         if (!user) {
-            throw new HttpException("Usuário não encontrado", HttpStatus.UNAUTHORIZED);
+            throw new InvalidCredentialsError();
         }
 
-        if (!this.validatePassword(user.password_hash, password_hash)) {
-            throw new HttpException("Credenciais inválidas", HttpStatus.UNAUTHORIZED);
+        const validPassword = await this.validatePassword(user.password_hash, password_hash);
+        if (!validPassword) {
+            throw new InvalidCredentialsError();
         }
 
         if (!user.company) {
-            throw new HttpException('Usuário sem empresa vinculada', HttpStatus.FORBIDDEN);
+            throw new ForbiddenError("Usuário sem empresa vinculada");
         }
 
         const companyPlan = user.company.companyPlan;
-        console.log(companyPlan);
-
         if (!companyPlan?.plan) {
-            throw new HttpException('Empresa sem plano ativo', HttpStatus.FORBIDDEN);
+            throw new CompanyWithoutPlanError();
+
         }
+
+
 
         const plan = companyPlan.plan;
 

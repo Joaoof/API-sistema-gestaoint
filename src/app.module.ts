@@ -5,7 +5,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { BullModule } from '@nestjs/bull';
 import { ProductModule } from './modules/product/product.module';
 import { CategoryModule } from './modules/category/category.module';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { SupplierModule } from './modules/supplier/supplier.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver } from '@nestjs/apollo';
@@ -18,6 +18,9 @@ import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 // import { UserModule } from './modules/user/user.module';
 import { ConfigModule } from '@nestjs/config';
+import { GraphQLExceptionFilter } from './infra/filters/gql-exception.filter';
+import { CompanyModule } from './modules/company/company.module';
+import { EntryMovementModule } from './modules/entryMovement/entry-movement.module';
 
 
 @Module({
@@ -66,7 +69,9 @@ import { ConfigModule } from '@nestjs/config';
     SupplierModule,
     QueuesModule,
     UserModule,
-    AuthModule
+    AuthModule,
+    CompanyModule,
+    EntryMovementModule
     // UserModule
   ],
   controllers: [AppController],
@@ -78,7 +83,11 @@ import { ConfigModule } from '@nestjs/config';
     {
       provide: APP_INTERCEPTOR,
       useClass: GqlCacheInterceptor
-    }
+    },
+    {
+      provide: APP_FILTER,
+      useClass: GraphQLExceptionFilter,
+    },
   ],
 })
 export class AppModule { }

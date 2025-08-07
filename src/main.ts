@@ -2,12 +2,15 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { CategoriesSchemas, ProductSchemas } from './shared/swagger/utils';
+import { GraphQLExceptionFilter } from './infra/filters/gql-exception.filter';
 
 async function bootstrap() {
   const adapter = new FastifyAdapter({ trustProxy: true });
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter, {
     cors: true,
   });
+  app.useGlobalFilters(new GraphQLExceptionFilter());
+
 
   // Swagger setup (sem alterações aqui)
   const { SwaggerModule, DocumentBuilder } = require('@nestjs/swagger');

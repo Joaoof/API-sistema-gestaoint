@@ -2,8 +2,8 @@
 import { BaseError } from './base.exception';
 
 export class ApiError extends BaseError {
-    constructor(message: string, statusCode: number = 400) {
-        super(message, statusCode);
+    constructor(message: string, code: string, statusCode: number = 400) {
+        super(message, code, statusCode);
         this.name = 'ApiError';
     }
 }
@@ -11,21 +11,21 @@ export class ApiError extends BaseError {
 // Exemplos de subclasses específicas:
 export class NotFoundError extends ApiError {
     constructor(resource: string, id: string | number) {
-        super(`${resource} with ID ${id} not found`, 404);
+        super(`${resource} with ID ${id} not found`, '404', 404);
         this.name = 'NotFoundError';
     }
 }
 
 export class UnauthorizedError extends ApiError {
     constructor() {
-        super('Unauthorized', 401);
+        super('Unauthorized', '401', 401);
         this.name = 'UnauthorizedError';
     }
 }
 
 export class ForbiddenError extends ApiError {
     constructor() {
-        super('Forbidden', 403);
+        super('Forbidden', '403', 403);
         this.name = 'ForbiddenError';
     }
 }

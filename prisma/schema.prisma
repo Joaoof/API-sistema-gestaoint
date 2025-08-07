@@ -6,7 +6,7 @@ generator client {
 
 datasource db {
   provider = "postgresql" // ou "mysql", "sqlite", etc.
-  url = env("BANCO_URL")
+  url      = env("BANCO_URL")
 }
 
 enum CategoryStatus {
@@ -21,34 +21,34 @@ model Gift {
   price       Decimal
   imageUrl    String?
   status      String   @default("available") // available, reserved
-  reservedBy  String?  // Nome de quem reservou
-  createdAt   DateTime @default(now())    
+  reservedBy  String? // Nome de quem reservou
+  createdAt   DateTime @default(now())
 }
 
 model Product {
-  id            String     @id @default(uuid())
-  nameProduct          String     @unique
-  quantity      Int        @default(0)
-  costPrice     Decimal    @default(0.0)
-  salePrice     Decimal    @default(0.0)
-  status        ProductStatus @default(ACTIVE)
+  id          String        @id @default(uuid())
+  nameProduct String        @unique
+  quantity    Int           @default(0)
+  costPrice   Decimal       @default(0.0)
+  salePrice   Decimal       @default(0.0)
+  status      ProductStatus @default(ACTIVE)
 
-  categoryId    String?
-  category      Category?  @relation(fields: [categoryId], references: [id])
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
 
-  supplierId    String?
-  supplier      Supplier?  @relation(fields: [supplierId], references: [id])
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
 
-  createdById   String?
-  createdBy     Users?      @relation(fields: [createdById], references: [id])
+  createdById String?
+  createdBy   Users?  @relation(fields: [createdById], references: [id])
 
-  description   String?
+  description String?
 
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  deletedAt     DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  inventory     Inventory?
+  inventory Inventory?
 
   @@index([nameProduct])
   @@index([status])
@@ -56,95 +56,93 @@ model Product {
   @@index([supplierId])
 }
 
-
 model Category {
-    id String @id @default(uuid())
-    name String
-    description String?
-    status CategoryStatus
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  id          String         @id @default(uuid())
+  name        String
+  description String?
+  status      CategoryStatus
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  Product     Product[]
 
-    @@index([name], map: "idx_category_name")
-    @@index([status], map: "idx_category_status")
-    Product Product[]
+  @@index([name], map: "idx_category_name")
+  @@index([status], map: "idx_category_status")
 }
 
 model Supplier {
-  id        String    @id @default(cuid())
-  name      String    @unique
-  email     String?   @unique
+  id        String   @id @default(cuid())
+  name      String   @unique
+  email     String?  @unique
   phone     String?
   address   String?
-  createdAt DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   Product Product[]
 }
 
 model Inventory {
-  id        String    @id @default(cuid())
-  productId String    @unique
-  quantity  Int       @default(0)
-  minStock  Int       @default(10)
-  product   Product   @relation(fields: [productId], references: [id])
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id        String   @id @default(cuid())
+  productId String   @unique
+  quantity  Int      @default(0)
+  minStock  Int      @default(10)
+  product   Product  @relation(fields: [productId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([quantity])
 }
 
 model Company {
-  id        String    @id @default(cuid())
-  name      String    @unique
-  email     String?   @unique
+  id        String   @id @default(cuid())
+  name      String   @unique
+  email     String?  @unique
   phone     String?
   address   String?
-  cpnj    String?   @unique
-  createdAt DateTime  @default(now())
+  cnpj      String?  @unique
+  createdAt DateTime @default(now())
 
-  Users Users[]
+  Users       Users[]
   companyPlan CompanyPlan?
 }
 
 model Modules {
-  id        String    @id @default(cuid())
-  name      String
-  module_key String
+  id          String @id @default(cuid())
+  name        String
+  module_key  String
   description String
 }
 
 model Users {
-  id    String @id @default(cuid())
-  email String @unique
+  id            String   @id @default(cuid())
+  email         String   @unique
   password_hash String
-  name String
-  company_id  String
-  role String
-  is_active Boolean
-  createdAt DateTime  @default(now())
-  
+  name          String
+  company_id    String
+  role          String
+  is_active     Boolean
+  createdAt     DateTime @default(now())
+
   company Company? @relation(fields: [company_id], references: [id])
 
   Product Product[]
 }
 
 model Plan {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  description  String?
-  createdAt DateTime @default(now())
-  isActive   Boolean  @default(true)
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  isActive    Boolean  @default(true)
 
-  module PlanModule[]
+  module       PlanModule[]
   companyPlans CompanyPlan[]
 }
 
 model Module {
-  id       String  @id @default(cuid())
-  name     String
-  module_key String   @unique
+  id          String  @id @default(cuid())
+  name        String
+  module_key  String  @unique
   description String?
-
 
   planModule PlanModule[]
 }
@@ -161,16 +159,31 @@ model PlanModule {
 }
 
 model CompanyPlan {
-  id         String   @id @default(cuid())
-  company_id  String   @unique
+  id         String    @id @default(cuid())
+  company_id String    @unique
   planId     String
-  startDate  DateTime @default(now())
+  startDate  DateTime  @default(now())
   endDate    DateTime?
 
   company Company @relation(fields: [company_id], references: [id])
   plan    Plan    @relation(fields: [planId], references: [id])
 
-  isActive   Boolean  @default(true)
+  isActive Boolean @default(true)
+}
+
+model EntryMovement {
+  id          String          @id @default(cuid())
+  user_id     String          @unique
+  typeEntry   EntryTypeClient
+  value       Int
+  description String // ✅ lowercase: "description", não "Description"
+  createdAt   DateTime        @default(now())
+}
+
+enum EntryTypeClient {
+  Sale
+  Change
+  Others
 }
 
 enum ProductStatus {
@@ -178,4 +191,3 @@ enum ProductStatus {
   INACTIVE
   DISCONTINUED
 }
-

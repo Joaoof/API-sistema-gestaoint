@@ -13,7 +13,7 @@ export class PrismaCategoriesRepository implements CategoriesRepository {
 
     async create(category: Category): Promise<void> {
         await this.prisma.category.create({ data: category });
-        await this.redis.del('categories:all'); // limpa cache após inserção
+        await this.redis.del('categories:all');
     }
 
     async findById(id: string): Promise<Category | null> {

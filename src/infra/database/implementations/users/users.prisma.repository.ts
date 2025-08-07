@@ -10,6 +10,9 @@ export class PrismaUserRepository implements UserRepository {
     constructor(private readonly prisma: PrismaService,
         private readonly redis: RedisService
     ) { }
+    create(user: User): Promise<User> {
+        throw new Error("Method not implemented.");
+    }
 
     async findAll(): Promise<User[]> {
         throw new Error("Method not implemented.");
