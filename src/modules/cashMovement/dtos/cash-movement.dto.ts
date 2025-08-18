@@ -14,6 +14,7 @@ export const CreateCashMovementSchema = z.object({
         .positive('O valor precisa ser um número positivo.'),
     description: z.string()
         .min(1, 'Descrição é obrigatória.'),
+    date: z.coerce.date().optional().default(() => new Date()),
     user_id: z.string().optional(),
 });
 

@@ -24,4 +24,8 @@ export class CashMovementGraphQL {
 
     @Field(() => String)
     user_id: string;
+
+    // 👇 Nova mensagem (opcional)
+    @Field({ nullable: true })
+    message?: string;
 }

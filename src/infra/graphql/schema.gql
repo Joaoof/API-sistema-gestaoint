@@ -25,6 +25,7 @@ type CashMovementGraphQL {
   date: DateTime
   description: String!
   id: String!
+  message: String
   type: CashMovementType!
   user_id: String!
   value: Float!
@@ -61,6 +62,7 @@ type CompanyDto {
 
 input CreateCashMovementInput {
   category: String!
+  date: DateTime
   description: String!
   type: String!
   value: Float!

@@ -31,6 +31,17 @@ export class CashMovementResolver {
         }
         const cashMovementResolver = await this.createCashMovementUseCase.execute(dto, user.id);
 
+        const messages = {
+            SALE: 'Venda registrada com sucesso!',
+            CHANGE: 'Troco registrado com sucesso!',
+            OTHER_IN: 'Entrada registrada com sucesso!',
+            EXPENSE: 'Despesa registrada com sucesso!',
+            WITHDRAWAL: 'Saque registrado com sucesso!',
+            PAYMENT: 'Pagamento registrado com sucesso!',
+        };
+
+        const message = messages[cashMovementResolver.category] || 'Movimentação registrada com sucesso!';
+
         return {
             id: cashMovementResolver.id,
             type: cashMovementResolver.type as CashMovementType,
@@ -39,6 +50,8 @@ export class CashMovementResolver {
             description: cashMovementResolver.description,
             date: cashMovementResolver.date,
             user_id: cashMovementResolver.user_id ?? '',
+            message
+
         }
     }
 

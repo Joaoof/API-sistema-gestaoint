@@ -15,4 +15,7 @@ export class CreateCashMovementInput {
 
     @Field(() => String)
     description: string;
+
+    @Field({ nullable: true })
+    date: Date;
 }
