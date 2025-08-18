@@ -62,6 +62,8 @@ export class CashMovementResolver {
         @CurrentUser() user: User,
     ): Promise<CashMovementGraphQL[]> {
         const movements = await this.findAllCashMovementUseCase.execute(user.id, input);
+        console.log(movements);
+
         return movements.map(CashMovementMapper.toJSON);
     }
 }

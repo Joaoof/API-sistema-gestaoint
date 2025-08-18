@@ -91,13 +91,10 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 scalar DateTime
 
 input FindAllCashMovementInput {
-  category: String
-  dateFrom: DateTime
-  dateTo: DateTime
-  search: String
+  date: DateTime
+  description: String!
   type: String
-  valueMax: Float
-  valueMin: Float
+  value: Float!
 }
 
 input LoginUserInput {

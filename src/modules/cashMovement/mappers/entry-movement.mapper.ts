@@ -23,7 +23,7 @@ export class CashMovementMapper {
             category: movement.category,
             value: movement.value,
             description: movement.description,
-            createdAt: new Date(movement.date),
+            date: new Date(movement.date),
             user_id: movement.user_id ?? '',
         };
     }
