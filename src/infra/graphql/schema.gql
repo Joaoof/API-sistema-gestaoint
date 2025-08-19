@@ -87,7 +87,13 @@ input CreateProductInput {
 
 type DashboardStats {
   monthlyTotal: Float!
-  today: TodayStats!
+  todayBalance: Float!
+  todayEntries: Float!
+  todayExits: Float!
+}
+
+input DashboardStatsInput {
+  date: String
 }
 
 """
@@ -148,7 +154,7 @@ type Query {
   categories: [CategoryType!]!
   categoriesActive: [CategoryDto!]!
   company(id: String!): CompanyDto!
-  dashboardStats: DashboardStats!
+  dashboardStats(input: DashboardStatsInput): DashboardStats!
   products: [ProductResponseDto!]!
   suppliers: [SupplierOutput!]!
 }
@@ -156,12 +162,6 @@ type Query {
 type SupplierOutput {
   id: ID!
   name: String!
-}
-
-type TodayStats {
-  balance: Float!
-  entries: Float!
-  exits: Float!
 }
 
 type UserDto {

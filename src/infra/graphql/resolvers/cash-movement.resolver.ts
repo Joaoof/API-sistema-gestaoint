@@ -13,6 +13,7 @@ import { CashMovementCategory } from '../enum/cash-movement-category.enum';
 import { FindAllCashMovementInput } from '../dto/find-all-cash-movement.input';
 import { DashboardStats } from '../dto/dashboard-stats.entity';
 import { DashboardMovementUseCase } from 'src/core/use-cases/cashMovement/dashboard-movement.use-case';
+import { DashboardStatsInput } from '../dto/dashboard-stats.input';
 
 @Resolver(() => CashMovementGraphQL)
 export class CashMovementResolver {
@@ -65,14 +66,19 @@ export class CashMovementResolver {
         @CurrentUser() user: User,
     ): Promise<CashMovementGraphQL[]> {
         const movements = await this.findAllCashMovementUseCase.execute(user.id, input);
+
         return movements.map(CashMovementMapper.toJSON);
     }
 
-    @Query(() => DashboardStats, { name: 'dashboardStats' })
     @UseGuards(GqlAuthGuard)
-    async dashboardStats(@CurrentUser() user: User) {
-        const dashboard = await this.dashboardMovementUseCase.execute(user.id);
-        console.log('AQQQQQQQQQQQQQQQQQQQQQQQ', dashboard);
+    @Query(() => DashboardStats, { name: 'dashboardStats' })
+    async dashboardStats(
+        @Args('input', { nullable: true }) input: DashboardStatsInput,
+        @CurrentUser() user: User) {
+        const dashboard = await this.dashboardMovementUseCase.execute(user.id, input?.date ?? '');
+
+        console.log(dashboard);
+
 
         return dashboard.toJSON();
     }

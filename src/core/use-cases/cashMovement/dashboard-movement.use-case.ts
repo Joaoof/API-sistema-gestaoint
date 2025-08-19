@@ -7,8 +7,8 @@ export class DashboardMovementUseCase {
     constructor(@Inject('CashMovementRepository') private readonly cashMovementRepository: CashMovementRepository) { }
 
 
-    async execute(userId: string): Promise<DashboardMovement> {
-        const search = await this.cashMovementRepository.dashboardMovement(userId)
+    async execute(userId: string, date: string): Promise<DashboardMovement> {
+        const search = await this.cashMovementRepository.dashboardMovement(userId, date)
 
         return search;
     }

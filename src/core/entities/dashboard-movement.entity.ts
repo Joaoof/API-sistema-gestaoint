@@ -1,4 +1,4 @@
-// entities/dashboard-movement.entity.ts
+// src/core/entities/dashboard-movement.entity.ts
 
 export class DashboardMovement {
     constructor(
@@ -8,14 +8,12 @@ export class DashboardMovement {
         public readonly monthlyTotal: number
     ) { }
 
-    // Método opcional para converter em objeto simples (útil para retorno em API)
+    // ✅ Garanta que o retorno tem exatamente os mesmos nomes dos campos no GraphQL
     toJSON() {
         return {
-            today: {
-                entries: this.todayEntries,
-                exits: this.todayExits,
-                balance: this.todayBalance,
-            },
+            todayEntries: this.todayEntries,
+            todayExits: this.todayExits,
+            todayBalance: this.todayBalance,
             monthlyTotal: this.monthlyTotal,
         };
     }

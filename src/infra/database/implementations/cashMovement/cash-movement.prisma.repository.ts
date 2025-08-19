@@ -5,8 +5,8 @@ import { DashboardMovement } from 'src/core/entities/dashboard-movement.entity';
 import { CashMovementRepository } from 'src/core/ports/cash-movement.repository';
 import { RedisService } from 'src/infra/cache/redis.service';
 import { FindAllCashMovementInput } from 'src/infra/graphql/dto/find-all-cash-movement.input';
-import { startOfDay, endOfDay } from 'date-fns';
-import { fromZonedTime } from 'date-fns-tz';
+import { startOfDay, endOfDay, toDate } from 'date-fns';
+import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 
 @Injectable()
 export class PrismaCashMovementRepository implements CashMovementRepository {
@@ -57,64 +57,73 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
         return movements.map(CashMovement.fromPrisma);
     }
 
-    async dashboardMovement(userId: string): Promise<any> {
-        const timeZone = 'America/Sao_Paulo'; 
-        const now = new Date();
 
-        const today = fromZonedTime(startOfDay(now), timeZone);
-        const endToday = fromZonedTime(endOfDay(now), timeZone);
+    async dashboardMovement(userId: string, date?: string): Promise<DashboardMovement> {
+        const targetDate = date || new Date().toISOString().split('T')[0]; // ex: "2025-08-18"
 
-        const startOfMonth = fromZonedTime(
-            new Date(now.getFullYear(), now.getMonth(), 1),
-            timeZone
-        );
-        const endOfMonth = fromZonedTime(
-            new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999),
-            timeZone
-        );
-
-        const [todayData, monthlySum] = await Promise.all([
-            this.prisma.cashMovement.groupBy({
-                by: ['type'],
+        const [dailyData, monthlyData] = await Promise.all([
+            // 🔹 Dados do dia
+            this.prisma.cashMovement.findMany({
                 where: {
                     user_id: userId,
-                    date: { gte: today, lte: endToday },
+                    date: {
+                        gte: new Date(`${targetDate}T00:00:00.000Z`),
+                        lte: new Date(`${targetDate}T23:59:59.999Z`),
+                    },
                 },
-                _sum: { value: true },
             }),
-
+            // 🔹 Total do mês
             this.prisma.cashMovement.aggregate({
                 _sum: { value: true },
                 where: {
                     user_id: userId,
-                    date: { gte: startOfMonth, lte: endOfMonth },
+                    date: {
+                        gte: new Date(new Date(targetDate).getFullYear(), new Date(targetDate).getMonth(), 1),
+                        lte: new Date(new Date(targetDate).getFullYear(), new Date(targetDate).getMonth() + 1, 0, 23, 59, 59, 999),
+                    },
                 },
             }),
         ]);
 
-        await this.prisma.cashMovement.findMany({
-            where: {
-                user_id: userId,
-                date: { gte: today, lte: endToday },
-            },
-            select: { id: true, type: true, value: true, date: true },
-        })
-        const entriesToday = Number(todayData.find((g) => g.type === 'ENTRY')?._sum.value || 0);
-        const exitsToday = Number(todayData.find((g) => g.type === 'EXIT')?._sum.value || 0);
+        const entriesToday = dailyData
+            .filter(m => m.type === 'ENTRY')
+            .reduce((sum, m) => sum + Number(m.value), 0);
 
-        console.log('entriesToday calculado =>', entriesToday);
-        console.log('exitsToday calculado =>', exitsToday);
+        const exitsToday = dailyData
+            .filter(m => m.type === 'EXIT')
+            .reduce((sum, m) => sum + Number(m.value), 0);
 
         return new DashboardMovement(
             Number(entriesToday.toFixed(2)),
             Number(exitsToday.toFixed(2)),
             Number((entriesToday - exitsToday).toFixed(2)),
-            Number((monthlySum._sum.value || 0).toFixed(2)),
+            Number((monthlyData._sum.value || 0).toFixed(2))
         );
-
     }
 
 
+    async getDailyStats(userId: string, start: Date, end: Date) {
+        return await this.prisma.cashMovement.groupBy({
+            by: ['type'],
+            where: {
+                user_id: userId,
+                date: { gte: start, lte: end }
+            },
+            _sum: { value: true }
+        });
+    }
 
+    async getMonthlyTotal(userId: string, year: number, month: number) {
+        const startOfMonth = new Date(year, month, 1);
+        const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
+
+        return await this.prisma.cashMovement.aggregate({
+            _sum: { value: true },
+            where: {
+                user_id: userId,
+                date: { gte: startOfMonth, lte: endOfMonth },
+            },
+        });
+    }
 
 }

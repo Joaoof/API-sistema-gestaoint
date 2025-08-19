@@ -6,5 +6,5 @@ export interface CashMovementRepository {
     create(movement: CashMovement): Promise<void>
     findById(id: string): Promise<CashMovement | null>;
     findAll(userId: string, filters?: FindAllCashMovementInput): Promise<CashMovement[]>
-    dashboardMovement(userId: string): Promise<any>
+    dashboardMovement(userId: string, date?: string): Promise<any>
 }
