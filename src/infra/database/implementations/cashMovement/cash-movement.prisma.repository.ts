@@ -58,7 +58,7 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
     }
 
     async dashboardMovement(userId: string): Promise<any> {
-        const timeZone = 'America/Sao_Paulo'; // Ajusta conforme o fuso da tua aplicação
+        const timeZone = 'America/Sao_Paulo'; 
         const now = new Date();
 
         const today = fromZonedTime(startOfDay(now), timeZone);
@@ -92,25 +92,13 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
             }),
         ]);
 
-        const allMovements = await this.prisma.cashMovement.findMany({
+        await this.prisma.cashMovement.findMany({
             where: {
                 user_id: userId,
                 date: { gte: today, lte: endToday },
             },
             select: { id: true, type: true, value: true, date: true },
         })
-
-        // === LOGS IMPORTANTES ===
-        console.log('==== RAW DATA ====');
-        console.log('todayData =>', todayData);
-        console.log('monthlySum =>', monthlySum);
-        console.log('todayMovements =>', allMovements);
-        console.log('today (UTC) =>', today.toISOString());
-        console.log('endToday (UTC) =>', endToday.toISOString());
-        console.log('startOfMonth (UTC) =>', startOfMonth.toISOString());
-        console.log('endOfMonth (UTC) =>', endOfMonth.toISOString());
-        console.log('userId =>', userId);
-
         const entriesToday = Number(todayData.find((g) => g.type === 'ENTRY')?._sum.value || 0);
         const exitsToday = Number(todayData.find((g) => g.type === 'EXIT')?._sum.value || 0);
 
@@ -125,6 +113,8 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
         );
 
     }
+
+
 
 
 }
