@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { DashboardMovement } from "src/core/entities/dashboard-movement.entity";
 import { CashMovementRepository } from "src/core/ports/cash-movement.repository";
+import { DashboardMovementSchema } from '../../../modules/cashMovement/dtos/dashboard-movement.dto'
 
 @Injectable()
 export class DashboardMovementUseCase {
@@ -8,8 +9,12 @@ export class DashboardMovementUseCase {
 
 
     async execute(userId: string, date: string): Promise<DashboardMovement> {
-        const search = await this.cashMovementRepository.dashboardMovement(userId, date)
+        const { userId: validUserId, date: validDate } = DashboardMovementSchema.parse({
+            userId,
+            date,
+        });
 
-        return search;
+        return this.cashMovementRepository.dashboardMovement(validUserId, validDate);
     }
+
 }

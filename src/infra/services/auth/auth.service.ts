@@ -110,10 +110,7 @@ export class AuthService {
         const companyPlan = user.company.companyPlan;
         if (!companyPlan?.plan) {
             throw new CompanyWithoutPlanError();
-
         }
-
-
 
         const plan = companyPlan.plan;
 

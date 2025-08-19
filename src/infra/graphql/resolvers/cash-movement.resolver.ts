@@ -31,7 +31,7 @@ export class CashMovementResolver {
     ): Promise<CashMovementGraphQL> {
         const dto = {
             ...input,
-            user_id: user.id,
+            userId: user.id,
         }
         const cashMovementResolver = await this.createCashMovementUseCase.execute(dto, user.id);
 
