@@ -22,8 +22,8 @@ export class UserDto {
     @Field(() => String)
     email: string;
 
-    @Field(() => String, { nullable: true })
-    name?: string;
+    @Field()
+    name: string;
 
     @Field(() => String)
     company_id?: string
@@ -40,6 +40,14 @@ export class UserDto {
     @Field(() => Date)
     createdAt: Date;
 }
+
+type UserPayload = {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    company_id: string;
+};
 
 export const LoginUserSchema = z.object({
     email: z.string().email("Email inválido"),
@@ -172,6 +180,7 @@ export class AuthService {
     private _createToken(user: Users): { expiresIn: string; accessToken: string } {
         const payload: JwtPayload = {
             sub: user.id,
+            name: user.name,
             email: user.email,
             role: user.role,
             company_id: user.company_id,
@@ -185,10 +194,21 @@ export class AuthService {
         };
     }
 
-    async validateUser(payload: JwtPayload): Promise<Users> {
+    async validateUser(payload: JwtPayload): Promise<UserPayload> {
         const user = await this.prisma.users.findUnique({
             where: { id: payload.sub },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                company_id: true,
+                createdAt: true,
+                is_active: true,
+            },
         });
+        console.log(user);
+        
 
         if (!user) {
             throw new HttpException("INVALID_TOKEN", HttpStatus.UNAUTHORIZED);

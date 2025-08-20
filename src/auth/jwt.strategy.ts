@@ -6,6 +6,7 @@ import { PrismaService } from 'prisma/prisma.service';
 // 🔽 Definição do payload do JWT
 export interface JwtPayload {
     sub: string; // ID do usuário
+    name: string;
     email: string;
     role: string;
     company_id: string;
@@ -15,16 +16,17 @@ export interface JwtPayload {
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
     constructor(private readonly prisma: PrismaService) {
-        super({ 
+        super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
-            secretOrKey: process.env.JWT_SECRET || 'seu-segredo-super-seguro',
+            secretOrKey: process.env.JWT_SECRET || 'secreto',
         });
     }
 
     async validate(payload: JwtPayload) {
+        console.log('🔐 [JwtStrategy] Payload recebido:', payload);
         // Aqui você pode buscar o usuário no banco para validação adicional, se necessário
         // Ou apenas retornar o payload (modo stateless)
-        return { id: payload.sub, email: payload.email, role: payload.role };
+        return { id: payload.sub, name: payload.name, email: payload.email, role: payload.role };
     }
 }
