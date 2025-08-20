@@ -128,6 +128,14 @@ type Mutation {
   login(loginUserInput: LoginUserInput!): AuthPayload!
 }
 
+type PermissionDto {
+  """Chave do módulo (ex: estoque, vendas)"""
+  module_key: String!
+
+  """Lista de permissões (ex: READ, WRITE)"""
+  permissions: [String!]!
+}
+
 type PlanDto {
   description: String
   id: String!
@@ -171,7 +179,8 @@ type UserDto {
   createdAt: DateTime!
   email: String!
   id: String!
-  name: String
+  name: String!
+  permissions: [PermissionDto]!
   plan: PlanDto
   role: String!
 }
@@ -182,5 +191,7 @@ type UserResponseDto {
   id: String!
   is_active: Boolean!
   name: String!
+  permissions: [PermissionDto]!
+  plan: PlanDto
   role: String!
 }

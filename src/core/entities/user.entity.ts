@@ -6,8 +6,9 @@ export class User {
         public email: string,
         public role: string,
         public company_id: string,
+        public plan: string,
+        public permissions: string[],
         public is_active: boolean,
         public created_at: Date,
-        public updated_at: Date
     ) { }
 }

@@ -13,33 +13,7 @@ import { ForbiddenError } from '@nestjs/apollo';
 import { InvalidCredentialsError } from 'src/core/exceptions/invalid-credentials.exception';
 import { CompanyWithoutPlanError } from 'src/core/exceptions/company-without-plan.exception';
 import { DomainValidationError } from 'src/core/exceptions/domain.exception';
-
-@ObjectType()
-export class UserDto {
-    @Field(() => String)
-    id: string;
-
-    @Field(() => String)
-    email: string;
-
-    @Field()
-    name: string;
-
-    @Field(() => String)
-    company_id?: string
-
-    @Field(() => String)
-    role: string;
-
-    @Field(() => CompanyDto)
-    company: CompanyDto;
-
-    @Field(() => PlanDto, { nullable: true })
-    plan?: PlanDto;
-
-    @Field(() => Date)
-    createdAt: Date;
-}
+import { UserDto } from 'src/infra/graphql/dto/user.dto';
 
 type UserPayload = {
     id: string;
@@ -105,15 +79,14 @@ export class AuthService {
         if (!user) {
             throw new InvalidCredentialsError();
         }
+        if (!user.company) throw new ForbiddenError("Usuário sem empresa vinculada");
+
 
         const validPassword = await this.validatePassword(user.password_hash, password_hash);
         if (!validPassword) {
             throw new InvalidCredentialsError();
         }
 
-        if (!user.company) {
-            throw new ForbiddenError("Usuário sem empresa vinculada");
-        }
 
         const companyPlan = user.company.companyPlan;
         if (!companyPlan?.plan) {
@@ -122,8 +95,12 @@ export class AuthService {
 
         const plan = companyPlan.plan;
 
-        const moduleMap = new Map<string, typeof modulesDto[0]>();
+        const permissions = plan.module.map(pm => ({
+            module_key: pm.module.module_key,
+            permissions: pm.permission, // ex: ['READ', 'WRITE']
+        }));
 
+        const moduleMap = new Map<string, typeof modulesDto[0]>();
         for (const pm of plan.module) {
             const key = pm.module.module_key;
 
@@ -158,6 +135,7 @@ export class AuthService {
             name: user.name,
             email: user.email,
             role: user.role,
+            company_id: user.company_id,
             createdAt: user.createdAt,
             company: {
                 id: user.company.id,
@@ -167,8 +145,8 @@ export class AuthService {
                 address: user.company.address ?? '',
             },
             plan: planDto,
+            permissions
         };
-
 
         return {
             accessToken: token.accessToken,
@@ -208,7 +186,7 @@ export class AuthService {
             },
         });
         console.log(user);
-        
+
 
         if (!user) {
             throw new HttpException("INVALID_TOKEN", HttpStatus.UNAUTHORIZED);
