@@ -99,6 +99,7 @@ model Company {
   phone     String?
   address   String?
   cnpj      String?  @unique
+  logoUrl   String?
   createdAt DateTime @default(now())
 
   Users       Users[]

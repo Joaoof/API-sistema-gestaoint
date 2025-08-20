@@ -143,6 +143,7 @@ export class AuthService {
                 email: user.company.email ?? '',
                 phone: user.company.phone ?? '',
                 address: user.company.address ?? '',
+                logoUrl: user.company.logoUrl ?? ''
             },
             plan: planDto,
             permissions

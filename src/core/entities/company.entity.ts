@@ -5,6 +5,7 @@ export class Company {
         public email: string,
         public phone: string,
         public address: string,
+        public logoUrl: string,
         public createdAt: Date,
         public updatedAt: Date
     ) { }
@@ -17,6 +18,7 @@ export class Company {
             data.email,
             data.phone,
             data.address,
+            data.logoUrl,
             new Date(data.createdAt),
             new Date(data.updatedAt)
         );

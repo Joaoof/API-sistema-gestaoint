@@ -16,4 +16,7 @@ export class CompanyDto {
 
     @Field(() => String, { nullable: true })
     address?: string;
+    
+    @Field(() => String, { nullable: true })
+    logoUrl?: string; // ✅ Adicione aqui
 }

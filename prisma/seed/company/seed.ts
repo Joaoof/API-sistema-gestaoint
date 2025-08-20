@@ -9,8 +9,10 @@ async function main() {
     await prisma.module.createMany({
         data: [
             { name: 'Dashboard', module_key: 'dashboard', description: 'Visão geral da empresa' },
-            { name: 'Estoque', module_key: 'estoque', description: 'Registro de entrada' },
-            { name: 'Vendas', module_key: 'vendas', description: 'Registro de saída' },
+            { name: 'Movimentacoes', module_key: 'movimentacoes', description: 'Dashboard de Movimentações' },
+            { name: 'Formulario de Movimentação', module_key: 'formulario-movimentacao', description: 'Registro de Movimentações' },
+            { name: 'Histórico de Movimentação', module_key: 'historico-movimentacao', description: 'Histórico de Movimentações' },
+            { name: 'Configurações do Usuário', module_key: 'configuracoes', description: 'Atualizações importantes sobre o usuário' }
         ],
         skipDuplicates: true
     })
@@ -27,6 +29,8 @@ async function main() {
 
     // 3. Buscar todos os módulos
     const allModules = await prisma.module.findMany()
+    console.log(allModules);
+
 
     const getModule = (key: string) => {
         const found = allModules.find(m => m.module_key === key)
@@ -37,8 +41,10 @@ async function main() {
     // 4. Vincular plano aos módulos
     const planModulesData = [
         { planId: basicPlan.id, moduleId: getModule('dashboard').id, permission: ['READ'] },
-        { planId: basicPlan.id, moduleId: getModule('estoque').id, permission: ['READ', 'WRITE'] },
-        { planId: basicPlan.id, moduleId: getModule('vendas').id, permission: ['READ', 'WRITE'] }
+        { planId: basicPlan.id, moduleId: getModule('movimentacoes').id, permission: ['READ', 'WRITE'] },
+        { planId: basicPlan.id, moduleId: getModule('formulario-movimentacao').id, permission: ['READ', 'WRITE'] },
+        { planId: basicPlan.id, moduleId: getModule('historico-movimentacao').id, permission: ['READ', 'WRITE'] },
+        { planId: basicPlan.id, moduleId: getModule('configuracoes').id, permission: ['READ', 'WRITE'] }
     ]
 
     await prisma.planModule.createMany({
@@ -60,7 +66,8 @@ async function main() {
             email: 'the9@gmail.com',
             cnpj: '123456789000231',
             phone: '11999999999',
-            address: 'Rua das Empresas, 123'
+            address: 'Rua das Empresas, 123',
+            logoUrl: 'https://img.freepik.com/vetores-gratis/vetor-de-gradiente-de-logotipo-colorido-de-passaro_343694-1365.jpg'
         }
     })
 

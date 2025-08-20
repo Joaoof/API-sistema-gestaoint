@@ -19,7 +19,7 @@ export class CompaniesResolver {
             email: company.email,
             phone: company.phone,
             address: company.address,
-            // mais campos se precisar
+            logoUrl: company.logoUrl
         };
     }
 }
