@@ -16,11 +16,11 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { QueuesModule } from './infra/queues/queue.module';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
-// import { UserModule } from './modules/user/user.module';
 import { ConfigModule } from '@nestjs/config';
 import { GraphQLExceptionFilter } from './infra/filters/gql-exception.filter';
 import { CompanyModule } from './modules/company/company.module';
 import { CashMovementModule } from './modules/cashMovement/cash-movement.module';
+import { RedisModule } from './infra/cache/redis.module';
 
 
 @Module({
@@ -53,11 +53,8 @@ import { CashMovementModule } from './modules/cashMovement/cash-movement.module'
     }]),
     BullModule.forRoot({
       redis: {
-        host: 'viable-ewe-10712.upstash.io',
+        host: 'localhost',
         port: 6379,
-        username: 'default',
-        password: 'ASnYAAIjcDFjNzYxYzM0NTEwNmI0YjdkYjZjYmM5N2QxNWJjNWRjMHAxMA',
-        tls: {}, // Upstash exige TLS
       },
     }),
 
@@ -71,8 +68,7 @@ import { CashMovementModule } from './modules/cashMovement/cash-movement.module'
     UserModule,
     AuthModule,
     CompanyModule,
-    CashMovementModule
-    // UserModule
+    CashMovementModule,
   ],
   controllers: [AppController],
   providers: [AppService,

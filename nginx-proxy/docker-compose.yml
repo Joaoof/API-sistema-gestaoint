@@ -1,0 +1,18 @@
+version: '3.6'
+
+networks:
+  proxy_network:
+    external: true  # Referência a uma rede externa existente
+
+services:
+  nginx-proxy:
+    image: nginx
+    container_name: nginx-proxy
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - proxy_network
+    volumes:
+      - ./conf.d:/etc/nginx/conf.d:ro
+      - ./certs:/etc/ssl

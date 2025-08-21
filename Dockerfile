@@ -1,42 +1,21 @@
-FROM node:20-alpine AS builder
+FROM node:20.18.0
+
+ENV NODE_OPTIONS="--max-old-space-size=2048 --max-semi-space-size=128"
 
 WORKDIR /usr/src/app
 
+# Copie apenas os arquivos necessários para instalar dependências
 COPY package*.json ./
+COPY prisma ./prisma
 
+# Instalação
 RUN npm install
-
-COPY prisma ./prisma/
 RUN npx prisma generate
 
-COPY .env ./
-
-RUN apk add --no-cache bash
-
-COPY wait-for-it.sh /usr/local/bin/wait-for-it.sh
-RUN chmod +x /usr/local/bin/wait-for-it.sh
-
+# Copie o restante do código fonte
 COPY . .
-RUN npm run build
+COPY .env .
 
-FROM node:20-alpine
+EXPOSE 3001
 
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm install --production
-
-COPY prisma ./prisma/
-RUN npx prisma generate
-
-COPY .env ./
-
-RUN apk add --no-cache bash
-
-COPY wait-for-it.sh /usr/local/bin/wait-for-it.sh
-RUN chmod +x /usr/local/bin/wait-for-it.sh
-
-COPY dist /app/dist
-
-CMD ["node", "dist/src/main.js"]
-
+CMD ["npm", "run", "start:dev"]
