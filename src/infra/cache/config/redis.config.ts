@@ -4,6 +4,8 @@ const redis = new Redis({
     host: process.env.REDIS_HOST,
     port: Number(process.env.REDIS_PORT),
     password: process.env.REDIS_PASSWORD,
+    maxRetriesPerRequest: null, // 🔑 evita esse erro
+    enableReadyCheck: false,    // 🔑 opcional, acelera conexão
     retryStrategy(times) {
         // tenta reconectar exponencialmente, até 30s
         return Math.min(times * 50, 30000);
