@@ -6,9 +6,11 @@ import redis from './config/redis.config';
 
 @Module({
     providers: [{
-        provide: REDIS_CLIENT,
+        provide: 'REDIS_CLIENT',
         useValue: redis
-    }],
-    exports: [RedisService, REDIS_CLIENT], // Exporta para usar em outros módulos
+    },
+        RedisService
+    ],
+    exports: [RedisService, 'REDIS_CLIENT'], // Exporta para usar em outros módulos
 })
 export class RedisModule { }
