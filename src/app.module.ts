@@ -55,10 +55,11 @@ import { RedisModule } from './infra/cache/redis.module';
     }]),
     BullModule.forRoot({
       redis: {
-        host: process.env.REDIS_HOST,
-        port: Number(process.env.REDIS_PORT),
-        username: process.env.REDIS_USERNAME,   // opcional
-        password: process.env.REDIS_PASSWORD,
+        host: 'saved-chimp-55853.upstash.io',
+        port: 6379,
+        username: 'default',
+        password: 'AdotAAIncDEwYzNjNDZhODZiN2U0NzVmYWM3NDE5MGEzMTBlNGQzMnAxNTU4NTM',
+        tls: {},
       },
     }),
 
