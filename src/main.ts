@@ -9,6 +9,15 @@ async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter, {
     cors: {
       origin: '*',
+      credentials: true,
+      allowedHeaders: [
+        'Accept',
+        'Authorization',
+        'Content-Type',
+        'X-Requested-With',
+        'apollo-require-preflight',
+      ],
+      methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
     }
   });
   app.useGlobalFilters(new GraphQLExceptionFilter());
