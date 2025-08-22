@@ -22,7 +22,6 @@ export class AuthService {
         private readonly jwtService: JwtService,
     ) {
         // Acesse o Redis singleton (ajuste conforme sua configuração)
-        this.redis = require('../infra/cache/redis'); // ou use injeção de dependência
     }
 
     async login(loginUserDto: LoginUserDto): Promise<any> {
