@@ -57,7 +57,6 @@ import { RedisModule } from './infra/cache/redis.module';
         port: Number(process.env.REDIS_PORT),
         username: process.env.REDIS_USERNAME,   // opcional
         password: process.env.REDIS_PASSWORD,
-        tls: process.env.REDIS_TLS === 'true' ? {} : undefined,
       },
     }),
 
