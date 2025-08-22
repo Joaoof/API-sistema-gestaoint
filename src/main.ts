@@ -8,14 +8,14 @@ async function bootstrap() {
   const adapter = new FastifyAdapter({ trustProxy: true });
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter, {
     cors: {
-      origin: '*',
+      origin: ['https://gestaoint.netlify.app', 'http://localhost:5173'], // ✅ Domínio específico
       credentials: true,
       allowedHeaders: [
         'Accept',
         'Authorization',
         'Content-Type',
         'X-Requested-With',
-        'apollo-require-preflight',
+        'x-apollo-operation-name', // ✅ Adicione este (mais comum que apollo-require-preflight)
       ],
       methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
     }
@@ -50,12 +50,29 @@ async function bootstrap() {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        imgSrc: ["'self'", "data:", "http://cdn.jsdelivr.net", "http://cdn.apollographql.com"],
-        scriptSrc: ["'self'", "http://cdn.jsdelivr.net", "http://cdn.apollographql.com", "'unsafe-inline'"],
-        styleSrc: ["'self'", "'unsafe-inline'", "http://cdn.jsdelivr.net", "http://fonts.googleapis.com"],
-        fontSrc: ["'self'", "http://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "https://cdn.jsdelivr.net", "https://cdn.apollographql.com"],
+        scriptSrc: [
+          "'self'",
+          "https://cdn.jsdelivr.net",
+          "https://cdn.apollographql.com",
+          "'unsafe-inline'",
+        ],
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://cdn.jsdelivr.net",
+          "https://fonts.googleapis.com",
+        ],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        connectSrc: [
+          "'self'",
+          "https://jc-production-6a4c.up.railway.app", // ✅ Permite conexão GraphQL
+          "https://*.up.railway.app", // ✅ Se usar outros subdomínios
+        ],
+        frameSrc: ["'self'", "https://studio.apollographql.com"], // ✅ Se usar Apollo Sandbox
       },
     },
+    crossOriginResourcePolicy: { policy: 'same-origin' },
   });
 
 

@@ -35,7 +35,7 @@ import { RedisModule } from './infra/cache/redis.module';
       debug: true,
       server: {
         // landingPageDisabled: true,
-        csrfPrevention: true, // 👈 Desativa a proteção  
+        // csrfPrevention: true, // 👈 Desativa a proteção  
 
       },
       context: ({ request, reply }: { request: any; reply: any }) => ({
