@@ -7,7 +7,9 @@ import { GraphQLExceptionFilter } from './infra/filters/gql-exception.filter';
 async function bootstrap() {
   const adapter = new FastifyAdapter({ trustProxy: true });
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter, {
-    cors: true,
+    cors: {
+      origin: '*',
+    }
   });
   app.useGlobalFilters(new GraphQLExceptionFilter());
 
