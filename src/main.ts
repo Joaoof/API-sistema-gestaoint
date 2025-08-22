@@ -37,7 +37,17 @@ async function bootstrap() {
 
   // Registra os plugins Fastify em vez de usar app.use()
   await app.register(require('@fastify/compress'));
-  await app.register(require('@fastify/helmet'));
+  await app.register(require('@fastify/helmet'), {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "http://cdn.jsdelivr.net", "http://cdn.apollographql.com"],
+        scriptSrc: ["'self'", "http://cdn.jsdelivr.net", "http://cdn.apollographql.com", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'", "http://cdn.jsdelivr.net", "http://fonts.googleapis.com"],
+        fontSrc: ["'self'", "http://fonts.gstatic.com"],
+      },
+    },
+  });
 
 
   // Para adicionar headers customizados:
