@@ -34,8 +34,9 @@ import { RedisModule } from './infra/cache/redis.module';
       sortSchema: true,
       debug: true,
       server: {
-        landingPageDisabled: true,
-        csrfPrevention: false, // 👈 Desativa a proteção
+        // landingPageDisabled: true,
+        csrfPrevention: true, // 👈 Desativa a proteção  
+
       },
       context: ({ request, reply }: { request: any; reply: any }) => ({
         req: request,
