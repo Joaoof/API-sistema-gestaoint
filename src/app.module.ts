@@ -53,10 +53,14 @@ import { RedisModule } from './infra/cache/redis.module';
     }]),
     BullModule.forRoot({
       redis: {
-        host: 'localhost',
-        port: 6379,
+        host: process.env.REDIS_HOST,
+        port: Number(process.env.REDIS_PORT),
+        username: process.env.REDIS_USERNAME,   // opcional
+        password: process.env.REDIS_PASSWORD,
+        tls: process.env.REDIS_TLS === 'true' ? {} : undefined,
       },
     }),
+
 
     BullModule.registerQueue({
       name: 'email',
