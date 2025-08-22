@@ -19,12 +19,25 @@ export class GqlCacheInterceptor extends CacheInterceptor {
 
     override trackBy(context: ExecutionContext): string | undefined {
         const ctx = GqlExecutionContext.create(context);
+
+        // ⚡ segurança extra
         const info = ctx.getInfo();
         const args = ctx.getArgs();
 
-        // Chave única por tipo + campo + argumentos (ex: Query:getProducts:{"category":1})
-        return `${info.parentType.name}:${info.fieldName}:${JSON.stringify(args)}`;
+        if (!info) {
+            // Se não for uma chamada GraphQL "normal", não tenta cachear
+            return undefined;
+        }
+
+        try {
+            // Chave única por tipo + campo + args
+            return `${info.parentType?.name}:${info.fieldName}:${JSON.stringify(args)}`;
+        } catch (err) {
+            console.warn('⚠️ Falha ao gerar chave de cache GraphQL:', err);
+            return undefined;
+        }
     }
+
 
     override isRequestCacheable(context: ExecutionContext): boolean {
         // Ignora método HTTP e permite cache para qualquer operação
