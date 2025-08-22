@@ -8,7 +8,8 @@ async function bootstrap() {
   const adapter = new FastifyAdapter({ trustProxy: true });
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter, {
     cors: {
-      origin: ['https://gestaoint.netlify.app', 'http://localhost:5173'], // ✅ Domínio específico
+      origin: ['https://gestaoint.netlify.app',   // ✅ Sem espaços
+        'http://localhost:5173'], // ✅ Domínio específico
       credentials: true,
       allowedHeaders: [
         'Accept',
@@ -47,51 +48,43 @@ async function bootstrap() {
   // Registra os plugins Fastify em vez de usar app.use()
   await app.register(require('@fastify/compress'));
   await app.register(require('@fastify/helmet'), {
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        imgSrc: ["'self'", "data:", "https://cdn.jsdelivr.net", "https://cdn.apollographql.com"],
-        scriptSrc: [
-          "'self'",
-          "https://cdn.jsdelivr.net",
-          "https://cdn.apollographql.com",
-          "'unsafe-inline'",
-        ],
-        styleSrc: [
-          "'self'",
-          "'unsafe-inline'",
-          "https://cdn.jsdelivr.net",
-          "https://fonts.googleapis.com",
-        ],
-        fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        connectSrc: [
-          "'self'",
-          "https://jc-production-6a4c.up.railway.app", // ✅ Permite conexão GraphQL
-          "https://*.up.railway.app", // ✅ Se usar outros subdomínios
-        ],
-        frameSrc: ["'self'", "https://studio.apollographql.com"], // ✅ Se usar Apollo Sandbox
-      },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "https://cdn.jsdelivr.net",
+        "https://cdn.apollographql.com"
+      ],
+      scriptSrc: [
+        "'self'",
+        "https://cdn.jsdelivr.net",
+        "https://cdn.apollographql.com",
+        "'unsafe-inline'"
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://cdn.jsdelivr.net",
+        "https://fonts.googleapis.com"
+      ],
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com"
+      ],
+      connectSrc: [
+        "'self'",
+        "https://jc-production-6a4c.up.railway.app", // ✅ Sem espaço
+        "https://*.up.railway.app"
+      ],
+      frameSrc: [
+        "'self'",
+        "https://studio.apollographql.com" // ✅ Sem espaço
+      ],
     },
-    crossOriginResourcePolicy: { policy: 'same-origin' },
-  });
-
-
-  // Para adicionar headers customizados:
-  const fastifyInstance = app.getHttpAdapter().getInstance();
-
-  fastifyInstance.addHook('onSend', async (request, reply, payload) => {
-    reply.header(
-      'Content-Security-Policy',
-      "default-src 'self'; " +
-      "img-src 'self' data: http://cdn.jsdelivr.net http://cdn.apollographql.com; " +
-      "script-src 'self' http://cdn.jsdelivr.net http://cdn.apollographql.com 'unsafe-inline'; " +
-      "style-src 'self' 'unsafe-inline' http://cdn.jsdelivr.net http://fonts.googleapis.com; " +
-      "font-src 'self' http://fonts.gstatic.com;"
-    );
-
-    return payload;
-  });
-
+  },
+});
 
 
   app.use((req, res, next) => {
