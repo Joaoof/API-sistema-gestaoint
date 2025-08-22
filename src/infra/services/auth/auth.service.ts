@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from 'src/auth/jwt.strategy';
 import { PrismaService } from 'prisma/prisma.service';
@@ -11,6 +11,7 @@ import { DomainValidationError } from 'src/core/exceptions/domain.exception';
 import { UserDto } from 'src/infra/graphql/dto/user.dto';
 import { PlanDto } from 'src/infra/graphql/dto/plan.dto';
 import { Redis } from 'ioredis';
+import { REDIS_CLIENT } from 'src/infra/cache/redis.constants';
 
 // 🔁 Importe o Redis (certifique-se de injetar ou acessar via módulo)
 @Injectable()
@@ -18,7 +19,7 @@ export class AuthService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly jwtService: JwtService,
-        private redis: Redis // Injete via construtor ou use um RedisService
+        @Inject(REDIS_CLIENT) private readonly redis: Redis, // ✅ Injetado corretamente
     ) {
         // Acesse o Redis singleton (ajuste conforme sua configuração)
     }

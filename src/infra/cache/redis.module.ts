@@ -1,16 +1,20 @@
-// src/config/redis.module.ts
+// src/infra/cache/redis.module.ts
 import { Module } from '@nestjs/common';
-import { RedisService } from 'src/infra/cache/redis.service';
+import Redis from 'ioredis';
 import { REDIS_CLIENT } from './redis.constants';
-import redis from './config/redis.config';
 
 @Module({
-    providers: [{
-        provide: 'REDIS_CLIENT',
-        useValue: redis
-    },
-        RedisService
+    providers: [
+        {
+            provide: REDIS_CLIENT,
+            useValue: new Redis({
+                host: process.env.REDIS_HOST,
+                port: Number(process.env.REDIS_PORT),
+                password: process.env.REDIS_PASSWORD,
+                tls: {}, // necessário para Upstash
+            }),
+        },
     ],
-    exports: [RedisService, 'REDIS_CLIENT'], // Exporta para usar em outros módulos
+    exports: [REDIS_CLIENT], // ✅ Exporta o token
 })
 export class RedisModule { }
