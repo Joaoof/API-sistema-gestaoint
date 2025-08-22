@@ -2,7 +2,7 @@ version: "4.3"
 
 services:
   db:
-    image: postgres
+    image: postgres:16
     restart: unless-stopped
     container_name: postgres_gestaoint
     environment:
@@ -10,11 +10,6 @@ services:
       POSTGRES_PASSWORD: Senha123@
       POSTGRES_DB: gestao
       POSTGRES_HOST_AUTH_METHOD: md5
-      PG_MAX_CONNECTIONS: "100"
-      SHARED_BUFFERS: 512MB
-      EFFECTIVE_CACHE_SIZE: 1536MB
-      WORK_MEM: 16MB
-      MAINTENANCE_WORK_MEM: 128MB
     ports:
       - 5432:5432
     volumes:
@@ -28,52 +23,8 @@ services:
     networks:
       - proxy_network
 
-  redis:
-    image: redis:7-alpine
-    container_name: redis_gestaoint
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
-    ports:
-      - 6379:6379
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - proxy_network
-
-  backend:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-    deploy:
-      replicas: 3  # Número de instâncias
-    environment:
-      - NODE_ENV=development
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=joao
-      - DB_PASSWORD=Senha123@
-      - DB_NAME=gestao
-      - REDIS_HOST=redis  # Adicionando o endereço do Redis
-      - REDIS_PORT=6379   # Porta padrão do Redis
-
-    volumes:
-      - /usr/src/app/node_modules  # Evita sobrescrever node_modules
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:  # Espera o Redis ficar pronto
-        condition: service_healthy
-    networks:
-      - proxy_network
-
 volumes:  
   postgres_data:
-  redis_data:
-  grafana_data:
 
 networks:
   proxy_network:
