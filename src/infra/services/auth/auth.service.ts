@@ -15,11 +15,10 @@ import { Redis } from 'ioredis';
 // 🔁 Importe o Redis (certifique-se de injetar ou acessar via módulo)
 @Injectable()
 export class AuthService {
-    private redis: Redis; // Injete via construtor ou use um RedisService
-
     constructor(
         private readonly prisma: PrismaService,
         private readonly jwtService: JwtService,
+        private redis: Redis // Injete via construtor ou use um RedisService
     ) {
         // Acesse o Redis singleton (ajuste conforme sua configuração)
     }

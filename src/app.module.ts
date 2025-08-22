@@ -80,6 +80,7 @@ import { RedisModule } from './infra/cache/redis.module';
     AuthModule,
     CompanyModule,
     CashMovementModule,
+    RedisModule
   ],
   controllers: [AppController],
   providers: [AppService,
