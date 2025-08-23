@@ -108,6 +108,20 @@ export class AuthService {
     // ✅ 3. Buscar empresa
     private async fetchCompany(companyId: string) {
         console.time('🏢 Busca Empresa');
+        const cacheKey = `auth:company:basic:${companyId}`;
+
+        try {
+            const cached = await this.redis.get(cacheKey);
+            if (cached) {
+                console.log(`✅ CACHE HIT: Empresa ${companyId}`);
+                console.timeEnd('🏢 Busca Empresa');
+                return JSON.parse(cached);
+            }
+            console.log(`❌ CACHE MISS: Empresa ${companyId}`);
+        } catch (err) {
+            console.error(`🔴 Redis GET falhou:`, err.message);
+        }
+
         const company = await this.prisma.company.findUnique({
             where: { id: companyId },
             select: {
@@ -122,11 +136,17 @@ export class AuthService {
 
         if (!company) {
             console.timeEnd('🏢 Busca Empresa');
-            console.timeEnd('🔐 AuthService.login completo');
-            throw new HttpException('Usuário sem empresa vinculada', HttpStatus.FORBIDDEN);
+            throw new HttpException('Empresa não encontrada', HttpStatus.FORBIDDEN);
         }
-        console.timeEnd('🏢 Busca Empresa');
 
+        try {
+            await this.redis.setex(cacheKey, 3600, JSON.stringify(company));
+            console.log(`✅ Empresa salva no Redis: ${cacheKey}`);
+        } catch (err) {
+            console.error(`🔴 Falha ao salvar empresa no Redis:`, err.message);
+        }
+
+        console.timeEnd('🏢 Busca Empresa');
         return company;
     }
 
@@ -136,40 +156,39 @@ export class AuthService {
         console.time('🧩 Plano + Cache');
         const cacheKey = `auth:company:plan:${companyId}`;
 
-        const cached = await this.redis.get(cacheKey);
-        if (cached) {
-            console.timeEnd('🧩 Plano + Cache');
-            return JSON.parse(cached);
+        try {
+            const cached = await this.redis.get(cacheKey);
+            if (cached) {
+                console.log(`✅ CACHE HIT: ${cacheKey}`);
+                console.timeEnd('🧩 Plano + Cache');
+                return JSON.parse(cached);
+            }
+            console.log(`❌ CACHE MISS: ${cacheKey}`);
+        } catch (err) {
+            console.error(`🔴 Erro ao acessar Redis (get):`, err.message);
         }
 
         const companyPlan = await this.prisma.companyPlan.findFirst({
-            where: {
-                company_id: companyId,
-                isActive: true
-            },
+            where: { company_id: companyId, isActive: true },
             include: {
                 plan: {
                     select: {
                         id: true,
                         name: true,
                         description: true,
-                        // Inclui os PlanModule ativos e seus módulos
                         module: {
-                            where: {
-                                isActive: true
-                            },
+                            where: { isActive: true },
                             include: {
-                                module: {  // o modelo Module
+                                module: {
                                     select: {
-                                        id: true,
-                                        name: true,
                                         module_key: true,
+                                        name: true,
                                         description: true,
                                     }
                                 }
                             },
                             select: {
-                                permission: true, // só precisamos das permissões aqui
+                                permission: true,
                             }
                         }
                     }
@@ -179,7 +198,6 @@ export class AuthService {
 
         if (!companyPlan || !companyPlan.plan) {
             console.timeEnd('🧩 Plano + Cache');
-            console.timeEnd('🔐 AuthService.login completo');
             throw new CompanyWithoutPlanError();
         }
 
@@ -198,7 +216,14 @@ export class AuthService {
             })),
         };
 
-        await this.redis.setex(cacheKey, 3600, JSON.stringify(planDto));
+        // 🔁 Tente salvar no Redis
+        try {
+            await this.redis.setex(cacheKey, 3600, JSON.stringify(planDto));
+            console.log(`✅ Plano salvo no Redis: ${cacheKey}`);
+        } catch (err) {
+            console.error(`🔴 Falha ao salvar no Redis:`, err.message);
+        }
+
         console.timeEnd('🧩 Plano + Cache');
         return planDto;
     }
