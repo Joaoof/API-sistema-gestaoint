@@ -176,6 +176,8 @@ model CompanyPlan {
   plan    Plan    @relation(fields: [planId], references: [id])
 
   isActive Boolean @default(true)
+
+  @@index([id], name: "idx_company_id")
 }
 
 model CashMovement {
