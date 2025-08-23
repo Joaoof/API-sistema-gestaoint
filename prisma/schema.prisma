@@ -100,6 +100,7 @@ model Company {
   address   String?
   cnpj      String?  @unique
   logoUrl   String?
+  is_active Boolean?  @default(true)
   createdAt DateTime @default(now())
 
   Users       Users[]

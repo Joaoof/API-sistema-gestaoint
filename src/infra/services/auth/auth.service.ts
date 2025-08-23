@@ -21,26 +21,67 @@ export class AuthService {
         @Inject(REDIS_CLIENT) private readonly redis: Redis,
     ) { }
 
+    async onModuleInit() {
+        await this.preloadFrequentCompanies();
+    }
+
+    private async preloadFrequentCompanies() {
+        try {
+            const frequentCompanies = await this.prisma.company.findMany({
+                where: { is_active: true },
+                take: 20,
+                select: { id: true }
+            });
+
+            await Promise.all(
+                frequentCompanies.map(company =>
+                    this.fetchCompany(company.id).catch(() => null)
+                )
+            );
+        } catch (error) {
+            console.log('⚠️  Pré-cache de empresas falhou, continuando...');
+        }
+    }
+
     async login(loginUserDto: LoginUserDto): Promise<any> {
         console.time('🔐 AuthService.login completo');
 
-        // 1. Validar entrada
-        const { email, password_hash } = await this.validateInput(loginUserDto);
+        // 1. Validação rápida
+        const { email, password_hash } = this.validateInputQuick(loginUserDto);
 
-        // 2. Buscar e validar usuário
-        const user = await this.findAndValidateUser(email, password_hash);
+        // 2. Buscar tudo de uma vez com cache
+        const userWithData = await this.findUserWithCompanyAndPlan(email, password_hash);
 
-        // 3. Buscar empresa e plano em paralelo (operação independente)
-        const [company, planDto] = await Promise.all([
-            this.fetchCompany(user.company_id),
-            this.fetchPlanWithCache(user.company_id),
-        ]);
+        if (!userWithData) {
+            console.timeEnd('🔐 AuthService.login completo');
+            throw new InvalidCredentialsError();
+        }
 
-        // 4. Gerar token
-        const token = this._createToken(user);
+        // 3. Validar senha
+        console.time('🔑 Validação de senha');
+        const isValid = await argon2.verify(userWithData.password_hash, password_hash);
+        if (!isValid) {
+            console.timeEnd('🔑 Validação de senha');
+            console.timeEnd('🔐 AuthService.login completo');
+            throw new InvalidCredentialsError();
+        }
+        console.timeEnd('🔑 Validação de senha');
 
-        // 5. Montar resposta
-        const userDto = this.buildUserDto(user, company, planDto);
+        // 4. Processar dados (já temos tudo)
+        const company = userWithData.company;
+        const planDto = this.processPlanFromCompany(company);
+
+        if (!planDto) {
+            console.timeEnd('🔐 AuthService.login completo');
+            throw new CompanyWithoutPlanError();
+        }
+
+        // 5. Gerar token e resposta
+        const token = this._createToken(userWithData);
+        const userDto = this.buildUserDto(userWithData, company, planDto);
+
+        // 6. Cache assíncrono (não bloqueia a resposta)
+        this.cacheUserDataAsync(userWithData.id, company, planDto);
 
         console.timeEnd('🔐 AuthService.login completo');
 
@@ -51,61 +92,119 @@ export class AuthService {
         };
     }
 
-    // ✅ 1. Validação de entrada
-    private async validateInput(dto: LoginUserDto): Promise<LoginUserDto> {
-        console.time('📝 Validação Zod');
-        const result = LoginUserSchema.safeParse(dto);
-        if (!result.success) {
-            const errors = result.error.errors.map(err => ({
-                field: err.path.join('.'),
-                message: err.message,
-            }));
-            console.timeEnd('📝 Validação Zod');
-            console.timeEnd('🔐 AuthService.login completo');
-            throw new DomainValidationError(errors);
+    private validateInputQuick(dto: LoginUserDto): LoginUserDto {
+        console.time('⚡ Validação Rápida');
+
+        if (!dto.email || !dto.email.includes('@')) {
+            console.timeEnd('⚡ Validação Rápida');
+            throw new DomainValidationError([{ field: 'email', message: 'Email inválido' }]);
         }
-        console.timeEnd('📝 Validação Zod');
-        return result.data;
+
+        if (!dto.password_hash || dto.password_hash.length < 8) {
+            console.timeEnd('⚡ Validação Rápida');
+            throw new DomainValidationError([{ field: 'password_hash', message: 'Senha deve ter pelo menos 8 caracteres' }]);
+        }
+
+        console.timeEnd('⚡ Validação Rápida');
+        return dto;
     }
 
-    // ✅ 2. Buscar usuário + validar credenciais
-    private async findAndValidateUser(email: string, passwordInput: string): Promise<Users> {
-        console.time('🗄️ Busca Usuário');
+    private async findUserWithCompanyAndPlan(email: string, passwordInput: string) {
+        console.time('🗄️ Busca Completa Usuário');
+
+        const cacheKey = `auth:user:full:${email}`;
+
+        try {
+            const cached = await this.redis.get(cacheKey);
+            if (cached) {
+                console.log(`✅ CACHE HIT: Usuário completo ${email}`);
+                console.timeEnd('🗄️ Busca Completa Usuário');
+                return JSON.parse(cached);
+            }
+        } catch (err) {
+            console.error('🔴 Redis user cache error:', err.message);
+        }
+
         const user = await this.prisma.users.findUnique({
             where: { email },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                password_hash: true,
-                role: true,
-                company_id: true,
-                is_active: true,
-                createdAt: true,
-            },
+            include: {
+                company: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        phone: true,
+                        address: true,
+                        logoUrl: true,
+                        companyPlan: {
+                            where: { isActive: true },
+                            include: {
+                                plan: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        description: true,
+                                        module: {
+                                            where: { isActive: true },
+                                            include: {
+                                                module: {
+                                                    select: {
+                                                        module_key: true,
+                                                        name: true,
+                                                        description: true,
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         });
 
-        if (!user) {
-            console.timeEnd('🗄️ Busca Usuário');
-            console.timeEnd('🔐 AuthService.login completo');
-            throw new InvalidCredentialsError();
+        if (user) {
+            try {
+                await this.redis.setex(cacheKey, 300, JSON.stringify(user));
+            } catch (err) {
+                console.error('🔴 Redis set error:', err.message);
+            }
         }
-        console.timeEnd('🗄️ Busca Usuário');
 
-        // 🔑 Validação de senha
-        console.time('🔑 Validação de senha');
-        const isValid = await argon2.verify(user.password_hash, passwordInput);
-        if (!isValid) {
-            console.timeEnd('🔑 Validação de senha');
-            console.timeEnd('🔐 AuthService.login completo');
-            throw new InvalidCredentialsError();
-        }
-        console.timeEnd('🔑 Validação de senha');
-
+        console.timeEnd('🗄️ Busca Completa Usuário');
         return user;
     }
 
-    // ✅ 3. Buscar empresa
+    private processPlanFromCompany(company: any): PlanDto | null {
+        if (!company.companyPlan || company.companyPlan.length === 0) {
+            return null;
+        }
+
+        const companyPlan = company.companyPlan[0];
+        if (!companyPlan.plan) {
+            return null;
+        }
+
+        const plan = companyPlan.plan;
+
+        const planDto: PlanDto = {
+            id: plan.id,
+            name: plan.name,
+            description: plan.description ?? '',
+            modules: plan.plan_module.map(pm => ({
+                module_key: pm.module.module_key,
+                name: pm.module.name,
+                description: pm.module.description ?? '',
+                permission: pm.permission ? Array.from(new Set(pm.permission)) : [],
+                isActive: true,
+            })),
+        };
+
+        return planDto;
+    }
+
     private async fetchCompany(companyId: string) {
         console.time('🏢 Busca Empresa');
         const cacheKey = `auth:company:basic:${companyId}`;
@@ -117,7 +216,6 @@ export class AuthService {
                 console.timeEnd('🏢 Busca Empresa');
                 return JSON.parse(cached);
             }
-            console.log(`❌ CACHE MISS: Empresa ${companyId}`);
         } catch (err) {
             console.error(`🔴 Redis GET falhou:`, err.message);
         }
@@ -141,7 +239,6 @@ export class AuthService {
 
         try {
             await this.redis.setex(cacheKey, 3600, JSON.stringify(company));
-            console.log(`✅ Empresa salva no Redis: ${cacheKey}`);
         } catch (err) {
             console.error(`🔴 Falha ao salvar empresa no Redis:`, err.message);
         }
@@ -150,85 +247,15 @@ export class AuthService {
         return company;
     }
 
-    // ✅ 4. Buscar plano com cache (Redis)
-    // ✅ 4. Buscar plano com cache (Redis)
-    private async fetchPlanWithCache(companyId: string): Promise<PlanDto> {
-        console.time('🧩 Plano + Cache');
-        const cacheKey = `auth:company:plan:${companyId}`;
-
-        try {
-            const cached = await this.redis.get(cacheKey);
-            if (cached) {
-                console.log(`✅ CACHE HIT: ${cacheKey}`);
-                console.timeEnd('🧩 Plano + Cache');
-                return JSON.parse(cached);
-            }
-            console.log(`❌ CACHE MISS: ${cacheKey}`);
-        } catch (err) {
-            console.error(`🔴 Erro ao acessar Redis (get):`, err.message);
-        }
-
-        const companyPlan = await this.prisma.companyPlan.findFirst({
-            where: { company_id: companyId, isActive: true },
-            include: {
-                plan: {
-                    select: {
-                        id: true,
-                        name: true,
-                        description: true,
-                        module: {
-                            where: { isActive: true },
-                            include: {
-                                module: {
-                                    select: {
-                                        module_key: true,
-                                        name: true,
-                                        description: true,
-                                    }
-                                }
-                            },
-                            select: {
-                                permission: true,
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        if (!companyPlan || !companyPlan.plan) {
-            console.timeEnd('🧩 Plano + Cache');
-            throw new CompanyWithoutPlanError();
-        }
-
-        const plan = companyPlan.plan;
-
-        const planDto: PlanDto = {
-            id: plan.id,
-            name: plan.name,
-            description: plan.description ?? '',
-            modules: plan.module.map(pm => ({
-                module_key: pm.module.module_key,
-                name: pm.module.name,
-                description: pm.module.description ?? '',
-                permission: Array.from(new Set(pm.permission)),
-                isActive: true,
-            })),
-        };
-
-        // 🔁 Tente salvar no Redis
-        try {
-            await this.redis.setex(cacheKey, 3600, JSON.stringify(planDto));
-            console.log(`✅ Plano salvo no Redis: ${cacheKey}`);
-        } catch (err) {
-            console.error(`🔴 Falha ao salvar no Redis:`, err.message);
-        }
-
-        console.timeEnd('🧩 Plano + Cache');
-        return planDto;
+    private async cacheUserDataAsync(userId: string, company: any, planDto: PlanDto) {
+        Promise.all([
+            this.redis.setex(`auth:company:basic:${company.id}`, 3600, JSON.stringify(company))
+                .catch(err => console.error('Redis company error:', err)),
+            this.redis.setex(`auth:company:plan:${company.id}`, 3600, JSON.stringify(planDto))
+                .catch(err => console.error('Redis plan error:', err))
+        ]).then(() => console.log('✅ Cache atualizado em background'));
     }
 
-    // ✅ 5. Montar UserDto
     private buildUserDto(user: Users, company: any, planDto: PlanDto): UserDto {
         console.time('📦 Montar UserDto');
         const userDto: UserDto = {
@@ -249,7 +276,6 @@ export class AuthService {
         return userDto;
     }
 
-    // ✅ 6. Gerar token JWT
     private _createToken(user: Users): { expiresIn: string; accessToken: string } {
         const payload: JwtPayload = {
             sub: user.id,
@@ -265,6 +291,17 @@ export class AuthService {
     }
 
     async validateUser(payload: JwtPayload): Promise<any> {
+        const cacheKey = `auth:user:${payload.sub}`;
+
+        try {
+            const cached = await this.redis.get(cacheKey);
+            if (cached) {
+                return JSON.parse(cached);
+            }
+        } catch (err) {
+            console.error('Redis user validation error:', err.message);
+        }
+
         const user = await this.prisma.users.findUnique({
             where: { id: payload.sub },
             select: {
@@ -277,10 +314,16 @@ export class AuthService {
             },
         });
 
-        if (!user || !user.is_active) {
-            throw new HttpException('INVALID_TOKEN', HttpStatus.UNAUTHORIZED);
+        if (user && user.is_active) {
+            try {
+                await this.redis.setex(cacheKey, 600, JSON.stringify(user));
+            } catch (err) {
+                console.error('Redis set user error:', err.message);
+            }
+            return user;
         }
-        return user;
+
+        throw new HttpException('INVALID_TOKEN', HttpStatus.UNAUTHORIZED);
     }
 }
 
