@@ -182,7 +182,7 @@ export class AuthService {
             return null;
         }
 
-        const companyPlan = company.companyPlan[0];
+        const companyPlan = company.companyPlan;
         if (!companyPlan.plan) {
             return null;
         }
