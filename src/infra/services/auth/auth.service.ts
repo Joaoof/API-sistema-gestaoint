@@ -155,26 +155,25 @@ export class AuthService {
         console.log(`❌ CACHE MISS: Buscando plano no banco para empresa ${companyId}`);
 
         const companyPlan = await this.prisma.companyPlan.findFirst({
-            where: { company_id: companyId, isActive: true },
+            where: {
+                company_id: companyId,
+                isActive: true
+            },
             include: {
                 plan: {
-                    select: {
-                        id: true,
-                        name: true,
-                        description: true,
+                    include: {
                         module: {
-                            where: { isActive: true },
+                            where: {
+                                isActive: true
+                            },
                             include: {
-                                module: {
+                                module: {  // o modelo `Module`
                                     select: {
                                         module_key: true,
                                         name: true,
                                         description: true,
                                     }
                                 }
-                            },
-                            select: {
-                                permission: true,
                             }
                         }
                     }
