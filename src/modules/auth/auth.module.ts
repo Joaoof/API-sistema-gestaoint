@@ -7,13 +7,14 @@ import { UserModule } from '../user/user.module';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from 'src/auth/jwt.strategy';
 import { PrismaService } from 'prisma/prisma.service';
-import { JwtService } from '@nestjs/jwt';
+import { RedisModule } from 'src/infra/cache/redis.module';
 
 
 @Module({
     imports: [
         UserModule, // onde está seu findById ou findByEmail
         PassportModule,
+        RedisModule,
         JwtModule.register({
             secret: process.env.JWT_SECRET || 'secreto',
             signOptions: { expiresIn: '1d' },
