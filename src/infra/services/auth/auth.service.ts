@@ -13,178 +13,34 @@ import { PlanDto } from 'src/infra/graphql/dto/plan.dto';
 import { Redis } from 'ioredis';
 import { REDIS_CLIENT } from 'src/infra/cache/redis.constants';
 
-// 🔁 Importe o Redis (certifique-se de injetar ou acessar via módulo)
 @Injectable()
 export class AuthService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly jwtService: JwtService,
-        @Inject(REDIS_CLIENT) private readonly redis: Redis, // ✅ Injetado corretamente
-    ) {
-        // Acesse o Redis singleton (ajuste conforme sua configuração)
-    }
+        @Inject(REDIS_CLIENT) private readonly redis: Redis,
+    ) { }
 
     async login(loginUserDto: LoginUserDto): Promise<any> {
         console.time('🔐 AuthService.login completo');
 
-        const { email, password_hash } = loginUserDto;
+        // 1. Validar entrada
+        const { email, password_hash } = await this.validateInput(loginUserDto);
 
-        // 1️⃣ Validação Zod
-        console.time('📝 Validação Zod');
-        const parsed = LoginUserSchema.safeParse(loginUserDto);
-        if (!parsed.success) {
-            const validationErrors = parsed.error.errors.map(err => ({
-                field: err.path.join('.'),
-                message: err.message,
-            }));
-            console.timeEnd('📝 Validação Zod');
-            console.timeEnd('🔐 AuthService.login completo');
-            throw new DomainValidationError(validationErrors);
-        }
-        console.timeEnd('📝 Validação Zod');
+        // 2. Buscar e validar usuário
+        const user = await this.findAndValidateUser(email, password_hash);
 
-        // 2️⃣ Busca no banco
-        console.time('🗄️ Busca no banco (Prisma)');
-        const user = await this.prisma.users.findUnique({
-            where: { email },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                role: true,
-                company_id: true,
-                password_hash: true,
-                createdAt: true,
-                is_active: true,
-                company: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        phone: true,
-                        address: true,
-                        logoUrl: true,
-                        companyPlan: {
-                            where: { isActive: true },
-                            select: {
-                                plan: {
-                                    select: {
-                                        id: true,
-                                        name: true,
-                                        description: true,
-                                        module: {
-                                            where: { isActive: true },
-                                            select: {
-                                                permission: true,
-                                                module: {
-                                                    select: {
-                                                        module_key: true,
-                                                        name: true,
-                                                        description: true,
-                                                    },
-                                                },
-                                            },
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-        });
+        // 3. Buscar empresa e plano em paralelo (operação independente)
+        const [company, planDto] = await Promise.all([
+            this.fetchCompany(user.company_id),
+            this.fetchPlanWithCache(user.company_id),
+        ]);
 
-        if (!user) {
-            console.timeEnd('🗄️ Busca no banco (Prisma)');
-            console.timeEnd('🔐 AuthService.login completo');
-            throw new InvalidCredentialsError();
-        }
-
-        if (!user.company) {
-            console.timeEnd('🗄️ Busca no banco (Prisma)');
-            console.timeEnd('🔐 AuthService.login completo');
-            throw new HttpException('Usuário sem empresa vinculada', HttpStatus.FORBIDDEN);
-        }
-        console.timeEnd('🗄️ Busca no banco (Prisma)');
-
-        // 3️⃣ Validação de senha
-        console.time('🔑 Validação de senha (argon2)');
-        const validPassword = await this.validatePassword(user.password_hash, password_hash);
-        if (!validPassword) {
-            console.timeEnd('🔑 Validação de senha (argon2)');
-            console.timeEnd('🔐 AuthService.login completo');
-            throw new InvalidCredentialsError();
-        }
-        console.timeEnd('🔑 Validação de senha (argon2)');
-
-        // 4️⃣ Cache do plano da empresa
-        console.time('🧩 Busca/Cache do plano');
-        const cacheKey = `auth:company:plan:${user.company_id}`;
-        let planDto: PlanDto;
-
-        const cached = await this.redis.get(cacheKey);
-        if (cached) {
-            console.log('🎯 Plano carregado do cache Redis');
-            planDto = JSON.parse(cached);
-        } else {
-            console.log('💾 Plano não encontrado no cache, buscando no banco');
-            const companyPlan = user.company.companyPlan;
-            if (!companyPlan) {
-                console.timeEnd('🧩 Busca/Cache do plano');
-                console.timeEnd('🔐 AuthService.login completo');
-                throw new CompanyWithoutPlanError();
-            }
-
-            // Simplifique: não use Map se não for necessário
-            const modulesDto = companyPlan.plan.module.map(pm => ({
-                module_key: pm.module.module_key,
-                name: pm.module.name,
-                description: pm.module.description ?? undefined,
-                permission: Array.from(new Set(pm.permission)), // remove duplicados
-                isActive: true,
-            }));
-
-            planDto = {
-                id: companyPlan.plan.id,
-                name: companyPlan.plan.name,
-                description: companyPlan.plan.description ?? '',
-                modules: modulesDto,
-            };
-
-            // Cache por 1 hora
-            await this.redis.setex(cacheKey, 3600, JSON.stringify(planDto));
-        }
-        console.timeEnd('🧩 Busca/Cache do plano');
-
-        // 5️⃣ Geração de token
-        console.time('⚡ Geração de token JWT');
+        // 4. Gerar token
         const token = this._createToken(user);
-        console.timeEnd('⚡ Geração de token JWT');
 
-        // 6️⃣ Montagem da resposta
-        console.time('📦 Montagem do UserDto');
-        const userDto: UserDto = {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            company_id: user.company_id,
-            createdAt: user.createdAt,
-            company: {
-                id: user.company.id,
-                name: user.company.name,
-                email: user.company.email ?? '',
-                phone: user.company.phone ?? '',
-                address: user.company.address ?? '',
-                logoUrl: user.company.logoUrl ?? '',
-            },
-            plan: planDto,
-            permissions: planDto.modules.map(m => ({
-                module_key: m.module_key,
-                permissions: m.permission,
-            })),
-        };
-        console.timeEnd('📦 Montagem do UserDto');
+        // 5. Montar resposta
+        const userDto = this.buildUserDto(user, company, planDto);
 
         console.timeEnd('🔐 AuthService.login completo');
 
@@ -195,10 +51,180 @@ export class AuthService {
         };
     }
 
-    private async validatePassword(hashedPassword: string, password_hash: string): Promise<boolean> {
-        return argon2.verify(hashedPassword, password_hash);
+    // ✅ 1. Validação de entrada
+    private async validateInput(dto: LoginUserDto): Promise<LoginUserDto> {
+        console.time('📝 Validação Zod');
+        const result = LoginUserSchema.safeParse(dto);
+        if (!result.success) {
+            const errors = result.error.errors.map(err => ({
+                field: err.path.join('.'),
+                message: err.message,
+            }));
+            console.timeEnd('📝 Validação Zod');
+            console.timeEnd('🔐 AuthService.login completo');
+            throw new DomainValidationError(errors);
+        }
+        console.timeEnd('📝 Validação Zod');
+        return result.data;
     }
 
+    // ✅ 2. Buscar usuário + validar credenciais
+    private async findAndValidateUser(email: string, passwordInput: string): Promise<Users> {
+        console.time('🗄️ Busca Usuário');
+        const user = await this.prisma.users.findUnique({
+            where: { email },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                password_hash: true,
+                role: true,
+                company_id: true,
+                is_active: true,
+                createdAt: true,
+            },
+        });
+
+        if (!user) {
+            console.timeEnd('🗄️ Busca Usuário');
+            console.timeEnd('🔐 AuthService.login completo');
+            throw new InvalidCredentialsError();
+        }
+        console.timeEnd('🗄️ Busca Usuário');
+
+        // 🔑 Validação de senha
+        console.time('🔑 Validação de senha');
+        const isValid = await argon2.verify(user.password_hash, passwordInput);
+        if (!isValid) {
+            console.timeEnd('🔑 Validação de senha');
+            console.timeEnd('🔐 AuthService.login completo');
+            throw new InvalidCredentialsError();
+        }
+        console.timeEnd('🔑 Validação de senha');
+
+        return user;
+    }
+
+    // ✅ 3. Buscar empresa
+    private async fetchCompany(companyId: string) {
+        console.time('🏢 Busca Empresa');
+        const company = await this.prisma.company.findUnique({
+            where: { id: companyId },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                address: true,
+                logoUrl: true,
+            },
+        });
+
+        if (!company) {
+            console.timeEnd('🏢 Busca Empresa');
+            console.timeEnd('🔐 AuthService.login completo');
+            throw new HttpException('Usuário sem empresa vinculada', HttpStatus.FORBIDDEN);
+        }
+        console.timeEnd('🏢 Busca Empresa');
+
+        return company;
+    }
+
+    // ✅ 4. Buscar plano com cache (Redis)
+    // ✅ 4. Buscar plano com cache (Redis)
+    private async fetchPlanWithCache(companyId: string): Promise<PlanDto> {
+        console.time('🧩 Plano + Cache');
+        const cacheKey = `auth:company:plan:${companyId}`;
+
+        const cached = await this.redis.get(cacheKey);
+        if (cached) {
+            console.timeEnd('🧩 Plano + Cache');
+            return JSON.parse(cached);
+        }
+
+        const companyPlan = await this.prisma.companyPlan.findFirst({
+            where: {
+                company_id: companyId,
+                isActive: true
+            },
+            include: {
+                plan: {
+                    select: {
+                        id: true,
+                        name: true,
+                        description: true,
+                        // Inclui os PlanModule ativos e seus módulos
+                        module: {
+                            where: {
+                                isActive: true
+                            },
+                            include: {
+                                module: {  // o modelo Module
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        module_key: true,
+                                        description: true,
+                                    }
+                                }
+                            },
+                            select: {
+                                permission: true, // só precisamos das permissões aqui
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!companyPlan || !companyPlan.plan) {
+            console.timeEnd('🧩 Plano + Cache');
+            console.timeEnd('🔐 AuthService.login completo');
+            throw new CompanyWithoutPlanError();
+        }
+
+        const plan = companyPlan.plan;
+
+        const planDto: PlanDto = {
+            id: plan.id,
+            name: plan.name,
+            description: plan.description ?? '',
+            modules: plan.module.map(pm => ({
+                module_key: pm.module.module_key,
+                name: pm.module.name,
+                description: pm.module.description ?? '',
+                permission: Array.from(new Set(pm.permission)),
+                isActive: true,
+            })),
+        };
+
+        await this.redis.setex(cacheKey, 3600, JSON.stringify(planDto));
+        console.timeEnd('🧩 Plano + Cache');
+        return planDto;
+    }
+
+    // ✅ 5. Montar UserDto
+    private buildUserDto(user: Users, company: any, planDto: PlanDto): UserDto {
+        console.time('📦 Montar UserDto');
+        const userDto: UserDto = {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            company_id: user.company_id,
+            createdAt: user.createdAt,
+            company,
+            plan: planDto,
+            permissions: planDto.modules.map(m => ({
+                module_key: m.module_key,
+                permissions: m.permission,
+            })),
+        };
+        console.timeEnd('📦 Montar UserDto');
+        return userDto;
+    }
+
+    // ✅ 6. Gerar token JWT
     private _createToken(user: Users): { expiresIn: string; accessToken: string } {
         const payload: JwtPayload = {
             sub: user.id,
@@ -207,11 +233,9 @@ export class AuthService {
             role: user.role,
             company_id: user.company_id,
         };
-
-        const accessToken = this.jwtService.sign(payload);
         return {
-            expiresIn: process.env.EXPIRESIN || '3600s',
-            accessToken,
+            accessToken: this.jwtService.sign(payload),
+            expiresIn: process.env.JWT_EXPIRES_IN || '3600s',
         };
     }
 
@@ -231,28 +255,14 @@ export class AuthService {
         if (!user || !user.is_active) {
             throw new HttpException('INVALID_TOKEN', HttpStatus.UNAUTHORIZED);
         }
-
         return user;
     }
 }
 
-// ✅ Schema de validação (mantido)
+// ✅ Schema e DTO
 export const LoginUserSchema = z.object({
     email: z.string().email('Email inválido'),
     password_hash: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres'),
 });
 
 export type LoginUserDto = z.infer<typeof LoginUserSchema>;
-
-// ✅ Interfaces (mantidas)
-export interface RegistrationStatus {
-    success: boolean;
-    message: string;
-    data?: Users;
-}
-
-export interface RegistrationSeederStatus {
-    success: boolean;
-    message: string;
-    data?: UserDto;
-}
