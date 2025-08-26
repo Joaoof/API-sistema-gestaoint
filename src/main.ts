@@ -47,6 +47,10 @@ async function bootstrap() {
 
   // Registra os plugins Fastify em vez de usar app.use()
   await app.register(require('@fastify/compress'));
+  app.get("/health", (req, res)  => {
+    res.status(200).json({ status: "ok" });
+  });
+
   // await app.register(require('@fastify/helmet'), {
   //   contentSecurityPolicy: {
   //     directives: {
@@ -99,5 +103,6 @@ async function bootstrap() {
   console.log(`🚀 Server running on port ${port}`);
 
 }
+
 
 bootstrap();
