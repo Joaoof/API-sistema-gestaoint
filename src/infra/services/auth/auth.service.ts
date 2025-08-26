@@ -38,7 +38,10 @@ export class AuthService {
     ) { }
 
     private async validatePassword(hashedPassword: string, password_hash: string): Promise<boolean> {
+        console.time('argon2-verify');
         return argon2.verify(hashedPassword, password_hash);
+        console.time('argon2-verify');
+
     }
     async login(loginUserDto: LoginUserDto): Promise<any> {
         const { email, password_hash } = loginUserDto;
@@ -83,6 +86,7 @@ export class AuthService {
 
 
         const validPassword = await this.validatePassword(user.password_hash, password_hash);
+
         if (!validPassword) {
             throw new InvalidCredentialsError();
         }
