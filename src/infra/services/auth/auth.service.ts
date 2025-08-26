@@ -22,9 +22,9 @@ export class AuthService {
     ) { }
 
     private async validatePassword(hashedPassword: string, password_hash: string): Promise<boolean> {
-        console.time('argon2-verify');
+        console.time('argon2-verify INITALLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL');
         const isValid = await argon2.verify(hashedPassword, password_hash);
-        console.timeEnd('argon2-verify');
+        console.timeEnd('argon2-verify FINALYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY');
         return isValid;
     }
     async login(loginUserDto: LoginUserDto): Promise<any> {
