@@ -47,8 +47,8 @@ async function bootstrap() {
 
   // Registra os plugins Fastify em vez de usar app.use()
   await app.register(require('@fastify/compress'));
-  app.get("/health", (req, res)  => {
-    res.status(200).json({ status: "ok" });
+  app.getHttpAdapter().getInstance().get("/health", async (request, reply) => {
+    reply.status(200).send({ status: "ok" });
   });
 
   // await app.register(require('@fastify/helmet'), {
