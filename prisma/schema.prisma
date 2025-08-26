@@ -100,6 +100,7 @@ model Company {
   address   String?
   cnpj      String?  @unique
   logoUrl   String?
+  is_active Boolean?  @default(true)
   createdAt DateTime @default(now())
 
   Users       Users[]
@@ -128,6 +129,10 @@ model Users {
   Product Product[]
 
   CashMovement CashMovement[]
+
+  @@index([company_id])
+  @@index([company_id, email])
+
 }
 
 model Plan {
@@ -172,6 +177,8 @@ model CompanyPlan {
   plan    Plan    @relation(fields: [planId], references: [id])
 
   isActive Boolean @default(true)
+
+  @@index([id], name: "idx_company_id")
 }
 
 model CashMovement {

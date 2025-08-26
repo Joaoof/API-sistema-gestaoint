@@ -1,18 +1,22 @@
 // src/infra/cache/redis.service.ts
-import { Injectable } from '@nestjs/common';
-import redisClient from '../cache/config/redis.config';
+import { Inject, Injectable } from '@nestjs/common';
+import { Redis } from 'ioredis';
 
 @Injectable()
 export class RedisService {
+    constructor(
+        @Inject('REDIS_CLIENT') private readonly redis: Redis, // ✅ Correto
+    ) { }
+    
     async get(key: string): Promise<string | null> {
-        return redisClient.get(key);
+        return this.redis.get(key);
     }
 
     async setex(key: string, ttl: number, value: string): Promise<void> {
-        await redisClient.setex(key, ttl, value);
+        await this.redis.setex(key, ttl, value);
     }
 
     async del(key: string): Promise<void> {
-        await redisClient.del(key);
+        await this.redis.del(key);
     }
 }

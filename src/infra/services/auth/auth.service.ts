@@ -1,139 +1,232 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { JwtService } from "@nestjs/jwt";
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from 'src/auth/jwt.strategy';
 import { PrismaService } from 'prisma/prisma.service';
-import { Users } from "@prisma/client"; // ou do seu DTO, se for diferente
-import { z } from "zod"
+import { Users } from '@prisma/client';
+import { z } from 'zod';
 import * as argon2 from 'argon2';
-import { ObjectType, Field } from '@nestjs/graphql';
-import { PlanDto } from 'src/infra/graphql/dto/plan.dto';
-import { CompanyDto } from 'src/infra/graphql/dto/company.dto';
-import { UnauthorizedError } from 'src/core/exceptions/api.exception';
-import { ForbiddenError } from '@nestjs/apollo';
 import { InvalidCredentialsError } from 'src/core/exceptions/invalid-credentials.exception';
 import { CompanyWithoutPlanError } from 'src/core/exceptions/company-without-plan.exception';
 import { DomainValidationError } from 'src/core/exceptions/domain.exception';
 import { UserDto } from 'src/infra/graphql/dto/user.dto';
-
-type UserPayload = {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    company_id: string;
-};
-
-export const LoginUserSchema = z.object({
-    email: z.string().email("Email inválido"),
-    password_hash: z.string().min(8, "A senha deve ter pelo menos 8 caracteres"),
-})
-
-export type LoginUserDto = z.infer<typeof LoginUserSchema>
+import { PlanDto } from 'src/infra/graphql/dto/plan.dto';
+import { Redis } from 'ioredis';
+import { REDIS_CLIENT } from 'src/infra/cache/redis.constants';
 
 @Injectable()
 export class AuthService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly jwtService: JwtService,
+        @Inject(REDIS_CLIENT) private readonly redis: Redis,
     ) { }
 
+<<<<<<< HEAD
     private async validatePassword(hashedPassword: string, password_hash: string): Promise<boolean> {
         console.time('argon2-verify');
         return argon2.verify(hashedPassword, password_hash);
         console.time('argon2-verify');
 
     }
+=======
+>>>>>>> 81e101f2db051018d94ea3fe35bb95dbe465d54b
     async login(loginUserDto: LoginUserDto): Promise<any> {
-        const { email, password_hash } = loginUserDto;
-        const parsed = LoginUserSchema.safeParse(loginUserDto);
-        if (!parsed.success) {
-            const validationErrors = parsed.error.errors.map(err => ({
-                field: err.path.join('.'), // ex: "email" ou "password_hash"
+        console.time('🔐 AuthService.login completo');
+
+        // 1. Validar entrada
+        const { email, password_hash } = await this.validateInput(loginUserDto);
+
+        // 2. Buscar e validar usuário
+        const user = await this.findAndValidateUser(email, password_hash);
+
+        // 3. Buscar empresa e plano em paralelo (operação independente)
+        const [company, planDto] = await Promise.all([
+            this.fetchCompany(user.company_id),
+            this.fetchPlanWithCache(user.company_id),
+        ]);
+
+        // 4. Gerar token
+        const token = this._createToken(user);
+
+        // 5. Montar resposta
+        const userDto = this.buildUserDto(user, company, planDto);
+
+        console.timeEnd('🔐 AuthService.login completo');
+
+        return {
+            accessToken: token.accessToken,
+            expiresIn: process.env.JWT_EXPIRES_IN || '3600s',
+            user: userDto,
+        };
+    }
+
+    // ✅ 1. Validação de entrada
+    private async validateInput(dto: LoginUserDto): Promise<LoginUserDto> {
+        console.time('📝 Validação Zod');
+        const result = LoginUserSchema.safeParse(dto);
+        if (!result.success) {
+            const errors = result.error.errors.map(err => ({
+                field: err.path.join('.'),
                 message: err.message,
             }));
-
-            throw new DomainValidationError(validationErrors); // ✅
+            console.timeEnd('📝 Validação Zod');
+            console.timeEnd('🔐 AuthService.login completo');
+            throw new DomainValidationError(errors);
         }
+        console.timeEnd('📝 Validação Zod');
+        return result.data;
+    }
 
+    // ✅ 2. Buscar usuário + validar credenciais
+    private async findAndValidateUser(email: string, passwordInput: string): Promise<Users> {
+        console.time('🗄️ Busca Usuário');
         const user = await this.prisma.users.findUnique({
             where: { email },
-            include: {
-                company: {
-                    include: {
-                        companyPlan: {
-                            where: { isActive: true },
-                            include: {
-                                plan: {
-                                    include: {
-                                        module: {
-                                            where: { isActive: true },
-                                            include: {
-                                                module: true,
-                                            },
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                password_hash: true,
+                role: true,
+                company_id: true,
+                is_active: true,
+                createdAt: true,
             },
         });
+
         if (!user) {
+            console.timeEnd('🗄️ Busca Usuário');
+            console.timeEnd('🔐 AuthService.login completo');
             throw new InvalidCredentialsError();
         }
-        if (!user.company) throw new ForbiddenError("Usuário sem empresa vinculada");
+        console.timeEnd('🗄️ Busca Usuário');
 
+<<<<<<< HEAD
 
         const validPassword = await this.validatePassword(user.password_hash, password_hash);
 
         if (!validPassword) {
+=======
+        // 🔑 Validação de senha
+        console.time('🔑 Validação de senha');
+        const isValid = await argon2.verify(user.password_hash, passwordInput);
+        if (!isValid) {
+            console.timeEnd('🔑 Validação de senha');
+            console.timeEnd('🔐 AuthService.login completo');
+>>>>>>> 81e101f2db051018d94ea3fe35bb95dbe465d54b
             throw new InvalidCredentialsError();
         }
+        console.timeEnd('🔑 Validação de senha');
 
+        return user;
+    }
 
-        const companyPlan = user.company.companyPlan;
-        if (!companyPlan?.plan) {
+    // ✅ 3. Buscar empresa
+    private async fetchCompany(companyId: string) {
+        console.time('🏢 Busca Empresa');
+        const cacheKey = `auth:company:basic:${companyId}`;
+
+        const cached = await this.redis.get(cacheKey);
+        if (cached) {
+            console.timeEnd('🏢 Busca Empresa');
+            return JSON.parse(cached);
+        }
+
+        const company = await this.prisma.company.findUnique({
+            where: { id: companyId },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                address: true,
+                logoUrl: true,
+            },
+        });
+
+        if (!company) {
+            console.timeEnd('🏢 Busca Empresa');
+            throw new HttpException('Empresa não encontrada', HttpStatus.FORBIDDEN);
+        }
+
+        await this.redis.setex(cacheKey, 3600, JSON.stringify(company));
+        console.log(`✅ Empresa ${companyId} salva no cache`);
+
+        console.timeEnd('🏢 Busca Empresa');
+        return company;
+    }
+
+    // ✅ 4. Buscar plano com cache (Redis)
+    private async fetchPlanWithCache(companyId: string): Promise<PlanDto> {
+        console.time('🧩 Plano + Cache');
+        const cacheKey = `auth:company:plan:${companyId}`;
+
+        const cached = await this.redis.get(cacheKey);
+        if (cached) {
+            console.log(`✅ CACHE HIT: Plano carregado do Redis para empresa ${companyId}`);
+            console.timeEnd('🧩 Plano + Cache');
+            return JSON.parse(cached);
+        }
+
+        console.log(`❌ CACHE MISS: Buscando plano no banco para empresa ${companyId}`);
+
+        const companyPlan = await this.prisma.companyPlan.findFirst({
+            where: {
+                company_id: companyId,
+                isActive: true
+            },
+            include: {
+                plan: {
+                    include: {
+                        module: {
+                            where: {
+                                isActive: true
+                            },
+                            include: {
+                                module: {  // o modelo `Module`
+                                    select: {
+                                        module_key: true,
+                                        name: true,
+                                        description: true,
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!companyPlan || !companyPlan.plan) {
+            console.timeEnd('🧩 Plano + Cache');
             throw new CompanyWithoutPlanError();
         }
 
         const plan = companyPlan.plan;
 
-        const permissions = plan.module.map(pm => ({
-            module_key: pm.module.module_key,
-            permissions: pm.permission, // ex: ['READ', 'WRITE']
-        }));
-
-        const moduleMap = new Map<string, typeof modulesDto[0]>();
-        for (const pm of plan.module) {
-            const key = pm.module.module_key;
-
-            if (!moduleMap.has(key)) {
-                moduleMap.set(key, {
-                    module_key: key,
-                    name: pm.module.name,
-                    description: pm.module.description ?? undefined,
-                    permission: [...pm.permission],
-                    isActive: pm.isActive,
-                });
-            } else {
-                const existing = moduleMap.get(key)!;
-                existing.permission = Array.from(new Set([...existing.permission, ...pm.permission]));
-            }
-        }
-
-        const modulesDto = Array.from(moduleMap.values());
-
-
         const planDto: PlanDto = {
             id: plan.id,
             name: plan.name,
             description: plan.description ?? '',
-            modules: modulesDto,
+            modules: plan.module.map(pm => ({
+                module_key: pm.module.module_key,
+                name: pm.module.name,
+                description: pm.module.description ?? '',
+                permission: Array.from(new Set(pm.permission)),
+                isActive: true,
+            })),
         };
 
-        const token = this._createToken(user);
+        await this.redis.setex(cacheKey, 3600, JSON.stringify(planDto));
+        console.log(`✅ Plano salvo no Redis: ${cacheKey} (TTL: 3600s)`);
 
+        console.timeEnd('🧩 Plano + Cache');
+        return planDto;
+    }
+
+    // ✅ 5. Montar UserDto
+    private buildUserDto(user: Users, company: any, planDto: PlanDto): UserDto {
+        console.time('📦 Montar UserDto');
         const userDto: UserDto = {
             id: user.id,
             name: user.name,
@@ -141,25 +234,18 @@ export class AuthService {
             role: user.role,
             company_id: user.company_id,
             createdAt: user.createdAt,
-            company: {
-                id: user.company.id,
-                name: user.company.name,
-                email: user.company.email ?? '',
-                phone: user.company.phone ?? '',
-                address: user.company.address ?? '',
-                logoUrl: user.company.logoUrl ?? ''
-            },
+            company,
             plan: planDto,
-            permissions
+            permissions: planDto.modules.map(m => ({
+                module_key: m.module_key,
+                permissions: m.permission,
+            })),
         };
-
-        return {
-            accessToken: token.accessToken,
-            expiresIn: process.env.JWT_EXPIRES_IN || '3600s',
-            user: userDto
-        };
+        console.timeEnd('📦 Montar UserDto');
+        return userDto;
     }
 
+    // ✅ 6. Gerar token JWT
     private _createToken(user: Users): { expiresIn: string; accessToken: string } {
         const payload: JwtPayload = {
             sub: user.id,
@@ -168,16 +254,13 @@ export class AuthService {
             role: user.role,
             company_id: user.company_id,
         };
-
-        const accessToken = this.jwtService.sign(payload);
-
         return {
-            expiresIn: process.env.EXPIRESIN || '3600s',
-            accessToken,
+            accessToken: this.jwtService.sign(payload),
+            expiresIn: process.env.JWT_EXPIRES_IN || '3600s',
         };
     }
 
-    async validateUser(payload: JwtPayload): Promise<UserPayload> {
+    async validateUser(payload: JwtPayload): Promise<any> {
         const user = await this.prisma.users.findUnique({
             where: { id: payload.sub },
             select: {
@@ -186,29 +269,21 @@ export class AuthService {
                 email: true,
                 role: true,
                 company_id: true,
-                createdAt: true,
                 is_active: true,
             },
         });
-        console.log(user);
 
-
-        if (!user) {
-            throw new HttpException("INVALID_TOKEN", HttpStatus.UNAUTHORIZED);
+        if (!user || !user.is_active) {
+            throw new HttpException('INVALID_TOKEN', HttpStatus.UNAUTHORIZED);
         }
-
         return user;
     }
 }
 
-export interface RegistrationStatus {
-    success: boolean;
-    message: string;
-    data?: Users;
-}
+// ✅ Schema e DTO
+export const LoginUserSchema = z.object({
+    email: z.string().email('Email inválido'),
+    password_hash: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres'),
+});
 
-export interface RegistrationSeederStatus {
-    success: boolean;
-    message: string;
-    data?: UserDto;
-}
+export type LoginUserDto = z.infer<typeof LoginUserSchema>;

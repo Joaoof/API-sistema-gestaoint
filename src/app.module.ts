@@ -57,8 +57,14 @@ import { RedisModule } from './infra/cache/redis.module';
       redis: {
         host: process.env.REDIS_HOST,
         port: Number(process.env.REDIS_PORT),
-        username: process.env.REDIS_USERNAME,   // opcional
         password: process.env.REDIS_PASSWORD,
+        tls: {},
+        maxRetriesPerRequest: null, // 🔑 evita esse erro
+        enableReadyCheck: false,    // 🔑 opcional, acelera conexão
+        retryStrategy(times) {
+          // tenta reconectar exponencialmente, até 30s
+          return Math.min(times * 50, 30000);
+        },
       },
     }),
 
@@ -74,6 +80,7 @@ import { RedisModule } from './infra/cache/redis.module';
     AuthModule,
     CompanyModule,
     CashMovementModule,
+    RedisModule
   ],
   controllers: [AppController],
   providers: [AppService,

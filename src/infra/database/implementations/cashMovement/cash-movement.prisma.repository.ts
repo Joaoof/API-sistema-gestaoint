@@ -5,8 +5,6 @@ import { DashboardMovement } from 'src/core/entities/dashboard-movement.entity';
 import { CashMovementRepository } from 'src/core/ports/cash-movement.repository';
 import { RedisService } from 'src/infra/cache/redis.service';
 import { FindAllCashMovementInput } from 'src/infra/graphql/dto/find-all-cash-movement.input';
-import { startOfDay, endOfDay, toDate } from 'date-fns';
-import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 
 @Injectable()
 export class PrismaCashMovementRepository implements CashMovementRepository {

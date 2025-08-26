@@ -7,12 +7,12 @@ import { FindCompanyByIdUseCase } from 'src/core/use-cases/company/find-company-
 
 import { CompaniesResolver } from 'src/infra/graphql/resolvers/companies.resolver';
 import { RedisService } from 'src/infra/cache/redis.service';
+import { RedisModule } from 'src/infra/cache/redis.module';
+import { PrismaModule } from 'prisma/prisma.module';
 
 @Module({
-    imports: [],
+    imports: [PrismaModule, RedisModule],
     providers: [
-        PrismaService,
-        RedisService,
         {
             provide: 'CompaniesRepository',
             useClass: PrismaCompaniesRepository,
