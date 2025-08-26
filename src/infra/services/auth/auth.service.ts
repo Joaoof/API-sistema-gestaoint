@@ -21,15 +21,12 @@ export class AuthService {
         @Inject(REDIS_CLIENT) private readonly redis: Redis,
     ) { }
 
-<<<<<<< HEAD
     private async validatePassword(hashedPassword: string, password_hash: string): Promise<boolean> {
         console.time('argon2-verify');
-        return argon2.verify(hashedPassword, password_hash);
-        console.time('argon2-verify');
-
+        const isValid = await argon2.verify(hashedPassword, password_hash);
+        console.timeEnd('argon2-verify');
+        return isValid;
     }
-=======
->>>>>>> 81e101f2db051018d94ea3fe35bb95dbe465d54b
     async login(loginUserDto: LoginUserDto): Promise<any> {
         console.time('🔐 AuthService.login completo');
 
@@ -101,19 +98,10 @@ export class AuthService {
         }
         console.timeEnd('🗄️ Busca Usuário');
 
-<<<<<<< HEAD
 
-        const validPassword = await this.validatePassword(user.password_hash, password_hash);
+        const validPassword = await this.validatePassword(user.password_hash, passwordInput);
 
         if (!validPassword) {
-=======
-        // 🔑 Validação de senha
-        console.time('🔑 Validação de senha');
-        const isValid = await argon2.verify(user.password_hash, passwordInput);
-        if (!isValid) {
-            console.timeEnd('🔑 Validação de senha');
-            console.timeEnd('🔐 AuthService.login completo');
->>>>>>> 81e101f2db051018d94ea3fe35bb95dbe465d54b
             throw new InvalidCredentialsError();
         }
         console.timeEnd('🔑 Validação de senha');
