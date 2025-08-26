@@ -22,7 +22,6 @@ export class AuthService {
     ) { }
 
     private async validatePassword(hashedPassword: string, password_hash: string): Promise<boolean> {
-        console.time('🔑 Validação de senha');
         const isValid = await argon2.verify(hashedPassword, password_hash);
         console.time('🔑 Validação de senha');
 
