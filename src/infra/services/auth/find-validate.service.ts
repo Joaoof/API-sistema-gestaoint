@@ -11,6 +11,7 @@ export class FindValidateUser {
             where: { email },
             select: {
                 id: true,
+                email: true,
                 password_hash: true,
             }
         })
