@@ -23,7 +23,7 @@ export class UserResponseDto {
     @Field(() => Boolean)
     is_active: boolean;
 
-    @Field(() => [PermissionDto], { nullable: 'items' })    
+    @Field(() => [PermissionDto], { nullable: 'items' })
     permissions: PermissionDto[];
 
     // ✅ ADICIONE A LINHA ABAIXO
@@ -33,11 +33,11 @@ export class UserResponseDto {
     static fromDomain(user: User): UserResponseDto {
         const dto = new UserResponseDto();
         dto.id = user.id;
-        dto.name = user.name;
-        dto.email = user.email;
-        dto.role = user.role;
+        dto.name = user.name ?? '';
+        dto.email = user.email ?? '';
+        dto.role = user.role ?? '';
         dto.company_id = user.company_id;
-        dto.is_active = user.is_active;
+        dto.is_active = user.is_active ?? true;
         dto.permissions = []; // será preenchido no resolver
         dto.plan = undefined; // será preenchido no resolver
         return dto;

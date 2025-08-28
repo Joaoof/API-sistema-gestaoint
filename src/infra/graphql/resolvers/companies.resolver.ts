@@ -15,7 +15,7 @@ export class CompaniesResolver {
 
         return {
             id: company.id,
-            name: company.name,
+            name: company.name ?? '',
             email: company.email,
             phone: company.phone,
             address: company.address,
