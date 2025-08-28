@@ -16,6 +16,7 @@ export class FindValidateUser {
                     id: true,
                     email: true,
                     password_hash: true,
+                    company_id: true,
                 }
             })
 

@@ -24,6 +24,9 @@ export class GetCompanyService {
             }
         })
 
+        console.log(company);
+        
+
         if (!company) {
             throw new HttpException("Empresa não encontrada", 403);
         }
