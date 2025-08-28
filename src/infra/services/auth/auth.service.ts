@@ -22,11 +22,12 @@ export class AuthService {
     ) { }
 
     private async validatePassword(hashedPassword: string, password_hash: string): Promise<boolean> {
+        console.time('🔑 Validação de senha');   // abre ANTES
         const isValid = await argon2.verify(hashedPassword, password_hash);
-        console.time('🔑 Validação de senha');
-
+        console.timeEnd('🔑 Validação de senha'); // fecha DEPOIS
         return isValid;
     }
+
 
     async login(loginUserDto: LoginUserDto): Promise<any> {
         console.time('🔐 AuthService.login completo');
