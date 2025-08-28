@@ -118,7 +118,13 @@ export class AuthService {
             role: user.role,
             company_id: user.company_id,
         };
+
+        console.log('Payload do JWT:', payload);
+
         const accessToken = this.jwtService.sign(payload);
+
+        console.log('Access Token gerado:', accessToken);
+
         return {
             accessToken,
             expiresIn: process.env.JWT_EXPIRES_IN || '3600s',
