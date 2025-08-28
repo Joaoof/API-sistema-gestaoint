@@ -12,12 +12,17 @@ import { UserDto } from 'src/infra/graphql/dto/user.dto';
 import { PlanDto } from 'src/infra/graphql/dto/plan.dto';
 import { Redis } from 'ioredis';
 import { REDIS_CLIENT } from 'src/infra/cache/redis.constants';
+import { User } from 'src/core/entities/user.entity';
+import { ValidatePassword } from './validate-password.service';
+import { ValidateInputZod } from './validate-zod.service';
 
 @Injectable()
 export class AuthService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly jwtService: JwtService,
+        private readonly validatePassword: ValidatePassword,
+        private readonly validateInputZod: ValidateInputZod,
         @Inject(REDIS_CLIENT) private readonly redis: Redis,
     ) { }
 
@@ -31,20 +36,8 @@ export class AuthService {
         return diff;
     }
 
-    private async validatePassword(hashedPassword: string, password_hash: string): Promise<boolean> {
-        const t = this.time('🔑 Validação de senha');
-        const isValid = await argon2.verify(hashedPassword, password_hash);
-        this.timeEnd(t);
-        return isValid;
-    }
-
     async login(loginUserDto: LoginUserDto): Promise<any> {
-        const tTotal = this.time('🔐 AuthService.login completo (total)');
-
-        // 1. Validar entrada
-        const tValidate = this.time('📝 Validação Zod');
-        const { email, password_hash } = await this.validateInput(loginUserDto);
-        this.timeEnd(tValidate);
+        const { email, password_hash } = await this.validateInputZod.isValid(loginUserDto);
 
         // 2. Buscar e validar usuário
         const tUser = this.time('🗄️ Busca Usuário + Validação');
@@ -54,8 +47,8 @@ export class AuthService {
         // 3. Buscar empresa e plano em paralelo (operação independente)
         const tParallel = this.time('🔀 Paralelo: busca empresa + plano');
         const [company, planDto] = await Promise.all([
-            this.fetchCompany(user.company_id),
-            this.fetchPlanWithCache(user.company_id),
+            this.fetchCompany(user.company_id ?? ''),
+            this.fetchPlanWithCache(user.company_id ?? ''),
         ]);
         this.timeEnd(tParallel);
 
@@ -78,40 +71,16 @@ export class AuthService {
         };
         this.timeEnd(tReturn);
 
-        this.timeEnd(tTotal);
         return response;
     }
-
-    // 1. Validação de entrada
-    private async validateInput(dto: LoginUserDto): Promise<LoginUserDto> {
-        const t = this.time('📝 Validação Zod (interno)');
-        const result = LoginUserSchema.safeParse(dto);
-        if (!result.success) {
-            const errors = result.error.errors.map((err) => ({
-                field: err.path.join('.'),
-                message: err.message,
-            }));
-            this.timeEnd(t);
-            throw new DomainValidationError(errors);
-        }
-        this.timeEnd(t);
-        return result.data;
-    }
-
     // 2. Buscar usuário + validar credenciais
-    private async findAndValidateUser(email: string, passwordInput: string): Promise<Users> {
+    private async findAndValidateUser(email: string, passwordInput: string): Promise<any> {
         const tFind = this.time('🗄️ Prisma.findUnique user');
         const user = await this.prisma.users.findUnique({
             where: { email },
             select: {
                 id: true,
-                name: true,
-                email: true,
                 password_hash: true,
-                role: true,
-                company_id: true,
-                is_active: true,
-                createdAt: true,
             },
         });
         this.timeEnd(tFind);
@@ -120,7 +89,7 @@ export class AuthService {
             throw new InvalidCredentialsError();
         }
 
-        const validPassword = await this.validatePassword(user.password_hash, passwordInput);
+        const validPassword = await this.validatePassword.isValid(user.password_hash, passwordInput);
 
         if (!validPassword) {
             throw new InvalidCredentialsError();
