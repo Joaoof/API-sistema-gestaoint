@@ -4,26 +4,25 @@ import { JwtPayload } from 'src/auth/jwt.strategy';
 import { PrismaService } from 'prisma/prisma.service';
 import { Users } from '@prisma/client';
 import { z } from 'zod';
-import * as argon2 from 'argon2';
-import { InvalidCredentialsError } from 'src/core/exceptions/invalid-credentials.exception';
 import { CompanyWithoutPlanError } from 'src/core/exceptions/company-without-plan.exception';
-import { DomainValidationError } from 'src/core/exceptions/domain.exception';
 import { UserDto } from 'src/infra/graphql/dto/user.dto';
 import { PlanDto } from 'src/infra/graphql/dto/plan.dto';
 import { Redis } from 'ioredis';
 import { REDIS_CLIENT } from 'src/infra/cache/redis.constants';
-import { User } from 'src/core/entities/user.entity';
-import { ValidatePassword } from './validate-password.service';
 import { ValidateInputZod } from './validate-zod.service';
+import { FindValidateUser } from './find-validate.service';
+import { GetCompanyService } from './get-company.service';
+import { GetPlanService } from './get-plan.service';
 
 @Injectable()
 export class AuthService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly jwtService: JwtService,
-        private readonly validatePassword: ValidatePassword,
         private readonly validateInputZod: ValidateInputZod,
-        @Inject(REDIS_CLIENT) private readonly redis: Redis,
+        private readonly findAndValidateUser: FindValidateUser,
+        private readonly fetchCompany: GetCompanyService,
+        private readonly fetchPlan: GetPlanService,
     ) { }
 
     // Helper simples pra logar timings (sem warnings de label)
@@ -38,28 +37,40 @@ export class AuthService {
 
     async login(loginUserDto: LoginUserDto): Promise<any> {
         const { email, password_hash } = await this.validateInputZod.isValid(loginUserDto);
+        const user = await this.findAndValidateUser.isValid(email, password_hash);
 
-        // 2. Buscar e validar usuário
-        const tUser = this.time('🗄️ Busca Usuário + Validação');
-        const user = await this.findAndValidateUser(email, password_hash);
-        this.timeEnd(tUser);
-
-        // 3. Buscar empresa e plano em paralelo (operação independente)
-        const tParallel = this.time('🔀 Paralelo: busca empresa + plano');
         const [company, planDto] = await Promise.all([
-            this.fetchCompany(user.company_id ?? ''),
-            this.fetchPlanWithCache(user.company_id ?? ''),
+            this.fetchCompany.getCompanyById(user.company_id ?? ''),
+            this.fetchPlan.getPlanByCompanyId(user.company_id ?? ''),
         ]);
-        this.timeEnd(tParallel);
 
         // 4. Gerar token (medir separadamente)
         const tJwt = this.time('🔒 JWT sign');
-        const token = this._createToken(user);
+        const token = this._createToken({
+            id: user.id,
+            name: user.name ?? '',
+            email: user.email ?? '',
+            role: user.role ?? '',
+            company_id: user.company_id ?? '',
+            createdAt: user.created_at ?? new Date(),
+            is_active: user.is_active ?? true,
+            password_hash: user.password_hash ?? '',
+
+        });
         this.timeEnd(tJwt);
 
         // 5. Montar resposta
         const tDto = this.time('📦 Montar UserDto');
-        const userDto = this.buildUserDto(user, company, planDto);
+        const userDto = this.buildUserDto({
+            id: user.id,
+            name: user.name ?? '',
+            email: user.email ?? '',
+            role: user.role ?? '',
+            company_id: user.company_id ?? '',
+            createdAt: user.created_at ?? new Date(),
+            is_active: user.is_active ?? true,
+            password_hash: user.password_hash ?? '',
+        }, company, planDto);
         this.timeEnd(tDto);
 
         // medir serialização/return (caso GraphQL/Nest faça algo custoso)
@@ -73,146 +84,6 @@ export class AuthService {
 
         return response;
     }
-    // 2. Buscar usuário + validar credenciais
-    private async findAndValidateUser(email: string, passwordInput: string): Promise<any> {
-        const tFind = this.time('🗄️ Prisma.findUnique user');
-        const user = await this.prisma.users.findUnique({
-            where: { email },
-            select: {
-                id: true,
-                password_hash: true,
-            },
-        });
-        this.timeEnd(tFind);
-
-        if (!user) {
-            throw new InvalidCredentialsError();
-        }
-
-        const validPassword = await this.validatePassword.isValid(user.password_hash, passwordInput);
-
-        if (!validPassword) {
-            throw new InvalidCredentialsError();
-        }
-        return user;
-    }
-
-    // 3. Buscar empresa
-    private async fetchCompany(companyId: string) {
-        const t = this.time('🏢 Busca Empresa (cache+db)');
-        const cacheKey = `auth:company:basic:${companyId}`;
-
-        const tRedisGet = this.time('🏷️ Redis GET (company)');
-        const cached = await this.redis.get(cacheKey);
-        this.timeEnd(tRedisGet);
-
-        if (cached) {
-            console.log(`✅ CACHE HIT: Company ${companyId}`);
-            this.timeEnd(t);
-            return JSON.parse(cached);
-        }
-
-        const tDb = this.time('🏢 Prisma.findUnique company (db)');
-        const company = await this.prisma.company.findUnique({
-            where: { id: companyId },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                phone: true,
-                address: true,
-                logoUrl: true,
-            },
-        });
-        this.timeEnd(tDb);
-
-        if (!company) {
-            throw new HttpException('Empresa não encontrada', HttpStatus.FORBIDDEN);
-        }
-
-        const tRedisSet = this.time('🏷️ Redis SETEX (company)');
-        await this.redis.setex(cacheKey, 3600, JSON.stringify(company));
-        this.timeEnd(tRedisSet);
-        console.log(`✅ Empresa ${companyId} salva no cache`);
-
-        this.timeEnd(t);
-        return company;
-    }
-
-    // 4. Buscar plano com cache (Redis)
-    private async fetchPlanWithCache(companyId: string): Promise<PlanDto> {
-        const t = this.time('🧩 Plano + Cache (total)');
-        const cacheKey = `auth:company:plan:${companyId}`;
-
-        const tRedisGet = this.time('🏷️ Redis GET (plan)');
-        const cached = await this.redis.get(cacheKey);
-        this.timeEnd(tRedisGet);
-
-        if (cached) {
-            console.log(`✅ CACHE HIT: Plano carregado do Redis para empresa ${companyId}`);
-            this.timeEnd(t);
-            return JSON.parse(cached);
-        }
-
-        console.log(`❌ CACHE MISS: Buscando plano no banco para empresa ${companyId}`);
-
-        const tDb = this.time('🧩 Prisma.findFirst companyPlan (db)');
-        const companyPlan = await this.prisma.companyPlan.findFirst({
-            where: {
-                company_id: companyId,
-                isActive: true,
-            },
-            include: {
-                plan: {
-                    include: {
-                        module: {
-                            where: {
-                                isActive: true,
-                            },
-                            include: {
-                                module: {
-                                    select: {
-                                        module_key: true,
-                                        name: true,
-                                        description: true,
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-        });
-        this.timeEnd(tDb);
-
-        if (!companyPlan || !companyPlan.plan) {
-            this.timeEnd(t);
-            throw new CompanyWithoutPlanError();
-        }
-
-        const plan = companyPlan.plan;
-
-        const planDto: PlanDto = {
-            id: plan.id,
-            name: plan.name,
-            description: plan.description ?? '',
-            modules: plan.module.map((pm) => ({
-                module_key: pm.module.module_key,
-                name: pm.module.name,
-                description: pm.module.description ?? '',
-                permission: Array.from(new Set(pm.permission)),
-                isActive: true,
-            })),
-        };
-
-        const tRedisSet = this.time('🏷️ Redis SETEX (plan)');
-        await this.redis.setex(cacheKey, 3600, JSON.stringify(planDto));
-        this.timeEnd(tRedisSet);
-        console.log(`✅ Plano salvo no Redis: ${cacheKey} (TTL: 3600s)`);
-
-        this.timeEnd(t);
-        return planDto;
-    }
 
     // 5. Montar UserDto
     private buildUserDto(user: Users, company: any, planDto: PlanDto): UserDto {
@@ -223,7 +94,7 @@ export class AuthService {
             email: user.email,
             role: user.role,
             company_id: user.company_id,
-            createdAt: user.createdAt,
+            createdAt: user.createdAt, // Use created_at from Users type
             company,
             plan: planDto,
             permissions: planDto.modules.map((m) => ({
