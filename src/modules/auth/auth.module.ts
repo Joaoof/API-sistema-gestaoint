@@ -8,23 +8,28 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from 'src/auth/jwt.strategy';
 import { PrismaService } from 'prisma/prisma.service';
 import { RedisModule } from 'src/infra/cache/redis.module';
-
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
     imports: [
-        UserModule, // onde está seu findById ou findByEmail
-        PassportModule,
+        ConfigModule.forRoot({ isGlobal: true }), // garante que process.env funciona
+        UserModule,
+        PassportModule.register({ defaultStrategy: 'jwt' }),
         RedisModule,
-        JwtModule.register({
-            secret: process.env.JWT_SECRET || 'secreto',
-            signOptions: { expiresIn: '1d' },
+        JwtModule.registerAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: async (config: ConfigService) => ({
+                secret: config.get<string>('JWT_SECRET') || 'secreto_super_forte', // fallback
+                signOptions: { expiresIn: config.get<string>('JWT_EXPIRES_IN') || '1d' },
+            }),
         }),
     ],
     providers: [
         AuthResolver,
         AuthService,
         PrismaService,
-        JwtStrategy
+        JwtStrategy,
     ],
     exports: [AuthService],
 })
