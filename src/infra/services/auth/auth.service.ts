@@ -106,8 +106,6 @@ export class AuthService {
         if (!validPassword) {
             throw new InvalidCredentialsError();
         }
-        console.timeEnd('🔑 Validação de senha');
-
         return user;
     }
 
