@@ -16,25 +16,17 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { QueuesModule } from './infra/queues/queue.module';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { GraphQLExceptionFilter } from './infra/filters/gql-exception.filter';
 import { CompanyModule } from './modules/company/company.module';
 import { CashMovementModule } from './modules/cashMovement/cash-movement.module';
 import { RedisModule } from './infra/cache/redis.module';
-import { JwtModule } from '@nestjs/jwt';
 
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true
-    }),
-    JwtModule.registerAsync({
-      useFactory: async (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '1h' },
-      }),
-      inject: [ConfigService],
     }),
     GraphQLModule.forRoot({
       driver: ApolloDriver,
