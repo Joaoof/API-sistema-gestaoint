@@ -1,10 +1,11 @@
-import { Inject } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { PrismaService } from "prisma/prisma.service";
 import { CompanyWithoutPlanError } from "src/core/exceptions/company-without-plan.exception";
 import { REDIS_CLIENT } from "src/infra/cache/redis.constants";
 import { RedisService } from "src/infra/cache/redis.service";
 import { PlanDto } from "src/infra/graphql/dto/plan.dto";
 
+@Injectable()
 export class GetPlanService {
     constructor(@Inject(REDIS_CLIENT) private readonly redis: RedisService, private readonly prisma: PrismaService) { }
 

@@ -38,6 +38,8 @@ export class AuthService {
     async login(loginUserDto: LoginUserDto): Promise<any> {
         const { email, password_hash } = await this.validateInputZod.isValid(loginUserDto);
         const user = await this.findAndValidateUser.isValid(email, password_hash);
+        console.log('✅ Usuário validado:', user);
+
 
         const [company, planDto] = await Promise.all([
             this.fetchCompany.getCompanyById(user.company_id ?? ''),

@@ -1,8 +1,9 @@
-import { HttpException } from "@nestjs/common";
+import { HttpException, Injectable } from "@nestjs/common";
 import { PrismaService } from "prisma/prisma.service";
 import { Company } from "src/core/entities/company.entity";
 import { RedisService } from "src/infra/cache/redis.service";
 
+@Injectable()
 export class GetCompanyService {
     constructor(private readonly prisma: PrismaService, private readonly redis: RedisService) { }
 
