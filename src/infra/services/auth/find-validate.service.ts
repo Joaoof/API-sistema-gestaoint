@@ -15,6 +15,9 @@ export class FindValidateUser {
             }
         })
 
+        console.log(user);
+        
+
         if (!user) {
             throw new InvalidCredentialsError();
         }
