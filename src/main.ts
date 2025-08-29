@@ -4,6 +4,7 @@ import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify
 import { CategoriesSchemas, ProductSchemas } from './shared/swagger/utils';
 import { GraphQLExceptionFilter } from './infra/filters/gql-exception.filter';
 import { config } from 'dotenv';
+import { createServer } from 'http';
 
 async function bootstrap() {
   config();
@@ -25,6 +26,19 @@ async function bootstrap() {
       methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
     }
   });
+
+  const healthServer = createServer((req, res) => {
+    if (req.url === '/health' && req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'ok' }));
+    } else {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Not Found' }));
+    }
+  }).listen(Number(process.env.PORT), '0.0.0.0'); // Escuta em 0.0.0.0 para ser acessível externamente
+
+  console.log(`✅ Health check server running on http://0.0.0.0:${process.env.PORT}/health`);
+
   app.useGlobalFilters(new GraphQLExceptionFilter());
 
 
@@ -51,12 +65,6 @@ async function bootstrap() {
 
   // Registra os plugins Fastify em vez de usar app.use()
   await app.register(require('@fastify/compress'));
-  await app.register(async (fastify) => {
-    fastify.get('/health', async (request, reply) => {
-      return reply.status(200).send({ status: 'ok' });
-    });
-  });
-
   // await app.register(require('@fastify/helmet'), {
   //   contentSecurityPolicy: {
   //     directives: {
