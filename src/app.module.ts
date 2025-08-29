@@ -26,7 +26,8 @@ import { RedisModule } from './infra/cache/redis.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true
+      isGlobal: true,
+      envFilePath: `.env`,
     }),
     GraphQLModule.forRoot({
       driver: ApolloDriver,

@@ -121,6 +121,12 @@ export class AuthService {
 
         console.log('Payload do JWT:', payload);
 
+        const secret = process.env.JWT_SECRET;
+        if (!secret) {
+            console.error('❌ JWT_SECRET não está definido!');
+            throw new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
         const accessToken = this.jwtService.sign(payload);
 
         console.log('Access Token gerado:', accessToken);
