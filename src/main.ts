@@ -3,10 +3,8 @@ import { AppModule } from './app.module';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { CategoriesSchemas, ProductSchemas } from './shared/swagger/utils';
 import { GraphQLExceptionFilter } from './infra/filters/gql-exception.filter';
-import { config } from 'dotenv';
 
 async function bootstrap() {
-  config();
   console.log('JWT_SECRET:', process.env.JWT_SECRET);
 
   const adapter = new FastifyAdapter({ trustProxy: true });
