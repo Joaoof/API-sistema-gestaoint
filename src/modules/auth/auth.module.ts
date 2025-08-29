@@ -19,7 +19,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
             imports: [ConfigModule], // ✅ isso está certo (para injeção)
             inject: [ConfigService],
             useFactory: (config: ConfigService) => ({
-                secret: config.get<string>(process.env.JWT_SECRET ?? 'secreto'),
+                secret: config.get<string>('JWT_SECRET'), // ✅ Busca a variável de ambiente
                 signOptions: { expiresIn: config.get<string>('JWT_EXPIRES_IN') || '1d' },
             }),
         }),
