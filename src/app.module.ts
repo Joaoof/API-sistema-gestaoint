@@ -58,7 +58,9 @@ import { RedisModule } from './infra/cache/redis.module';
         host: process.env.REDIS_HOST,
         port: Number(process.env.REDIS_PORT),
         password: process.env.REDIS_PASSWORD,
-        tls: {},
+        tls: {
+          rejectUnauthorized: false, // 👈 ignora certificado self-signed
+        },
         maxRetriesPerRequest: null, // 🔑 evita esse erro
         enableReadyCheck: false,    // 🔑 opcional, acelera conexão
         retryStrategy(times) {

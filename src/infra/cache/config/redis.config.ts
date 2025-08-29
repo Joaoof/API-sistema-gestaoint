@@ -4,7 +4,9 @@ export const redis = new Redis({
     host: process.env.REDIS_HOST,
     port: Number(process.env.REDIS_PORT),
     password: process.env.REDIS_PASSWORD,
-    tls: {},
+    tls: {
+        rejectUnauthorized: false, // 👈 ignora certificado self-signed
+    },
     maxRetriesPerRequest: null, // 🔑 evita esse erro
     enableReadyCheck: false,    // 🔑 opcional, acelera conexão
     retryStrategy(times) {
