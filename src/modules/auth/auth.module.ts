@@ -12,25 +12,19 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
     imports: [
-        ConfigModule.forRoot({ isGlobal: true }), // garante que process.env funciona
         UserModule,
         PassportModule.register({ defaultStrategy: 'jwt' }),
         RedisModule,
         JwtModule.registerAsync({
-            imports: [ConfigModule],
+            imports: [ConfigModule], // ✅ isso está certo (para injeção)
             inject: [ConfigService],
-            useFactory: async (config: ConfigService) => ({
-                secret: config.get<string>('JWT_SECRET') || 'secreto_super_forte', // fallback
+            useFactory: (config: ConfigService) => ({
+                secret: config.get<string>('JWT_SECRET'),
                 signOptions: { expiresIn: config.get<string>('JWT_EXPIRES_IN') || '1d' },
             }),
         }),
     ],
-    providers: [
-        AuthResolver,
-        AuthService,
-        PrismaService,
-        JwtStrategy,
-    ],
+    providers: [/* ... */],
     exports: [AuthService],
 })
 export class AuthModule { }

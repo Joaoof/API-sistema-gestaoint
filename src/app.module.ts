@@ -54,24 +54,6 @@ import { RedisModule } from './infra/cache/redis.module';
       ttl: 60000,
       limit: 100
     }]),
-    BullModule.forRoot({
-      redis: {
-        host: process.env.REDIS_HOST,
-        port: Number(process.env.REDIS_PORT),
-        password: process.env.REDIS_PASSWORD,
-        tls: {
-          rejectUnauthorized: false, // 👈 ignora certificado self-signed
-        },
-        maxRetriesPerRequest: null, // 🔑 evita esse erro
-        enableReadyCheck: false,    // 🔑 opcional, acelera conexão
-        retryStrategy(times) {
-          // tenta reconectar exponencialmente, até 30s
-          return Math.min(times * 50, 30000);
-        },
-      },
-    }),
-
-
     BullModule.registerQueue({
       name: 'email',
     }),
