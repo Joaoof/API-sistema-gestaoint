@@ -78,7 +78,7 @@ export class AuthService {
         // medir serialização/return (caso GraphQL/Nest faça algo custoso)
         const tReturn = this.time('🚀 Serialização/Return');
         const response = {
-            accessToken: token.accessToken,
+            accessToken: (await token).accessToken,
             expiresIn: process.env.JWT_EXPIRES_IN || '3600s',
             user: userDto,
         };
@@ -109,7 +109,7 @@ export class AuthService {
     }
 
     // 6. Gerar token JWT (sincrono)
-    private _createToken(user: Users): { expiresIn: string; accessToken: string } {
+    private async _createToken(user: Users): Promise<{ expiresIn: string; accessToken: string; }> {
         // jwtService.sign é síncrono por padrão (dependendo da lib/config).
         const payload: JwtPayload = {
             sub: user.id,
@@ -127,7 +127,7 @@ export class AuthService {
             throw new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        const accessToken = this.jwtService.sign(payload);
+        const accessToken = await this.jwtService.sign(payload);
 
         console.log('Access Token gerado:', accessToken);
 
