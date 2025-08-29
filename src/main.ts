@@ -3,10 +3,12 @@ import { AppModule } from './app.module';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { CategoriesSchemas, ProductSchemas } from './shared/swagger/utils';
 import { GraphQLExceptionFilter } from './infra/filters/gql-exception.filter';
-import { config } from 'dotenv';
-config();
+import { config as dotenvConfig } from 'dotenv';
 
 async function bootstrap() {
+  dotenvConfig();
+    console.log('JWT_SECRET:', process.env.JWT_SECRET); // 🔍 Veja se aparece
+
   const adapter = new FastifyAdapter({ trustProxy: true });
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter, {
     cors: {
@@ -28,7 +30,7 @@ async function bootstrap() {
 
   // Swagger setup (sem alterações aqui)
   const { SwaggerModule, DocumentBuilder } = require('@nestjs/swagger');
-  const config = new DocumentBuilder()
+  const swaggerConfig = new DocumentBuilder()
     .setTitle('Gestão JC - API')
     .setDescription('Documentação da API do sistema de gestão')
     .setVersion('1.0')
@@ -37,7 +39,7 @@ async function bootstrap() {
     .addTag('categories', 'Categorias')
     .build();
 
-  const document = SwaggerModule.createDocument(app, config, {
+  const document = SwaggerModule.createDocument(app, swaggerConfig, {
     components: {
       schemas: {
         CreateProductDto: ProductSchemas.CreateProductDto,
