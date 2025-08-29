@@ -3,11 +3,11 @@ import { AppModule } from './app.module';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { CategoriesSchemas, ProductSchemas } from './shared/swagger/utils';
 import { GraphQLExceptionFilter } from './infra/filters/gql-exception.filter';
-import { config as dotenvConfig } from 'dotenv';
+import { config } from 'dotenv';
 
 async function bootstrap() {
-  dotenvConfig();
-    console.log('JWT_SECRET:', process.env.JWT_SECRET); // 🔍 Veja se aparece
+  config();
+  console.log('JWT_SECRET:', process.env.JWT_SECRET); // 🔍 Veja se aparece
 
   const adapter = new FastifyAdapter({ trustProxy: true });
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter, {
@@ -51,8 +51,10 @@ async function bootstrap() {
 
   // Registra os plugins Fastify em vez de usar app.use()
   await app.register(require('@fastify/compress'));
-  app.getHttpAdapter().getInstance().get("/health", async (request, reply) => {
-    reply.status(200).send({ status: "ok" });
+  await app.register(async (fastify) => {
+    fastify.get('/health', async (request, reply) => {
+      return reply.status(200).send({ status: 'ok' });
+    });
   });
 
   // await app.register(require('@fastify/helmet'), {
@@ -94,13 +96,6 @@ async function bootstrap() {
   //   },
   //   crossOriginResourcePolicy: false, // opcional, se usar iframe
   // });
-
-
-  app.use((req, res, next) => {
-    console.log('Middleware req.ip:', req.ip);
-    console.log('Middleware res.header?', typeof res.header);
-    next();
-  });
 
   const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0'); // importante: '0.0.0.0', não 'localhost'
