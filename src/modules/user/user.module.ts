@@ -10,6 +10,8 @@ import { GetCompanyService } from "src/infra/services/auth/get-company.service";
 import { GetPlanService } from "src/infra/services/auth/get-plan.service";
 import { ValidatePassword } from "src/infra/services/auth/validate-password.service";
 import { ValidateInputZod } from "src/infra/services/auth/validate-zod.service";
+import { CreateTokenService } from "src/infra/services/auth/create-token.service";
+import { UserDtoService } from "src/infra/services/auth/user-dto.service";
 
 @Module({
     imports: [PrismaModule, RedisModule],
@@ -22,9 +24,11 @@ import { ValidateInputZod } from "src/infra/services/auth/validate-zod.service";
         GetPlanService,
         ValidatePassword,
         ValidateInputZod,
+        CreateTokenService,
+        UserDtoService,
         UserResolver
     ],
-    exports: [AuthService, JwtService, FindValidateUser, GetCompanyService, GetPlanService, ValidatePassword, ValidateInputZod]
+    exports: [AuthService, JwtService, FindValidateUser, GetCompanyService, GetPlanService, ValidatePassword, ValidateInputZod, CreateTokenService, UserDtoService]
 })
 
 export class UserModule { }
