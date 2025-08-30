@@ -20,12 +20,13 @@ export class GetCompanyService {
             where: { id: companyId },
             select: {
                 id: true,
+                name: true, 
                 logoUrl: true,
             }
         })
 
-        console.log(company);
-        
+        console.log('🏢 Empresa encontrada:', company);
+
 
         if (!company) {
             throw new HttpException("Empresa não encontrada", 403);

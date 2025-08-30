@@ -5,8 +5,9 @@ export class CompanyDto {
     @Field(() => String)
     id: string;
 
-    @Field(() => String)
-    name: string;
+    @Field(() => String, { nullable: true })
+    name?: string;
+
 
     @Field(() => String, { nullable: true })
     email?: string;
@@ -16,7 +17,7 @@ export class CompanyDto {
 
     @Field(() => String, { nullable: true })
     address?: string;
-    
+
     @Field(() => String, { nullable: true })
     logoUrl?: string; // ✅ Adicione aqui
 }

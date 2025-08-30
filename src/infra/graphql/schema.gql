@@ -57,7 +57,7 @@ type CompanyDto {
   email: String
   id: String!
   logoUrl: String
-  name: String!
+  name: String
   phone: String
 }
 

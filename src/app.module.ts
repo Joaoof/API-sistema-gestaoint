@@ -51,7 +51,7 @@ import { RedisModule } from './infra/cache/redis.module';
       isGlobal: true, // torna acessível em toda a aplicação
     }),
     ThrottlerModule.forRoot([{
-      ttl: 60000,
+      ttl: 60000, 
       limit: 100
     }]),
     BullModule.registerQueue({

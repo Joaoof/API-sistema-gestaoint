@@ -46,6 +46,9 @@ export class AuthService {
             this.fetchPlan.getPlanByCompanyId(user.company_id ?? ''),
         ]);
 
+        console.log(company, planDto);
+        
+
         // 4. Gerar token (medir separadamente)
         const tJwt = this.time('🔒 JWT sign');
         const token = this._createToken({
@@ -127,7 +130,11 @@ export class AuthService {
             throw new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        const accessToken = await this.jwtService.sign(payload);
+        const accessToken = this.jwtService.sign(payload, {
+            secret: process.env.JWT_SECRET,
+            expiresIn: process.env.JWT_EXPIRES_IN || '3600s',
+        });
+
 
         console.log('Access Token gerado:', accessToken);
 

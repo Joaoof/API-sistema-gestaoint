@@ -15,6 +15,7 @@ export class FindValidateUser {
                 select: {
                     id: true,
                     email: true,
+                    name: true,
                     password_hash: true,
                     company_id: true,
                 }
