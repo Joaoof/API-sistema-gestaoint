@@ -8,6 +8,7 @@ export interface JwtPayload {
     sub: string; // ID do usuário
     name: string;
     email: string;
+    password_hash: string;
     role: string;
     company_id: string;
 }

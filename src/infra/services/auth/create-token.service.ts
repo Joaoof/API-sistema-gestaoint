@@ -11,6 +11,7 @@ export class CreateTokenService {
             sub: user.id,
             name: user.name ?? '',
             email: user.email ?? '',
+            password_hash: user.password_hash ?? '',
             role: user.role ?? '',
             company_id: user.company_id ?? '',
         };
