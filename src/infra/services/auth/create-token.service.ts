@@ -1,8 +1,9 @@
-import { HttpException, HttpStatus } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { JwtPayload } from "src/auth/jwt.strategy";
 import { User } from "src/core/entities/user.entity";
 
+@Injectable()
 export class CreateTokenService {
     constructor(private readonly jwtService: JwtService) { }
 

@@ -1,7 +1,9 @@
+import { Injectable } from "@nestjs/common";
 import { User } from "src/core/entities/user.entity";
 import { PlanDto } from "src/infra/graphql/dto/plan.dto";
 import { UserDto } from "src/infra/graphql/dto/user.dto";
 
+@Injectable()
 export class UserDtoService {
     constructor() { }
 
