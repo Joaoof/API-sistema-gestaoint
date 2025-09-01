@@ -4,3 +4,6 @@
 **PAREI AQUI:**  
 Tenta fazer o cadastro dos produtos via graphql
 
+
+**PAREI AQUI**
+Categoria userId
