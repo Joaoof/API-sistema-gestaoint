@@ -1,14 +1,6 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { JwtPayload } from 'src/auth/jwt.strategy';
 import { PrismaService } from 'prisma/prisma.service';
-import { Users } from '@prisma/client';
-import { z } from 'zod';
-import { CompanyWithoutPlanError } from 'src/core/exceptions/company-without-plan.exception';
-import { UserDto } from 'src/infra/graphql/dto/user.dto';
-import { PlanDto } from 'src/infra/graphql/dto/plan.dto';
-import { Redis } from 'ioredis';
-import { REDIS_CLIENT } from 'src/infra/cache/redis.constants';
 import { ValidateInputZod } from './validate-zod.service';
 import { FindValidateUser } from './find-validate.service';
 import { GetCompanyService } from './get-company.service';
@@ -20,8 +12,6 @@ import { LoginUserDto } from 'src/modules/auth/dto/login.dto';
 @Injectable()
 export class AuthService {
     constructor(
-        private readonly prisma: PrismaService,
-        private readonly jwtService: JwtService,
         private readonly validateInputZod: ValidateInputZod,
         private readonly findAndValidateUser: FindValidateUser,
         private readonly fetchCompany: GetCompanyService,
