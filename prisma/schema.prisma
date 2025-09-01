@@ -65,6 +65,9 @@ model Category {
   updatedAt   DateTime       @updatedAt
   Product     Product[]
 
+  userId String?
+  user  Users? @relation(fields: [userId], references: [id])
+
   @@index([name], map: "idx_category_name")
   @@index([status], map: "idx_category_status")
 }
@@ -133,6 +136,7 @@ model Users {
   @@index([company_id])
   @@index([company_id, email])
 
+  Category Category[]
 }
 
 model Plan {

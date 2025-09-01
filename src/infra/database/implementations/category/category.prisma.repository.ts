@@ -2,38 +2,38 @@ import { Category } from '../../../../core/entities/category.entity';
 import { PrismaService } from '../../../../../prisma/prisma.service';
 import { CategoriesRepository } from 'src/core/ports/category.repository';
 import { Injectable } from '@nestjs/common';
-import { RedisService } from 'src/infra/cache/redis.service';
+import { RedisRepository } from 'src/infra/cache/redis.service';
 
 @Injectable()
 export class PrismaCategoriesRepository implements CategoriesRepository {
     constructor(
         private readonly prisma: PrismaService,
-        private readonly redis: RedisService
+        private readonly redis: RedisRepository
     ) { }
 
     async create(category: Category): Promise<void> {
         await this.prisma.category.create({ data: category });
-        await this.redis.del('categories:all');
+        await this.redis.delete('categories', 'all');
     }
 
     async findById(id: string): Promise<Category | null> {
-        const cached = await this.redis.get(`category:${id}`);
+        const cached = await this.redis.get('category', id);
         if (cached) return Category.fromPrisma(JSON.parse(cached));
 
         const data = await this.prisma.category.findUnique({ where: { id } });
         if (!data) return null;
 
         const category = Category.fromPrisma(data);
-        await this.redis.setex(`category:${id}`, 30, JSON.stringify(category)); // cache por 30s
+        await this.redis.set(`category:${id}`, '30', JSON.stringify(category)); // cache por 30s
         return category;
     }
 
     async findAll(): Promise<Category[]> {
-        const cached = await this.redis.get('categories:all');
+        const cached = await this.redis.get('categories', 'all');
         if (cached) return JSON.parse(cached).map(Category.fromPrisma);
 
         const data = await this.prisma.category.findMany();
-        await this.redis.setex('categories:all', 60, JSON.stringify(data));
+        await this.redis.set('categories:all', '60', JSON.stringify(data));
         return data.map(Category.fromPrisma);
     }
 
@@ -46,5 +46,22 @@ export class PrismaCategoriesRepository implements CategoriesRepository {
                 status: true
             }
         })
+    }
+
+    async findByCategoryUser(userId: string): Promise<Category[]> {
+
+        const categoryCached = await this.redis.get('categories:user', userId);
+
+        const categories = await this.prisma.category.findMany({
+            where: { userId },
+            select: {
+                id: true,
+                name: true,
+                status: true,
+                description: true,
+                userId: true
+            }
+        });
+        return JSON.parse(categoryCached ?? '') ?? categories.map(Category.fromPrisma);
     }
 }

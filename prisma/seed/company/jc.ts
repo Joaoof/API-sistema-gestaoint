@@ -11,6 +11,7 @@ async function main() {
             { name: "Dashboard", module_key: "dashboard", description: "Visão geral" },
             { name: "Entregas", module_key: "entregas", description: "entregas" },
             { name: "Estoque", module_key: "estoque", description: "Controle de estoque" },
+            { name: "Cadastros", module_key: "cadastros", description: "Cadastros gerais" },
             { name: "Vendas", module_key: "vendas", description: "Gestão de vendas" },
             { name: "Entrada", module_key: "entrada", description: "Movimento de entrada" },
             { name: "Fiscal", module_key: "fiscal", description: "Área fiscal" },
@@ -26,7 +27,7 @@ async function main() {
 
     // 2. Criar plano básico
     const basicPlan = await prisma.plan.upsert({
-        where: { name: 'Basic' },
+        where: { name: 'Advanced' },
         update: {},
         create: {
             name: 'Advanced',
@@ -50,6 +51,7 @@ async function main() {
         { planId: basicPlan.id, moduleId: getModule('dashboard').id, permission: ['READ', 'WRITE'] },
         { planId: basicPlan.id, moduleId: getModule('entregas').id, permission: ['READ', 'WRITE'] },
         { planId: basicPlan.id, moduleId: getModule('estoque').id, permission: ['READ', 'WRITE'] },
+        { planId: basicPlan.id, moduleId: getModule('cadastros').id, permission: ['READ', 'WRITE'] },
         { planId: basicPlan.id, moduleId: getModule('vendas').id, permission: ['READ', 'WRITE'] },
         { planId: basicPlan.id, moduleId: getModule('entrada').id, permission: ['READ', 'WRITE'] },
         { planId: basicPlan.id, moduleId: getModule('fiscal').id, permission: ['READ', 'WRITE'] },
@@ -119,7 +121,7 @@ async function main() {
                 password_hash: await argon2.hash("Senha123", {
                     timeCost: 3,
                     memoryCost: 2 ** 11,
-                    parallelism: 1 
+                    parallelism: 1
                 }),
                 role: 'ADMIN',
                 is_active: true,
