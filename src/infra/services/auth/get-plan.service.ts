@@ -10,9 +10,10 @@ export class GetPlanService {
     constructor(@Inject(REDIS_CLIENT) private readonly redis: RedisService, private readonly prisma: PrismaService) { }
 
     async getPlanByCompanyId(companyId: string): Promise<PlanDto> {
-        const cacheKey = `auth:company:plan:${companyId}`;
+        const cachePrefix = `auth:company:plan:${companyId}`;
+        const cacheKey = `${companyId}`;
 
-        const cached = await this.redis.get(cacheKey);
+        const cached = await this.redis.get(cachePrefix, cacheKey);
 
         if (cached) {
             return JSON.parse(cached);
@@ -60,7 +61,7 @@ export class GetPlanService {
             })),
         };
 
-        await this.redis.setex(cacheKey, 3600, JSON.stringify(planDto));
+        await this.redis.setWithExpiry(cachePrefix, cacheKey, JSON.stringify(planDto), 3600);
 
         return planDto;
     }

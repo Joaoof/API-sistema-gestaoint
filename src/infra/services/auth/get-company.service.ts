@@ -8,9 +8,10 @@ export class GetCompanyService {
     constructor(private readonly prisma: PrismaService, private readonly redis: RedisService) { }
 
     async getCompanyById(companyId: string): Promise<Company | null> {
-        const cacheKey = `auth:company:${companyId}`;
+        const cachePrefix = "auth:company";
+        const cacheKey = companyId;
 
-        const cached = await this.redis.get(cacheKey);
+        const cached = await this.redis.get(cachePrefix, cacheKey);
 
         if (cached) {
             return JSON.parse(cached);
@@ -32,7 +33,7 @@ export class GetCompanyService {
             throw new HttpException("Empresa não encontrada", 403);
         }
 
-        await this.redis.setex(cacheKey, 10000, JSON.stringify(company))
+        await this.redis.setWithExpiry("auth:company", companyId, JSON.stringify(company), 10000)
 
         return {
             ...company,
