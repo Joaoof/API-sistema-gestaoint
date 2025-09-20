@@ -10,45 +10,38 @@ export class GetPlanService {
     constructor(@Inject(REDIS_CLIENT) private readonly redis: RedisService, private readonly prisma: PrismaService) { }
 
     async getPlanByCompanyId(companyId: string): Promise<PlanDto> {
-        const cachePrefix = `auth:company:plan:${companyId}`;
-        const cacheKey = `${companyId}`;
+        const cacheKey = `auth:company:plan:${companyId}`;
 
-        const cached = await this.redis.get(cachePrefix, cacheKey);
-
-        if (cached) {
-            return JSON.parse(cached);
-        }
+        // GET correto
+        const cached = await this.redis.get(cacheKey);
+        if (cached) return JSON.parse(cached);
 
         const companyPlan = await this.prisma.companyPlan.findFirst({
-            where: {
-                company_id: companyId,
-                isActive: true,
-            },
+            where: { company_id: companyId, isActive: true },
             include: {
                 plan: {
                     include: {
                         module: {
-                            where: {
-                                isActive: true,
-                            }, include: {
+                            where: { isActive: true },
+                            include: {
                                 module: {
-                                    select: {
-                                        module_key: true,
-                                        name: true
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        })
+                                    select: { module_key: true, name: true },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        });
 
         if (!companyPlan || !companyPlan.plan) {
             throw new CompanyWithoutPlanError();
         }
 
         const plan = companyPlan.plan;
+
+        console.log(plan);
+        
 
         const planDto: PlanDto = {
             id: plan.id,
@@ -61,9 +54,12 @@ export class GetPlanService {
             })),
         };
 
-        await this.redis.setWithExpiry(cachePrefix, cacheKey, JSON.stringify(planDto), 3600);
+        // SET correto com TTL de 1h
+        await this.redis.set(cacheKey, 3600);
 
         return planDto;
     }
+
+
 
 }

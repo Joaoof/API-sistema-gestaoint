@@ -17,7 +17,7 @@ export class UserDtoService {
             createdAt: user.created_at ?? new Date(),
             company,
             plan: planDto,
-            permissions: planDto.modules.map((m) => ({
+            permissions: (planDto.modules || []).map((m) => ({
                 module_key: m.module_key,
                 permissions: m.permission,
             })),

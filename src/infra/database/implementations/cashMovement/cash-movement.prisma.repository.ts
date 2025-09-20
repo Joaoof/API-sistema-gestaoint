@@ -29,7 +29,7 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
             },
         });
 
-        await this.redis.del(`cashMovements:${movement.user_id}:all`);
+        await this.redis.delete(`cashMovements:${movement.user_id}:all`, movement.user_id);
     }
 
     async findById(id: string): Promise<CashMovement | null> {
@@ -50,7 +50,7 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
             orderBy: { date: 'desc' },
         });
 
-        await this.redis.setex(cacheKey, 120, JSON.stringify(movements));
+        await this.redis.set(cacheKey, 3600);
 
         return movements.map(CashMovement.fromPrisma);
     }

@@ -8,20 +8,25 @@ export class GetCompanyService {
     constructor(private readonly prisma: PrismaService, private readonly redis: RedisService) { }
 
     async getCompanyById(companyId: string): Promise<Company | null> {
-        const cachePrefix = "auth:company";
-        const cacheKey = companyId;
+        const cachePrefix = `auth:company:${companyId}`;
 
-        const cached = await this.redis.get(cachePrefix, cacheKey);
+        const cached = await this.redis.get(cachePrefix);
 
         if (cached) {
             return JSON.parse(cached);
         }
 
+
+        const data = await this.prisma.company.findUnique({ where: { id: companyId } });
+
+        console.log('MINHA COMPANHIA', data);
+        
+
         const company = await this.prisma.company.findUnique({
             where: { id: companyId },
             select: {
                 id: true,
-                name: true, 
+                name: true,
                 logoUrl: true,
             }
         })
@@ -33,7 +38,7 @@ export class GetCompanyService {
             throw new HttpException("Empresa não encontrada", 403);
         }
 
-        await this.redis.setWithExpiry("auth:company", companyId, JSON.stringify(company), 10000)
+        await this.redis.set(`auth:company:{companyId}`, 3600)
 
         return {
             ...company,

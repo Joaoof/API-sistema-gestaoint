@@ -57,6 +57,7 @@ export class UserResolver {
 
         const plan = companyPlan.plan;
 
+
         // ✅ Monta permissions
         const permissions = plan.module.map((pm) => ({
             module_key: pm.module.module_key,
@@ -66,7 +67,7 @@ export class UserResolver {
         // ✅ Monta planDto
         const planDto = {
             id: plan.id,
-            name: plan.name,
+            name: plan.name ?? 'Sem nome',
             description: plan.description ?? '',
             modules: plan.module.map((pm) => ({
                 module_key: pm.module.module_key,

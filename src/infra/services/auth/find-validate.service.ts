@@ -11,7 +11,6 @@ export class FindValidateUser {
     async isValid(email: string, passwordInput: string): Promise<User> {
         try {
 
-            const teste = await this.prisma.
             const user = await this.prisma.users.findUnique({
                 where: { email },
                 select: {

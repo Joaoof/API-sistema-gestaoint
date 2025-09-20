@@ -2,13 +2,13 @@ import { Category } from '../../../../core/entities/category.entity';
 import { PrismaService } from '../../../../../prisma/prisma.service';
 import { CategoriesRepository } from 'src/core/ports/category.repository';
 import { Injectable } from '@nestjs/common';
-import { RedisRepository } from 'src/infra/cache/redis.service';
+import { RedisService } from 'src/infra/cache/redis.service';
 
 @Injectable()
 export class PrismaCategoriesRepository implements CategoriesRepository {
     constructor(
         private readonly prisma: PrismaService,
-        private readonly redis: RedisRepository
+        private readonly redis: RedisService
     ) { }
 
     async create(category: Category): Promise<void> {
@@ -17,23 +17,23 @@ export class PrismaCategoriesRepository implements CategoriesRepository {
     }
 
     async findById(id: string): Promise<Category | null> {
-        const cached = await this.redis.get('category', id);
+        const cached = await this.redis.get('category');
         if (cached) return Category.fromPrisma(JSON.parse(cached));
 
         const data = await this.prisma.category.findUnique({ where: { id } });
         if (!data) return null;
 
         const category = Category.fromPrisma(data);
-        await this.redis.set(`category:${id}`, '30', JSON.stringify(category)); // cache por 30s
+        await this.redis.set(`category:${id}`, 3600); // cache por 30s
         return category;
     }
 
     async findAll(): Promise<Category[]> {
-        const cached = await this.redis.get('categories', 'all');
+        const cached = await this.redis.get('categories:all');
         if (cached) return JSON.parse(cached).map(Category.fromPrisma);
 
         const data = await this.prisma.category.findMany();
-        await this.redis.set('categories:all', '60', JSON.stringify(data));
+        await this.redis.set('categories:all', 3600);
         return data.map(Category.fromPrisma);
     }
 
@@ -50,7 +50,7 @@ export class PrismaCategoriesRepository implements CategoriesRepository {
 
     async findByCategoryUser(userId: string): Promise<Category[]> {
 
-        const categoryCached = await this.redis.get('categories:user', userId);
+        const categoryCached = await this.redis.get(`categories:${userId}`,);
 
         const categories = await this.prisma.category.findMany({
             where: { userId },
