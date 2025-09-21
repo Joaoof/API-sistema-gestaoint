@@ -8,7 +8,6 @@ async function main() {
     // 1. Criar os módulos
     await prisma.module.createMany({
         data: [
-            { name: 'Dashboard', module_key: 'dashboard', description: 'Visão geral da empresa' },
             { name: 'Movimentacoes', module_key: 'movimentacoes', description: 'Dashboard de Movimentações' },
             { name: 'Formulario de Movimentação', module_key: 'formulario-movimentacao', description: 'Registro de Movimentações' },
             { name: 'Histórico de Movimentação', module_key: 'historico-movimentacao', description: 'Histórico de Movimentações' },
@@ -40,7 +39,6 @@ async function main() {
 
     // 4. Vincular plano aos módulos
     const planModulesData = [
-        { planId: basicPlan.id, moduleId: getModule('dashboard').id, permission: ['READ'] },
         { planId: basicPlan.id, moduleId: getModule('movimentacoes').id, permission: ['READ', 'WRITE'] },
         { planId: basicPlan.id, moduleId: getModule('formulario-movimentacao').id, permission: ['READ', 'WRITE'] },
         { planId: basicPlan.id, moduleId: getModule('historico-movimentacao').id, permission: ['READ', 'WRITE'] },
@@ -91,7 +89,7 @@ async function main() {
     console.log('🏢 Empresa OK:', company.id)
 
     // 7. Criar usuário admin se não existir
-    const adminEmail = 'thiago-the9@gmail.com'
+    const adminEmail = 'the9@gmail.com'
     const existingUser = await prisma.users.findUnique({
         where: { email: adminEmail }
     })
