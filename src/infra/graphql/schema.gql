@@ -181,6 +181,7 @@ type UserDto {
   email: String!
   id: String!
   name: String!
+  password_hash: String!
   permissions: [PermissionDto]!
   plan: PlanDto
   role: String!

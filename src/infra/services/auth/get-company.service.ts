@@ -16,11 +16,7 @@ export class GetCompanyService {
             return JSON.parse(cached);
         }
 
-
         const data = await this.prisma.company.findUnique({ where: { id: companyId } });
-
-        console.log('MINHA COMPANHIA', data);
-        
 
         const company = await this.prisma.company.findUnique({
             where: { id: companyId },
@@ -30,9 +26,6 @@ export class GetCompanyService {
                 logoUrl: true,
             }
         })
-
-        console.log('🏢 Empresa encontrada:', company);
-
 
         if (!company) {
             throw new HttpException("Empresa não encontrada", 403);

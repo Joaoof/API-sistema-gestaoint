@@ -22,9 +22,6 @@ export class PrismaCompaniesRepository implements CompaniesRepository {
         // }
 
         const data = await this.prisma.company.findUnique({ where: { id } });
-
-        console.log('KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKj', data);
-
         if (!data) return null;
 
         const company = Company.fromPrisma({
@@ -33,9 +30,6 @@ export class PrismaCompaniesRepository implements CompaniesRepository {
             logoUrl: data.logoUrl ?? ''
             
         });
-
-        console.log('KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK', company);
-
 
         // Se você quiser expiração de 30 segundos:
         // await this.redis.set(key, company, 3600); // usa nosso método seguro

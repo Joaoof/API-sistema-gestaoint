@@ -17,8 +17,6 @@ export class CreateTokenService {
             company_id: user.company_id ?? '',
         };
 
-        console.log('Payload do JWT:', payload);
-
         const secret = process.env.JWT_SECRET;
         if (!secret) {
             console.error('❌ JWT_SECRET não está definido!');
@@ -29,10 +27,7 @@ export class CreateTokenService {
             secret: process.env.JWT_SECRET,
             expiresIn: process.env.JWT_EXPIRES_IN || '3600s',
         });
-
-
-        console.log('Access Token gerado:', accessToken);
-
+        
         return {
             accessToken,
             expiresIn: process.env.JWT_EXPIRES_IN || '3600s',

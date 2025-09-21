@@ -12,6 +12,9 @@ export class UserDto {
     email: string;
 
     @Field(() => String)
+    password_hash: string;
+
+    @Field(() => String)
     name: string;
 
     @Field(() => String)

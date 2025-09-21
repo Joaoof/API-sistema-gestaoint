@@ -11,8 +11,6 @@
         @Query(() => CompanyDto, { name: 'company' })
         async company(@Args('id') id: string): Promise<CompanyDto | null> {
             const company = await this.findCompanyByIdUseCase.execute(id);
-            
-            console.log('🏢 Empresa encontrada:', company);
 
             if (!company) return null;
 

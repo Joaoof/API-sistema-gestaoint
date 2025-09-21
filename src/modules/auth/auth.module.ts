@@ -9,6 +9,7 @@ import { JwtStrategy } from 'src/auth/jwt.strategy';
 import { PrismaService } from 'prisma/prisma.service';
 import { RedisModule } from 'src/infra/cache/redis.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { GetByIdUserService } from 'src/infra/services/auth/get-by-id.service';
 
 @Module({
     imports: [
@@ -24,7 +25,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
             }),
         }),
     ],
-    providers: [AuthService, AuthResolver, JwtStrategy, PrismaService],
+    providers: [AuthService, AuthResolver, JwtStrategy, PrismaService, GetByIdUserService],
     exports: [AuthService],
 })
 export class AuthModule { }

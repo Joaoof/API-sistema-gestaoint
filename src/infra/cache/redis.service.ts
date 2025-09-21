@@ -20,7 +20,8 @@ export class RedisService implements OnModuleDestroy {
         const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
 
         if (ttlSeconds) {
-            await this.redisClient.set(key, stringValue, 'EX', ttlSeconds);
+            // ⚠️ Garanta que ttlSeconds é número
+            await this.redisClient.set(key, stringValue, 'EX', Number(ttlSeconds));
         } else {
             await this.redisClient.set(key, stringValue);
         }

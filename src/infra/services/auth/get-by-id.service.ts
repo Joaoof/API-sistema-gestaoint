@@ -1,21 +1,16 @@
-// src/infra/graphql/resolvers/user.resolver.ts
-import { UseGuards } from '@nestjs/common';
-import { Query, Resolver } from '@nestjs/graphql';
-import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
-import { GqlAuthGuard } from 'src/auth/guards/auth.guard';
-import { UserResponseDto } from 'src/modules/user/dtos/reponse-user.dto';
-import { PrismaService } from 'prisma/prisma.service';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "prisma/prisma.service";
+import { UserDto } from "src/infra/graphql/dto/user.dto";
+import { UserResponseDto } from "src/modules/user/dtos/reponse-user.dto";
 
-@Resolver(() => UserResponseDto)
-export class UserResolver {
+@Injectable()
+export class GetByIdUserService {
     constructor(private readonly prisma: PrismaService) { }
 
-    @Query(() => UserResponseDto)
-    @UseGuards(GqlAuthGuard)
-    async me(@CurrentUser() userPayload: any): Promise<UserResponseDto> {
-        // ✅ Use o ID do payload para buscar o usuário completo
+    async getUserById(userId: string): Promise<UserResponseDto> {
+
         const user = await this.prisma.users.findUnique({
-            where: { id: userPayload.id || userPayload.sub },
+            where: { id: userId },
             include: {
                 company: {
                     include: {
@@ -55,6 +50,7 @@ export class UserResolver {
 
         const plan = companyPlan.plan;
 
+
         // ✅ Monta permissions
         const permissions = plan.module.map((pm) => ({
             module_key: pm.module.module_key,
@@ -66,7 +62,7 @@ export class UserResolver {
             id: plan.id,
             name: plan.name,
             description: plan.description ?? '',
-            modules: plan.module?.map((pm) => ({
+            modules: plan.module.map((pm) => ({
                 module_key: pm.module.module_key,
                 name: pm.module.name,
                 description: pm.module.description ?? '',

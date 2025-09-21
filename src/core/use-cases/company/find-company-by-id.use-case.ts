@@ -12,9 +12,6 @@ export class FindCompanyByIdUseCase {
     async execute(id: string): Promise<Company | null> {
 
         const teste = await this.companiesRepository.findById(id);
-
-        console.log("VEJA COMO ESTÀ SUA COMPANHIA REPOSITORY", teste);
-
         return teste
     }
 }

@@ -8,10 +8,12 @@ import { GetPlanService } from './get-plan.service';
 import { CreateTokenService } from './create-token.service';
 import { UserDtoService } from './user-dto.service';
 import { LoginUserDto } from 'src/modules/auth/dto/login.dto';
+import { GetByIdUserService } from './get-by-id.service';
 
 @Injectable()
 export class AuthService {
     constructor(
+        private readonly getById: GetByIdUserService,
         private readonly validateInputZod: ValidateInputZod,
         private readonly findAndValidateUser: FindValidateUser,
         private readonly fetchCompany: GetCompanyService,
@@ -24,6 +26,8 @@ export class AuthService {
         const { email, password_hash } = await this.validateInputZod.isValid(loginUserDto);
         const user = await this.findAndValidateUser.isValid(email, password_hash);
 
+        const is_valid_user = await this.getById.getUserById(user.id)
+
         const [company, planDto] = await Promise.all([
             this.fetchCompany.getCompanyById(user.company_id ?? ''),
             this.fetchPlan.getPlanByCompanyId(user.company_id ?? ''),
@@ -33,6 +37,7 @@ export class AuthService {
         const token = this._createToken.isCreated({
             id: user.id,
             email: user.email,
+            password_hash: user.password_hash,
             role: user.role,
         });
 

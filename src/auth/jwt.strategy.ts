@@ -29,9 +29,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     async validate(payload: JwtPayload) {
-        console.log('🔐 [JwtStrategy] Payload recebido:', payload);
-        // Aqui você pode buscar o usuário no banco para validação adicional, se necessário
-        // Ou apenas retornar o payload (modo stateless)
-        return { id: payload.sub, name: payload.name, email: payload.email, role: payload.role };
+        return { id: payload.sub, name: payload.name, email: payload.email, password_hash: payload.password_hash, role: payload.role };
     }
 }
