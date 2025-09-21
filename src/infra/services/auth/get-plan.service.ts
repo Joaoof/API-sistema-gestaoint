@@ -11,28 +11,18 @@ export class GetPlanService {
 
     async getPlanByCompanyId(companyId: string): Promise<PlanDto> {
         const cacheKey = `auth:company:plan:${companyId}`;
-        console.log('CACHE KEY:', cacheKey);
-
-        // Tenta do cache
         const cached = await this.redis.get(cacheKey);
         if (cached) {
-            console.log('🎯 SERVINDO DO CACHE');
-            console.log('CACHE RAW:', cached); // ← veja o que realmente está lá
-
             try {
                 const parsed = JSON.parse(cached);
 
-                // ✅ VALIDAÇÃO: só aceita se for objeto e tiver id e name
                 if (parsed && typeof parsed === 'object' && 'id' in parsed && 'name' in parsed) {
-                    console.log('✅ CACHE VÁLIDO:', parsed);
                     return parsed;
                 } else {
                     console.warn('⚠️ CACHE CORROMPIDO OU INVÁLIDO — IGNORANDO');
-                    // Não retorna — deixa buscar do banco
                 }
             } catch (err) {
                 console.error('❌ CACHE INVÁLIDO (JSON parse error) — IGNORANDO', err.message);
-                // Não retorna — deixa buscar do banco
             }
         }
 
@@ -62,15 +52,6 @@ export class GetPlanService {
 
         const plan = companyPlan.plan;
 
-        // 👇 LOG CRÍTICO — VEJA O QUE REALMENTE VEIO DO BANCO
-        console.log('📊 DADOS DO BANCO - plan.name:', {
-            value: plan.name,
-            type: typeof plan.name,
-            isNull: plan.name === null,
-            isUndefined: plan.name === undefined
-        });
-
-        // ✅ SOLUÇÃO FINAL: SEMPRE FORNECER STRING VÁLIDA
         const planDto: PlanDto = {
             id: plan.id,
             name: plan.name?.trim() || 'Plano Padrão', // 👈 NUNCA undefined, NUNCA null
@@ -82,11 +63,8 @@ export class GetPlanService {
             })),
         };
 
-        console.log('✅ DTO MONTADO:', planDto);
-
         // Salva no cache — SEM JSON.stringify manual
         await this.redis.set(cacheKey, planDto, 3600);
-        console.log('💾 SALVO NO CACHE');
 
         return planDto;
     }

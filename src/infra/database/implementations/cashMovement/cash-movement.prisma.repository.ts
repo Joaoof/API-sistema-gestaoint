@@ -42,7 +42,13 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
         const cached = await this.redis.get(cacheKey);
 
         if (cached) {
-            return JSON.parse(cached).map(CashMovement.fromPrisma);
+            const parsed = JSON.parse(cached);
+            // ✅ VALIDAÇÃO + CONVERSÃO
+            if (Array.isArray(parsed)) {
+                return parsed.map(CashMovement.fromPrisma); // ← CONVERTA PARA INSTÂNCIAS!
+            } else {
+                console.warn('⚠️ Cache inválido — buscando do banco');
+            }
         }
 
         const movements = await this.prisma.cashMovement.findMany({
@@ -50,8 +56,7 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
             orderBy: { date: 'desc' },
         });
 
-        await this.redis.set(cacheKey, 3600);
-
+        await this.redis.set(cacheKey, JSON.stringify(movements), 3600);
         return movements.map(CashMovement.fromPrisma);
     }
 
