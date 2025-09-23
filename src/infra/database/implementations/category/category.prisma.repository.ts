@@ -13,7 +13,7 @@ export class PrismaCategoriesRepository implements CategoriesRepository {
 
     async create(category: Category): Promise<void> {
         await this.prisma.category.create({ data: category });
-        await this.redis.delete('categories', 'all');
+        await this.redis.delete('categories:all');
     }
 
     async findById(id: string): Promise<Category | null> {
