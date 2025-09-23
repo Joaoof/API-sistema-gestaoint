@@ -29,13 +29,17 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
             },
         });
 
+        const cacheKey = `cashMovements:${movement.user_id}:all`;
+        console.log(`[REDIS CREATE] 🔑 Chave: "${cacheKey}" | Len: ${cacheKey.length} | User: "${movement.user_id}" | User Len: ${movement.user_id.length}`);
+
         try {
-            await this.redis.delete(`cashMovements:${movement.user_id}:all`);
-            console.log(`[REDIS] Cache invalidado para usuário: ${movement.user_id}`);
+            const result = await this.redis.delete(cacheKey);
+            console.log(`[REDIS CREATE] 🗑️ DEL retornou:`, result); // Deve ser 1 (se existia) ou 0 (se não existia)
         } catch (err) {
-            console.error(`[REDIS] Falha ao invalidar cache:`, err);
-            // Não bloqueia a operação — só loga
+            console.error(`[REDIS CREATE] ❌ Erro no DEL:`, err);
         }
+
+        console.log(`[REDIS CREATE] ✅ Cache invalidado para usuário: ${movement.user_id}`);
     }
 
     async findById(id: string): Promise<CashMovement | null> {
@@ -73,7 +77,7 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
         console.log(`[CACHE] 📥 Salvando ${movements.length} itens no cache...`, movements);
 
         // ✅ CORREÇÃO IMPORTANTE: Sintaxe correta para definir TTL no Redis (v4+ ou ioredis)
-        await this.redis.set(cacheKey, movements, 3600); 
+        await this.redis.set(cacheKey, movements, 3600);
         console.log(`[CACHE] 💾 Salvo com sucesso no Redis com chave: ${cacheKey}`);
 
         return movements.map(CashMovement.fromPrisma);
