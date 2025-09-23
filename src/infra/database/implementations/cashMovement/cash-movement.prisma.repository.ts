@@ -29,7 +29,7 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
             },
         });
 
-        await this.redis.delete(`cashMovements:${movement.user_id}:all`, movement.user_id);
+        await this.redis.delete(`cashMovements:${movement.user_id}:all`);
     }
 
     async findById(id: string): Promise<CashMovement | null> {
