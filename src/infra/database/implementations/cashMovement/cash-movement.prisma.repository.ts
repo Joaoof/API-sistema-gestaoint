@@ -73,8 +73,7 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
         console.log(`[CACHE] 📥 Salvando ${movements.length} itens no cache...`, movements);
 
         // ✅ CORREÇÃO IMPORTANTE: Sintaxe correta para definir TTL no Redis (v4+ ou ioredis)
-        await this.redis.set(cacheKey, JSON.stringify(movements), 3600); // ← ANTES ERA SÓ 3600 (ERRADO)
-
+        await this.redis.set(cacheKey, movements, 3600); 
         console.log(`[CACHE] 💾 Salvo com sucesso no Redis com chave: ${cacheKey}`);
 
         return movements.map(CashMovement.fromPrisma);
