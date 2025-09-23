@@ -39,23 +39,38 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
 
     async findAll(userId: string, filters?: FindAllCashMovementInput): Promise<CashMovement[]> {
         const cacheKey = `cashMovements:${userId}:all`;
+        console.log(`[CACHE] Buscando chave: ${cacheKey}`);
+
         const cached = await this.redis.get(cacheKey);
+        console.log(`[CACHE] Valor retornado do Redis:`, cached);
 
         if (cached) {
-            const parsed = JSON.parse(cached);
-            if (Array.isArray(parsed)) {
-                return parsed.map(CashMovement.fromPrisma); // ← CONVERTA PARA INSTÂNCIAS!
-            } else {
-                console.warn('⚠️ Cache inválido — buscando do banco');
+            try {
+                const parsed = JSON.parse(cached);
+                if (Array.isArray(parsed)) {
+                    console.log(`[CACHE] ✅ HIT! Retornando ${parsed.length} itens do cache.`);
+                    return parsed.map(CashMovement.fromPrisma);
+                } else {
+                    console.warn('⚠️ Cache inválido (não é array) — buscando do banco');
+                }
+            } catch (e) {
+                console.warn('⚠️ Erro ao parsear cache — buscando do banco', e);
             }
         }
 
+        console.log('[CACHE] ❌ MISS — buscando do banco de dados...');
         const movements = await this.prisma.cashMovement.findMany({
             where: { user_id: userId },
             orderBy: { date: 'desc' },
         });
 
-        await this.redis.set(cacheKey, JSON.stringify(movements), 3600);
+        console.log(`[CACHE] 📥 Salvando ${movements.length} itens no cache...`, movements);
+
+        // ✅ CORREÇÃO IMPORTANTE: Sintaxe correta para definir TTL no Redis (v4+ ou ioredis)
+        await this.redis.set(cacheKey, JSON.stringify(movements), 3600); // ← ANTES ERA SÓ 3600 (ERRADO)
+
+        console.log(`[CACHE] 💾 Salvo com sucesso no Redis com chave: ${cacheKey}`);
+
         return movements.map(CashMovement.fromPrisma);
     }
 
