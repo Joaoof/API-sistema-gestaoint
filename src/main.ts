@@ -12,6 +12,7 @@ async function bootstrap() {
     cors: {
       origin: [
         'https://gestaoint.netlify.app',   // ✅ Espaços removidos
+        'https://studio.apollographql.com',
         'http://localhost:5173'
       ],
       credentials: true,

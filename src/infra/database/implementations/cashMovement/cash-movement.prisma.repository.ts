@@ -43,7 +43,6 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
 
         if (cached) {
             const parsed = JSON.parse(cached);
-            // ✅ VALIDAÇÃO + CONVERSÃO
             if (Array.isArray(parsed)) {
                 return parsed.map(CashMovement.fromPrisma); // ← CONVERTA PARA INSTÂNCIAS!
             } else {
