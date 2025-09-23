@@ -29,7 +29,13 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
             },
         });
 
-        await this.redis.delete(`cashMovements:${movement.user_id}:all`);
+        try {
+            await this.redis.delete(`cashMovements:${movement.user_id}:all`);
+            console.log(`[REDIS] Cache invalidado para usuário: ${movement.user_id}`);
+        } catch (err) {
+            console.error(`[REDIS] Falha ao invalidar cache:`, err);
+            // Não bloqueia a operação — só loga
+        }
     }
 
     async findById(id: string): Promise<CashMovement | null> {
