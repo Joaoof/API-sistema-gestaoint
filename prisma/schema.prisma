@@ -7,6 +7,7 @@ generator client {
 datasource db {
   provider = "postgresql" // ou "mysql", "sqlite", etc.
   url      = env("BANCO_URL")
+  directUrl = env("BANCO_URL_DIRECT")
   relationMode = "prisma"
 }
 
