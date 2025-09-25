@@ -3,10 +3,11 @@ import { AppModule } from './app.module';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { CategoriesSchemas, ProductSchemas } from './shared/swagger/utils';
 import { GraphQLExceptionFilter } from './infra/filters/gql-exception.filter';
+import { PrismaService } from 'prisma/prisma.service';
+import * as cron from 'node-cron';
+
 
 async function bootstrap() {
-  console.log('JWT_SECRET:', process.env.JWT_SECRET);
-
   const adapter = new FastifyAdapter({ trustProxy: true });
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter, {
     cors: {
@@ -27,7 +28,16 @@ async function bootstrap() {
     }
   });
 
-  // ✅ REGISTRE O /health IMEDIATAMENTE, ANTES DE QUALQUER OUTRA COISA
+  const prisma = app.get(PrismaService);
+  cron.schedule('*/5 * * * *', async () => {
+    try {
+      await prisma.$executeRaw`REFRESH MATERIALIZED VIEW auth_login_view;`;
+      console.log('Materialized view auth_login_view atualizada');
+    } catch (err) {
+      console.error('Falha ao atualizar materialized view:', err);
+    }
+  });
+
   const fastify = app.getHttpAdapter().getInstance();
   fastify.get('/health', async (request, reply) => {
     return reply.status(200).send({ status: 'ok' });

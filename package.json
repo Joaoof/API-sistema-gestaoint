@@ -58,6 +58,7 @@
     "ioredis": "^5.6.1",
     "mediatr": "^1.0.1",
     "nest-winston": "^1.10.2",
+    "node-cron": "^4.2.1",
     "nodemailer": "^7.0.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
