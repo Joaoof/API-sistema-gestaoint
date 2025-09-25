@@ -8,13 +8,11 @@ export class CreateTokenService {
     constructor(private readonly jwtService: JwtService) { }
 
     async isCreated(user: User): Promise<{ expiresIn: string; accessToken: string; }> {
-        const payload: JwtPayload = {
+        // ✅ Otimizado
+        const payload = {
             sub: user.id,
-            name: user.name ?? '',
-            email: user.email ?? '',
-            password_hash: user.password_hash ?? '',
-            role: user.role ?? '',
-            company_id: user.company_id ?? '',
+            email: user.email,
+            role: user.role
         };
 
         const secret = process.env.JWT_SECRET;
@@ -27,7 +25,7 @@ export class CreateTokenService {
             secret: process.env.JWT_SECRET,
             expiresIn: process.env.JWT_EXPIRES_IN || '3600s',
         });
-        
+
         return {
             accessToken,
             expiresIn: process.env.JWT_EXPIRES_IN || '3600s',

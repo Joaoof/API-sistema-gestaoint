@@ -7,7 +7,6 @@
     @Injectable()
     export class FindValidateUser {
         constructor(private readonly prisma: PrismaService, private readonly validatePassword: ValidatePassword) { }
-
         async isValid(email: string, passwordInput: string): Promise<User> {
             try {
 

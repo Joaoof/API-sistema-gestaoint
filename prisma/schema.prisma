@@ -7,6 +7,7 @@ generator client {
 datasource db {
   provider = "postgresql" // ou "mysql", "sqlite", etc.
   url      = env("BANCO_URL")
+  relationMode = "prisma"
 }
 
 enum CategoryStatus {
@@ -137,6 +138,22 @@ model Users {
   @@index([company_id, email])
 
   Category Category[]
+}
+
+
+model AuthLoginView {
+  user_id      String   @id @map("user_id")
+  user_email   String   @map("user_email")
+  user_role    String   @map("user_role")
+  company_id   String   @map("company_id")
+  company_name String   @map("company_name")
+  company_logo String?  @map("company_logo")
+  plan_id      String   @map("plan_id")
+  plan_name    String   @map("plan_name")
+  modules      Json     @map("modules")
+  
+  @@ignore // View somente leitura
+  @@map("auth_login_view")
 }
 
 model Plan {
