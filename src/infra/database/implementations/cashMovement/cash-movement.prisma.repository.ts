@@ -47,41 +47,42 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
         return data ? CashMovement.fromPrisma(data) : null;
     }
 
-    async findAll(userId: string, filters?: FindAllCashMovementInput): Promise<CashMovement[]> {
+    async findAll(userId: string): Promise<CashMovement[]> {
         const cacheKey = `cashMovements:${userId}:all`;
-        console.log(`[CACHE] Buscando chave: ${cacheKey}`);
-
         const cached = await this.redis.get(cacheKey);
-        console.log(`[CACHE] Valor retornado do Redis:`, cached);
-
         if (cached) {
             try {
-                const parsed = JSON.parse(cached);
-                if (Array.isArray(parsed)) {
-                    console.log(`[CACHE] ✅ HIT! Retornando ${parsed.length} itens do cache.`);
-                    return parsed.map(CashMovement.fromPrisma);
-                } else {
-                    console.warn('⚠️ Cache inválido (não é array) — buscando do banco');
+                const arr = JSON.parse(cached);
+                if (Array.isArray(arr)) {
+                    return arr.map(CashMovement.fromPrisma);
                 }
-            } catch (e) {
-                console.warn('⚠️ Erro ao parsear cache — buscando do banco', e);
+            } catch {
+                await this.redis.delete(cacheKey);
             }
         }
 
-        console.log('[CACHE] ❌ MISS — buscando do banco de dados...');
-        const movements = await this.prisma.cashMovement.findMany({
+        // 1) Consulta ÚNICA à materialized view usando índice composto
+        const rows = await this.prisma.mvCashMovementsPerUser.findMany({
             where: { user_id: userId },
             orderBy: { date: 'desc' },
+            select: {
+                id: true,
+                type: true,
+                category: true,
+                value: true,
+                description: true,
+                date: true,
+            },
         });
 
-        console.log(`[CACHE] 📥 Salvando ${movements.length} itens no cache...`, movements);
+        // 2) Cache rápido
+        await this.redis.setWithPipeline(cacheKey, rows, 3600);
 
-        // ✅ CORREÇÃO IMPORTANTE: Sintaxe correta para definir TTL no Redis (v4+ ou ioredis)
-        await this.redis.set(cacheKey, movements, 3600);
-        console.log(`[CACHE] 💾 Salvo com sucesso no Redis com chave: ${cacheKey}`);
-
-        return movements.map(CashMovement.fromPrisma);
+        return rows.map(CashMovement.fromPrisma);
     }
+
+
+
 
 
     async dashboardMovement(userId: string, date?: string): Promise<DashboardMovement> {

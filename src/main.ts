@@ -38,6 +38,15 @@ async function bootstrap() {
     }
   });
 
+  cron.schedule('*/5 * * * *', async () => {
+    try {
+      await prisma.$executeRaw`REFRESH MATERIALIZED VIEW mv_cash_movements_per_user;`;
+      console.log('Materialized view mv_cash_movements_per_user atualizada');
+    } catch (err) {
+      console.error('Falha ao atualizar mv_cash_movements_per_user:', err);
+    }
+  });
+
   const fastify = app.getHttpAdapter().getInstance();
   fastify.get('/health', async (request, reply) => {
     return reply.status(200).send({ status: 'ok' });
