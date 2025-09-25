@@ -32,18 +32,9 @@ async function bootstrap() {
   cron.schedule('*/5 * * * *', async () => {
     try {
       await prisma.$executeRaw`REFRESH MATERIALIZED VIEW auth_login_view;`;
-      console.log('Materialized view auth_login_view atualizada');
-    } catch (err) {
-      console.error('Falha ao atualizar materialized view:', err);
-    }
-  });
-
-  cron.schedule('*/5 * * * *', async () => {
-    try {
       await prisma.$executeRaw`REFRESH MATERIALIZED VIEW mv_cash_movements_per_user;`;
-      console.log('Materialized view mv_cash_movements_per_user atualizada');
     } catch (err) {
-      console.error('Falha ao atualizar mv_cash_movements_per_user:', err);
+      console.error('Falha ao atualizar materialized views:', err);
     }
   });
 
