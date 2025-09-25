@@ -51,7 +51,8 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
     }
 
     async findAll(userId: string): Promise<CashMovement[]> {
-        console.debug('findAll userId recebido:', userId);
+        await this.prisma.$executeRaw`REFRESH MATERIALIZED VIEW mv_cash_movements_per_user;`;
+
 
         const cacheKey = `cashMovements:${userId}:all`;
         const cached = await this.redis.get(cacheKey);
