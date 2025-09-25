@@ -57,7 +57,7 @@ export class AuthService {
 
             const user = await this.findAndValidateUser.isValid(email, password_hash);
 
-            const viewData = await this.prisma.au.findFirst({
+            const viewData = await this.prisma.authLoginView.findFirst({
                 where: { user_email: user.email },
             });
 
