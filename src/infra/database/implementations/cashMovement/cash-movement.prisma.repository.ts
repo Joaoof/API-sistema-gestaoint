@@ -29,6 +29,9 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
             },
         });
 
+        await this.prisma.$executeRaw`REFRESH MATERIALIZED VIEW mv_cash_movements_per_user;`;
+        await this.prisma.$executeRaw`REFRESH MATERIALIZED VIEW auth_login_view;`;
+
         const cacheKey = `cashMovements:${movement.user_id}:all`;
         console.log(`[REDIS CREATE] 🔑 Chave: "${cacheKey}" | Len: ${cacheKey.length} | User: "${movement.user_id}" | User Len: ${movement.user_id.length}`);
 
