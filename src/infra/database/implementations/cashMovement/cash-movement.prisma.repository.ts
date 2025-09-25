@@ -50,19 +50,6 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
     async findAll(userId: string): Promise<CashMovement[]> {
         console.debug('findAll userId recebido:', userId);
 
-        const cacheKey = `cashMovements:${userId}:all`;
-        const cached = await this.redis.get(cacheKey);
-        if (cached) {
-            try {
-                const arr = JSON.parse(cached);
-                if (Array.isArray(arr)) {
-                    return arr.map(CashMovement.fromPrisma);
-                }
-            } catch {
-                await this.redis.delete(cacheKey);
-            }
-        }
-
         const allRows = await this.prisma.mvCashMovementsPerUser.findMany();
         console.debug('DEBUG allRows na view (sem filtro):', allRows);
 
@@ -81,10 +68,7 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
         });
 
         console.debug(`DEBUG rows filtrados por ${userId}:`, rows);
-
         // 2) Cache rápido
-        await this.redis.setWithPipeline(cacheKey, rows, 3600);
-
         return rows.map(CashMovement.fromPrisma);
     }
 
