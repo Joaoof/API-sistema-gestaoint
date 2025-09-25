@@ -214,6 +214,7 @@ model CashMovement {
   user        Users       @relation(fields: [user_id], references: [id])
 
 
+  @@index([user_id, date(sort: Desc)])
   @@index([date])
 }
 
