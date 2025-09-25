@@ -48,6 +48,8 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
     }
 
     async findAll(userId: string): Promise<CashMovement[]> {
+        console.debug('findAll userId recebido:', userId);
+
         const cacheKey = `cashMovements:${userId}:all`;
         const cached = await this.redis.get(cacheKey);
         if (cached) {
@@ -60,6 +62,9 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
                 await this.redis.delete(cacheKey);
             }
         }
+
+        const allRows = await this.prisma.mvCashMovementsPerUser.findMany();
+        console.debug('DEBUG allRows na view (sem filtro):', allRows);
 
         // 1) Consulta ÚNICA à materialized view usando índice composto
         const rows = await this.prisma.mvCashMovementsPerUser.findMany({
@@ -74,6 +79,8 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
                 date: true,
             },
         });
+
+        console.debug(`DEBUG rows filtrados por ${userId}:`, rows);
 
         // 2) Cache rápido
         await this.redis.setWithPipeline(cacheKey, rows, 3600);
