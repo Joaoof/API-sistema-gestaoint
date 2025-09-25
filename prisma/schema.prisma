@@ -218,6 +218,20 @@ model CashMovement {
   @@index([date])
 }
 
+model MvCashMovementsPerUser {
+  user_id     String   @map("user_id")
+  id          String   @map("id")            @id
+  type        MovementType  @map("type")
+  category    MovementCategory @map("category")
+  value       Decimal  @map("value")
+  description String   @map("description")
+  date        DateTime @map("date")
+
+  @@map("mv_cash_movements_per_user")
+  @@index([user_id, date(sort: Desc)])
+}
+
+
 enum MovementType {
   ENTRY
   EXIT
