@@ -27,6 +27,13 @@ export class RedisService implements OnModuleDestroy {
         }
     }
 
+    async setWithPipeline(key: string, value: any, ttlSeconds: number): Promise<void> {
+        const str = JSON.stringify(value);
+        const pipeline = this.redisClient.pipeline();
+        pipeline.set(key, str);
+        pipeline.expire(key, ttlSeconds);
+        await pipeline.exec();
+    }
 
     async delete(key: string): Promise<void> {
         await this.redisClient.del(`:${key}`);

@@ -55,31 +55,27 @@ export class AuthService {
                 };
             }
 
-            // 🔍 Cache miss - buscar dados no banco
             const user = await this.findAndValidateUser.isValid(email, password_hash);
 
-            const viewData = await this.prisma.authLoginView.findUnique({
-                where: { user_email: user.email || '' },
+            const viewData = await this.prisma.authLoginView.findFirst({
+                where: { user_email: user.email },
             });
+
             if (!viewData) {
                 throw new Error('Dados de login não encontrados');
             }
 
-            // 🚀 Buscar dados relacionados em paralelo
             const [company, planDto] = await Promise.all([
                 this.fetchCompany.getCompanyById(user.company_id ?? ''),
                 this.fetchPlan.getPlanByCompanyId(user.company_id ?? ''),
             ]);
 
-            // 🔐 Criar token (SEM password_hash)
             const token = this._createToken.isCreated({
                 id: user.id,
                 email: user.email,
                 role: user.role,
-                // ✅ REMOVIDO password_hash por segurança
             });
 
-            // 👤 Construir DTO do usuário
             const userDto = await this.buildUserDto.buildUserDto({
                 id: user.id,
                 email: user.email,
@@ -87,14 +83,12 @@ export class AuthService {
                 company_id: user.company_id,
             }, company, planDto);
 
-            // 💾 Cachear dados completos (ORDEM CORRETA)
-            await this.redisService.set(
+            await this.redisService.setWithPipeline(
                 cacheKey,
-                JSON.stringify({ user, company, planDto }),
+                viewData,
                 900 // 15 minutos
             );
 
-            // 📤 Retornar response completo
             const response = {
                 accessToken: (await token).accessToken,
                 expiresIn: process.env.JWT_EXPIRES_IN || '3600s',
@@ -104,13 +98,10 @@ export class AuthService {
             return response;
 
         } catch (error) {
-            // 🚨 Log do erro para debug
             console.error('Login error:', error);
 
-            // Se Redis falhar, continuar sem cache
             if (error.message?.includes('Redis')) {
                 console.warn('Redis unavailable, proceeding without cache');
-                // Implementar fallback sem cache aqui
             }
 
             throw error;
