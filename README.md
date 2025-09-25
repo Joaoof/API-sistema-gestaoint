@@ -129,7 +129,7 @@ Empower organizations with a reliable, secure, and high-performance API that str
 <details>
 <summary>View detailed dependency list</summary>
 
-\`\`\`json
+```json
 {
   "production": {
     "@nestjs/core": "^10.0.0",
@@ -148,7 +148,7 @@ Empower organizations with a reliable, secure, and high-performance API that str
     "prisma": "^5.0.0"
   }
 }
-\`\`\`
+```
 
 </details>
 
@@ -160,7 +160,7 @@ Empower organizations with a reliable, secure, and high-performance API that str
 
 Our API follows **Domain-Driven Design (DDD)** and **SOLID principles** to ensure maintainability, testability, and scalability.
 
-\`\`\`mermaid
+```mermaid
 graph TB
     A[Client Request] --> B[Controller Layer]
     B --> C[Service Layer]
@@ -175,11 +175,11 @@ graph TB
     style A fill:#e1f5fe
     style F fill:#f3e5f5
     style D fill:#fff3e0
-\`\`\`
+```
 
 ### **📁 Project Structure**
 
-\`\`\`
+```
 src/
 ├── 🏗️ core/                    # Domain Layer
 │   ├── entities/               # Business Entities
@@ -207,11 +207,11 @@ src/
     ├── unit/                  # Unit Tests
     ├── integration/           # Integration Tests
     └── e2e/                   # End-to-End Tests
-\`\`\`
+```
 
 ### **🔄 Request Flow**
 
-\`\`\`mermaid
+```mermaid
 sequenceDiagram
     participant C as Client
     participant G as Guard
@@ -231,7 +231,7 @@ sequenceDiagram
     R-->>S: Domain Entity
     S-->>Ctrl: Response DTO
     Ctrl-->>C: HTTP Response
-\`\`\`
+```
 
 ---
 
@@ -251,7 +251,7 @@ sequenceDiagram
 <details>
 <summary><strong>🐳 Docker (Recommended)</strong></summary>
 
-\`\`\`bash
+```bash
 # Clone the repository
 git clone https://github.com/Joaoof/api-sistema-gestaoint.git
 cd api-sistema-gestaoint
@@ -264,14 +264,14 @@ docker-compose logs -f api
 
 # Access the API
 curl http://localhost:3000/health
-\`\`\`
+```
 
 </details>
 
 <details>
 <summary><strong>💻 Local Development</strong></summary>
 
-\`\`\`bash
+```bash
 # Clone and setup
 git clone https://github.com/Joaoof/api-sistema-gestaoint.git
 cd api-sistema-gestaoint
@@ -291,7 +291,7 @@ npx prisma db seed
 npm run start:dev
 
 # API will be available at http://localhost:3000
-\`\`\`
+```
 
 </details>
 
@@ -300,7 +300,7 @@ npm run start:dev
 <details>
 <summary>View environment variables</summary>
 
-\`\`\`bash
+```bash
 # Database
 DATABASE_URL="postgresql://user:password@localhost:5432/gestaoint"
 REDIS_URL="redis://localhost:6379"
@@ -323,7 +323,7 @@ SMTP_PASS="your-app-password"
 # Monitoring
 SENTRY_DSN="your-sentry-dsn"
 LOG_LEVEL="info"
-\`\`\`
+```
 
 </details>
 
@@ -332,18 +332,18 @@ LOG_LEVEL="info"
 ## 📖 **API Documentation**
 
 ### **🔗 Base URL**
-\`\`\`
+```
 Production:  https://api.gestaoint.com/v1
 Development: http://localhost:3000/v1
-\`\`\`
+```
 
 ### **🔐 Authentication**
 
 All protected endpoints require a Bearer token in the Authorization header:
 
-\`\`\`bash
+```bash
 Authorization: Bearer <your-jwt-token>
-\`\`\`
+```
 
 ### **📋 Endpoints Overview**
 
@@ -354,15 +354,15 @@ Authorization: Bearer <your-jwt-token>
 Authenticate user and receive JWT token.
 
 **Request:**
-\`\`\`json
+```json
 {
   "email": "user@example.com",
   "password": "securePassword123"
 }
-\`\`\`
+```
 
 **Response:**
-\`\`\`json
+```json
 {
   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -374,20 +374,11 @@ Authenticate user and receive JWT token.
   },
   "expiresIn": 604800
 }
-\`\`\`
+```
 
 #### **POST** `/auth/register`
-Create a new user account.
+Create a new user seed.
 
-**Request:**
-\`\`\`json
-{
-  "name": "John Doe",
-  "email": "user@example.com",
-  "password": "securePassword123",
-  "confirmPassword": "securePassword123"
-}
-\`\`\`
 
 #### **POST** `/auth/refresh`
 Refresh JWT token using refresh token.
@@ -411,7 +402,7 @@ List all users with pagination and filtering.
 - `status`: Filter by user status
 
 **Response:**
-\`\`\`json
+```json
 {
   "data": [
     {
@@ -431,7 +422,7 @@ List all users with pagination and filtering.
     "totalPages": 10
   }
 }
-\`\`\`
+```
 
 #### **GET** `/users/:id`
 Get user details by ID.
@@ -486,7 +477,7 @@ All API responses follow a consistent format:
 
 ### **🛠️ Development Commands**
 
-\`\`\`bash
+```bash
 # Development
 npm run start:dev          # Start with hot reload
 npm run start:debug        # Start with debugger
@@ -513,13 +504,13 @@ npm run test               # Run unit tests
 npm run test:watch         # Run tests in watch mode
 npm run test:cov           # Generate coverage report
 npm run test:e2e           # Run end-to-end tests
-\`\`\`
+```
 
 ### **🔄 Git Workflow**
 
 We follow **Conventional Commits** and **GitFlow** branching strategy:
 
-\`\`\`bash
+```bash
 # Feature development
 git checkout -b feature/user-management
 git commit -m "feat(users): add user creation endpoint"
@@ -531,7 +522,7 @@ git commit -m "fix(auth): resolve JWT validation issue"
 # Releases
 git checkout -b release/v1.2.0
 git commit -m "chore(release): bump version to 1.2.0"
-\`\`\`
+```
 
 ### **📝 Code Style Guidelines**
 
@@ -560,20 +551,6 @@ git commit -m "chore(release): bump version to 1.2.0"
 
 ---
 
-## 🧪 **Testing Strategy**
-
-### **🎯 Testing Pyramid**
-
-\`\`\`mermaid
-graph TD
-    A[E2E Tests<br/>10%] --> B[Integration Tests<br/>20%]
-    B --> C[Unit Tests<br/>70%]
-    
-    style A fill:#ffcdd2
-    style B fill:#fff3e0
-    style C fill:#e8f5e8
-\`\`\`
-
 ### **📊 Coverage Requirements**
 
 | Type | Minimum Coverage | Current Coverage |
@@ -582,171 +559,11 @@ graph TD
 | **Integration Tests** | 70% | ![Coverage](https://img.shields.io/badge/75%25-passing-brightgreen) |
 | **E2E Tests** | 60% | ![Coverage](https://img.shields.io/badge/65%25-passing-brightgreen) |
 
-### **🧪 Test Examples**
-
-<details>
-<summary>Unit Test Example</summary>
-
-\`\`\`typescript
-describe('UserService', () => {
-  let service: UserService;
-  let repository: MockRepository<User>;
-
-  beforeEach(async () => {
-    const module = await Test.createTestingModule({
-      providers: [
-        UserService,
-        {
-          provide: getRepositoryToken(User),
-          useClass: MockRepository,
-        },
-      ],
-    }).compile();
-
-    service = module.get<UserService>(UserService);
-    repository = module.get(getRepositoryToken(User));
-  });
-
-  describe('createUser', () => {
-    it('should create a new user successfully', async () => {
-      const createUserDto = {
-        name: 'John Doe',
-        email: 'john@example.com',
-        password: 'password123',
-      };
-
-      const expectedUser = {
-        id: 'uuid',
-        ...createUserDto,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      repository.save.mockResolvedValue(expectedUser);
-
-      const result = await service.createUser(createUserDto);
-
-      expect(result).toEqual(expectedUser);
-      expect(repository.save).toHaveBeenCalledWith(
-        expect.objectContaining(createUserDto)
-      );
-    });
-  });
-});
-\`\`\`
-
-</details>
-
 ---
 
 ## 🚢 **Deployment**
 
-### **🐳 Docker Deployment**
 
-<details>
-<summary>Production Docker Setup</summary>
-
-\`\`\`yaml
-# docker-compose.prod.yml
-version: '3.8'
-
-services:
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=${DATABASE_URL}
-      - JWT_SECRET=${JWT_SECRET}
-    depends_on:
-      - postgres
-      - redis
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_DB: gestaoint
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./ssl:/etc/nginx/ssl
-    depends_on:
-      - api
-    restart: unless-stopped
-
-volumes:
-  postgres_data:
-\`\`\`
-
-</details>
-
-### **☁️ Cloud Deployment Options**
-
-| Platform | Configuration | Estimated Cost |
-|----------|---------------|----------------|
-| **AWS ECS** | Fargate + RDS | $50-200/month |
-| **Google Cloud Run** | Serverless + Cloud SQL | $30-150/month |
-| **DigitalOcean** | Droplet + Managed DB | $25-100/month |
-| **Heroku** | Dyno + Postgres | $25-75/month |
-
-### **🔄 CI/CD Pipeline**
-
-\`\`\`yaml
-# .github/workflows/deploy.yml
-name: Deploy to Production
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      - run: npm ci
-      - run: npm run test
-      - run: npm run test:e2e
-
-  build-and-deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Build Docker image
-        run: docker build -t api-gestaoint .
-      - name: Deploy to production
-        run: |
-          # Deploy commands here
-\`\`\`
-
----
 
 ## 📊 **Performance & Monitoring**
 
@@ -769,7 +586,7 @@ jobs:
 
 ### **🏥 Health Checks**
 
-\`\`\`typescript
+```typescript
 @Controller('health')
 export class HealthController {
   @Get()
@@ -783,7 +600,7 @@ export class HealthController {
     ]);
   }
 }
-\`\`\`
+```
 
 ---
 
