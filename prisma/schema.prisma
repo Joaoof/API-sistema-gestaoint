@@ -152,7 +152,6 @@ model AuthLoginView {
   plan_name    String   @map("plan_name")
   modules      Json     @map("modules")
   
-  @@ignore // View somente leitura
   @@map("auth_login_view")
 }
 

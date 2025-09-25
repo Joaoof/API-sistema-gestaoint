@@ -8,6 +8,7 @@ import { UserDtoService } from './user-dto.service';
 import { LoginUserDto } from 'src/modules/auth/dto/login.dto';
 import { GetByIdUserService } from './get-by-id.service';
 import { RedisService } from 'src/infra/cache/redis.service';
+import { PrismaService } from 'prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +21,7 @@ export class AuthService {
         private readonly _createToken: CreateTokenService,
         private readonly buildUserDto: UserDtoService,
         private readonly redisService: RedisService,
+        private readonly prisma: PrismaService,
     ) { }
 
     async login(loginUserDto: LoginUserDto): Promise<any> {
@@ -55,6 +57,13 @@ export class AuthService {
 
             // 🔍 Cache miss - buscar dados no banco
             const user = await this.findAndValidateUser.isValid(email, password_hash);
+
+            const viewData = await this.prisma.authLoginView.findUnique({
+                where: { user_email: user.email || '' },
+            });
+            if (!viewData) {
+                throw new Error('Dados de login não encontrados');
+            }
 
             // 🚀 Buscar dados relacionados em paralelo
             const [company, planDto] = await Promise.all([
