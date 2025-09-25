@@ -4,9 +4,9 @@
 
 # 🏢 API Sistema GestãoInt
 
-### **Enterprise-Grade RESTful API for Internal Organization Management**
+### **API RESTful de Nível Empresarial para Gestão Organizacional Interna**
 
-*Built with NestJS • Following DDD & SOLID Principles • Production-Ready with Docker & CI/CD*
+*Construída com NestJS • Seguindo Princípios DDD & SOLID • Pronta para Produção com Docker & CI/CD*
 
 ---
 
@@ -17,106 +17,106 @@
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker)](https://docker.com)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat-square&logo=typescript)](https://typescriptlang.org)
 
-[🚀 **Quick Start**](#-quick-start) • [📖 **Documentation**](#-api-documentation) • [🏗️ **Architecture**](#-architecture) • [🔧 **Development**](#-development-guide)
+[🚀 **Início Rápido**](#-início-rápido) • [📖 **Documentação**](#-documentação-da-api) • [🏗️ **Arquitetura**](#-arquitetura) • [🔧 **Desenvolvimento**](#-guia-de-desenvolvimento)
 
 </div>
 
 ---
 
-## 📋 **Table of Contents**
+## 📋 **Índice**
 
 <details>
-<summary>Click to expand</summary>
+<summary>Clique para expandir</summary>
 
-- [🔍 Overview](#-overview)
-- [✨ Key Features](#-key-features)
-- [🛠️ Tech Stack](#️-tech-stack)
-- [🏗️ Architecture](#️-architecture)
-- [🚀 Quick Start](#-quick-start)
-- [📖 API Documentation](#-api-documentation)
-- [🔧 Development Guide](#-development-guide)
-- [🧪 Testing Strategy](#-testing-strategy)
-- [🚢 Deployment](#-deployment)
-- [📊 Performance & Monitoring](#-performance--monitoring)
-- [🔒 Security](#-security)
-- [🤝 Contributing](#-contributing)
-- [📝 License](#-license)
+- [🔍 Visão Geral](#-visão-geral)
+- [✨ Principais Funcionalidades](#-principais-funcionalidades)
+- [🛠️ Stack Tecnológica](#️-stack-tecnológica)
+- [🏗️ Arquitetura](#️-arquitetura)
+- [🚀 Início Rápido](#-início-rápido)
+- [📖 Documentação da API](#-documentação-da-api)
+- [🔧 Guia de Desenvolvimento](#-guia-de-desenvolvimento)
+- [🧪 Estratégia de Testes](#-estratégia-de-testes)
+- [🚢 Deploy](#-deploy)
+- [📊 Performance e Monitoramento](#-performance-e-monitoramento)
+- [🔒 Segurança](#-segurança)
+- [🤝 Contribuindo](#-contribuindo)
+- [📝 Licença](#-licença)
 
 </details>
 
 ---
 
-## 🔍 **Overview**
+## 🔍 **Visão Geral**
 
-The **API Sistema GestãoInt** is a cutting-edge, enterprise-grade RESTful API designed for comprehensive internal organization management. Built with modern architectural patterns and industry best practices, it provides a robust, scalable, and maintainable backend solution.
+A **API Sistema GestãoInt** é uma API RESTful de ponta, de nível empresarial, projetada para gestão organizacional interna abrangente. Construída com padrões arquiteturais modernos e melhores práticas da indústria, fornece uma solução backend robusta, escalável e sustentável.
 
-### **🎯 Mission**
-Empower organizations with a reliable, secure, and high-performance API that streamlines internal operations while maintaining code quality and developer experience.
+### **🎯 Missão**
+Capacitar organizações com uma API confiável, segura e de alta performance que otimiza operações internas mantendo qualidade de código e experiência do desenvolvedor.
 
-### **🌟 Why Choose This API?**
+### **🌟 Por que Escolher Esta API?**
 
-| Feature | Benefit |
-|---------|---------|
-| 🏗️ **Domain-Driven Design** | Clean, maintainable code architecture |
-| 🔒 **Enterprise Security** | JWT authentication with role-based access |
-| 📈 **Scalable Infrastructure** | Docker containerization with orchestration |
-| 🚀 **CI/CD Ready** | Automated testing and deployment pipelines |
-| 📊 **Monitoring & Observability** | Built-in health checks and metrics |
-| 🧪 **Test-Driven Development** | Comprehensive test coverage |
+| Funcionalidade | Benefício |
+|----------------|-----------|
+| 🏗️ **Design Orientado a Domínio** | Arquitetura de código limpa e sustentável |
+| 🔒 **Segurança Empresarial** | Autenticação JWT com controle de acesso baseado em funções |
+| 📈 **Infraestrutura Escalável** | Containerização Docker com orquestração |
+| 🚀 **Pronto para CI/CD** | Pipelines automatizados de teste e deploy |
+| 📊 **Monitoramento e Observabilidade** | Health checks e métricas integradas |
+| 🧪 **Desenvolvimento Orientado a Testes** | Cobertura abrangente de testes |
 
 ---
 
-## ✨ **Key Features**
+## ✨ **Principais Funcionalidades**
 
 <div align="center">
 
-| 🔐 **Authentication & Authorization** | 👥 **User Management** | 🏗️ **Architecture** |
+| 🔐 **Autenticação e Autorização** | 👥 **Gestão de Usuários** | 🏗️ **Arquitetura** |
 |:---:|:---:|:---:|
-| JWT Token Management | CRUD Operations | Domain-Driven Design |
-| Role-Based Access Control | Profile Management | SOLID Principles |
-| Session Management | Permission System | Clean Architecture |
-| Password Security | User Validation | Dependency Injection |
+| Gestão de Tokens JWT | Operações CRUD | Design Orientado a Domínio |
+| Controle de Acesso Baseado em Funções | Gestão de Perfis | Princípios SOLID |
+| Gestão de Sessões | Sistema de Permissões | Arquitetura Limpa |
+| Segurança de Senhas | Validação de Usuários | Injeção de Dependência |
 
 </div>
 
-### **🚀 Advanced Features**
+### **🚀 Funcionalidades Avançadas**
 
-- **🔄 Real-time Updates**: WebSocket support for live data synchronization
-- **📊 Analytics Dashboard**: Built-in metrics and reporting capabilities
-- **🌐 Multi-tenant Support**: Isolated data per organization
-- **🔍 Advanced Search**: Full-text search with filtering and pagination
-- **📱 API Versioning**: Backward compatibility with version management
-- **🛡️ Rate Limiting**: Protection against abuse and DDoS attacks
-- **📧 Email Integration**: Automated notifications and alerts
-- **🗄️ Database Migrations**: Version-controlled schema changes
-- **🔄 Background Jobs**: Asynchronous task processing
-- **📈 Performance Optimization**: Caching and query optimization
+- **🔄 Atualizações em Tempo Real**: Suporte WebSocket para sincronização de dados ao vivo
+- **📊 Dashboard de Analytics**: Capacidades integradas de métricas e relatórios
+- **🌐 Suporte Multi-tenant**: Dados isolados por organização
+- **🔍 Busca Avançada**: Busca de texto completo com filtragem e paginação
+- **📱 Versionamento de API**: Compatibilidade retroativa com gestão de versões
+- **🛡️ Rate Limiting**: Proteção contra abuso e ataques DDoS
+- **📧 Integração de Email**: Notificações e alertas automatizados
+- **🗄️ Migrações de Banco de Dados**: Mudanças de schema controladas por versão
+- **🔄 Jobs em Background**: Processamento assíncrono de tarefas
+- **📈 Otimização de Performance**: Cache e otimização de consultas
 
 ---
 
-## 🛠️ **Tech Stack**
+## 🛠️ **Stack Tecnológica**
 
 <div align="center">
 
-### **Core Technologies**
+### **Tecnologias Principais**
 
 ![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)
 
-### **Database & ORM**
+### **Banco de Dados e ORM**
 
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
 
-### **DevOps & Infrastructure**
+### **DevOps e Infraestrutura**
 
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
 ![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
 
-### **Quality & Testing**
+### **Qualidade e Testes**
 
 ![Jest](https://img.shields.io/badge/Jest-C21325?style=for-the-badge&logo=jest&logoColor=white)
 ![ESLint](https://img.shields.io/badge/ESLint-4B32C3?style=for-the-badge&logo=eslint&logoColor=white)
@@ -124,12 +124,12 @@ Empower organizations with a reliable, secure, and high-performance API that str
 
 </div>
 
-### **📦 Dependencies Overview**
+### **📦 Visão Geral das Dependências**
 
 <details>
-<summary>View detailed dependency list</summary>
+<summary>Ver lista detalhada de dependências</summary>
 
-```json
+````json
 {
   "production": {
     "@nestjs/core": "^10.0.0",
@@ -148,25 +148,25 @@ Empower organizations with a reliable, secure, and high-performance API that str
     "prisma": "^5.0.0"
   }
 }
-```
+````
 
 </details>
 
 ---
 
-## 🏗️ **Architecture**
+## 🏗️ **Arquitetura**
 
-### **🎯 Architectural Principles**
+### **🎯 Princípios Arquiteturais**
 
-Our API follows **Domain-Driven Design (DDD)** and **SOLID principles** to ensure maintainability, testability, and scalability.
+Nossa API segue **Design Orientado a Domínio (DDD)** e **princípios SOLID** para garantir sustentabilidade, testabilidade e escalabilidade.
 
-```mermaid
+````mermaid
 graph TB
-    A[Client Request] --> B[Controller Layer]
-    B --> C[Service Layer]
-    C --> D[Domain Layer]
-    D --> E[Repository Layer]
-    E --> F[Database]
+    A[Requisição do Cliente] --> B[Camada Controller]
+    B --> C[Camada Service]
+    C --> D[Camada Domain]
+    D --> E[Camada Repository]
+    E --> F[Banco de Dados]
     
     G[Authentication Guard] --> B
     H[Validation Pipe] --> B
@@ -175,240 +175,249 @@ graph TB
     style A fill:#e1f5fe
     style F fill:#f3e5f5
     style D fill:#fff3e0
-```
+````
 
-### **📁 Project Structure**
+### **📁 Estrutura do Projeto**
 
-```
+````
 src/
-├── 🏗️ core/                    # Domain Layer
-│   ├── entities/               # Business Entities
-│   ├── repositories/           # Repository Interfaces
-│   ├── use-cases/             # Business Logic
-│   └── exceptions/            # Custom Exceptions
-├── 🔧 infrastructure/          # Infrastructure Layer
-│   ├── database/              # Database Implementations
-│   ├── services/              # External Services
-│   └── config/                # Configuration
-├── 🌐 modules/                 # Presentation Layer
-│   ├── auth/                  # Authentication Module
-│   ├── users/                 # User Management Module
-│   └── shared/                # Shared Components
-├── 🛠️ shared/                  # Cross-cutting Concerns
-│   ├── pipes/                 # Validation Pipes
-│   ├── guards/                # Authentication Guards
-│   ├── interceptors/          # Request/Response Interceptors
-│   └── decorators/            # Custom Decorators
-├── 📊 monitoring/              # Observability
+├── 🏗️ core/                    # Camada de Domínio
+│   ├── entities/               # Entidades de Negócio
+│   ├── repositories/           # Interfaces de Repository
+│   ├── use-cases/             # Lógica de Negócio
+│   └── exceptions/            # Exceções Customizadas
+├── 🔧 infrastructure/          # Camada de Infraestrutura
+│   ├── database/              # Implementações de Banco de Dados
+│   ├── services/              # Serviços Externos
+│   └── config/                # Configuração
+├── 🌐 modules/                 # Camada de Apresentação
+│   ├── auth/                  # Módulo de Autenticação
+│   ├── users/                 # Módulo de Gestão de Usuários
+│   └── shared/                # Componentes Compartilhados
+├── 🛠️ shared/                  # Preocupações Transversais
+│   ├── pipes/                 # Pipes de Validação
+│   ├── guards/                # Guards de Autenticação
+│   ├── interceptors/          # Interceptors de Request/Response
+│   └── decorators/            # Decorators Customizados
+├── 📊 monitoring/              # Observabilidade
 │   ├── health/                # Health Checks
-│   ├── metrics/               # Performance Metrics
-│   └── logging/               # Structured Logging
-└── 🧪 __tests__/              # Test Suites
-    ├── unit/                  # Unit Tests
-    ├── integration/           # Integration Tests
-    └── e2e/                   # End-to-End Tests
-```
+│   ├── metrics/               # Métricas de Performance
+│   └── logging/               # Logging Estruturado
+└── 🧪 __tests__/              # Suítes de Teste
+    ├── unit/                  # Testes Unitários
+    ├── integration/           # Testes de Integração
+    └── e2e/                   # Testes End-to-End
+````
 
-### **🔄 Request Flow**
+### **🔄 Fluxo de Requisição**
 
-```mermaid
+````mermaid
 sequenceDiagram
-    participant C as Client
+    participant C as Cliente
     participant G as Guard
     participant Ctrl as Controller
     participant S as Service
     participant R as Repository
-    participant DB as Database
+    participant DB as Banco de Dados
 
-    C->>G: HTTP Request
-    G->>G: Validate JWT
-    G->>Ctrl: Authorized Request
-    Ctrl->>Ctrl: Validate Input
-    Ctrl->>S: Business Logic
-    S->>R: Data Operation
+    C->>G: Requisição HTTP
+    G->>G: Validar JWT
+    G->>Ctrl: Requisição Autorizada
+    Ctrl->>Ctrl: Validar Input
+    Ctrl->>S: Lógica de Negócio
+    S->>R: Operação de Dados
     R->>DB: Query/Mutation
-    DB-->>R: Result
-    R-->>S: Domain Entity
-    S-->>Ctrl: Response DTO
-    Ctrl-->>C: HTTP Response
-```
+    DB-->>R: Resultado
+    R-->>S: Entidade de Domínio
+    S-->>Ctrl: DTO de Resposta
+    Ctrl-->>C: Resposta HTTP
+````
 
 ---
 
-## 🚀 **Quick Start**
+## 🚀 **Início Rápido**
 
-### **📋 Prerequisites**
+### **📋 Pré-requisitos**
 
-| Requirement | Version | Installation |
-|-------------|---------|--------------|
+| Requisito | Versão | Instalação |
+|-----------|--------|------------|
 | **Node.js** | ≥ 18.x | [Download](https://nodejs.org) |
 | **Docker** | ≥ 20.x | [Download](https://docker.com) |
 | **PostgreSQL** | ≥ 14.x | [Download](https://postgresql.org) |
-| **Git** | Latest | [Download](https://git-scm.com) |
+| **Git** | Mais recente | [Download](https://git-scm.com) |
 
-### **⚡ Installation Methods**
+### **⚡ Métodos de Instalação**
 
 <details>
-<summary><strong>🐳 Docker (Recommended)</strong></summary>
+<summary><strong>🐳 Docker (Recomendado)</strong></summary>
 
-```bash
-# Clone the repository
+````bash
+# Clonar o repositório
 git clone https://github.com/Joaoof/api-sistema-gestaoint.git
 cd api-sistema-gestaoint
 
-# Start with Docker Compose
+# Iniciar com Docker Compose
 docker-compose up -d
 
-# View logs
+# Ver logs
 docker-compose logs -f api
 
-# Access the API
+# Acessar a API
 curl http://localhost:3000/health
-```
+````
 
 </details>
 
 <details>
-<summary><strong>💻 Local Development</strong></summary>
+<summary><strong>💻 Desenvolvimento Local</strong></summary>
 
-```bash
-# Clone and setup
+````bash
+# Clonar e configurar
 git clone https://github.com/Joaoof/api-sistema-gestaoint.git
 cd api-sistema-gestaoint
 
-# Install dependencies
+# Instalar dependências
 npm install
 
-# Setup environment
+# Configurar ambiente
 cp .env.example .env
-# Edit .env with your database credentials
+# Editar .env com suas credenciais de banco de dados
 
-# Database setup
+# Configuração do banco de dados
 npx prisma migrate deploy
 npx prisma db seed
 
-# Start development server
+# Iniciar servidor de desenvolvimento
 npm run start:dev
 
-# API will be available at http://localhost:3000
-```
+# API estará disponível em http://localhost:3000
+````
 
 </details>
 
-### **🔧 Environment Configuration**
+### **🔧 Configuração de Ambiente**
 
 <details>
-<summary>View environment variables</summary>
+<summary>Ver variáveis de ambiente</summary>
 
-```bash
-# Database
+````bash
+# Banco de Dados
 DATABASE_URL="postgresql://user:password@localhost:5432/gestaoint"
 REDIS_URL="redis://localhost:6379"
 
-# Authentication
-JWT_SECRET="your-super-secret-jwt-key"
+# Autenticação
+JWT_SECRET="sua-chave-jwt-super-secreta"
 JWT_EXPIRES_IN="7d"
 
-# Application
+# Aplicação
 NODE_ENV="development"
 PORT=3000
 API_VERSION="v1"
 
-# External Services
+# Serviços Externos
 SMTP_HOST="smtp.gmail.com"
 SMTP_PORT=587
-SMTP_USER="your-email@gmail.com"
-SMTP_PASS="your-app-password"
+SMTP_USER="seu-email@gmail.com"
+SMTP_PASS="sua-senha-de-app"
 
-# Monitoring
-SENTRY_DSN="your-sentry-dsn"
+# Monitoramento
+SENTRY_DSN="seu-sentry-dsn"
 LOG_LEVEL="info"
-```
+````
 
 </details>
 
 ---
 
-## 📖 **API Documentation**
+## 📖 **Documentação da API**
 
-### **🔗 Base URL**
-```
-Production:  https://api.gestaoint.com/v1
-Development: http://localhost:3000/v1
-```
+### **🔗 URL Base**
+````
+Produção:     https://api.gestaoint.com/v1
+Desenvolvimento: http://localhost:3000/v1
+````
 
-### **🔐 Authentication**
+### **🔐 Autenticação**
 
-All protected endpoints require a Bearer token in the Authorization header:
+Todos os endpoints protegidos requerem um token Bearer no cabeçalho Authorization:
 
-```bash
-Authorization: Bearer <your-jwt-token>
-```
+````bash
+Authorization: Bearer <seu-jwt-token>
+````
 
-### **📋 Endpoints Overview**
+### **📋 Visão Geral dos Endpoints**
 
 <details>
-<summary><strong>🔐 Authentication Endpoints</strong></summary>
+<summary><strong>🔐 Endpoints de Autenticação</strong></summary>
 
 #### **POST** `/auth/login`
-Authenticate user and receive JWT token.
+Autenticar usuário e receber token JWT.
 
-**Request:**
-```json
+**Requisição:**
+````json
 {
-  "email": "user@example.com",
-  "password": "securePassword123"
+  "email": "usuario@exemplo.com",
+  "password": "senhaSegura123"
 }
-```
+````
 
-**Response:**
-```json
+**Resposta:**
+````json
 {
   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
     "id": "uuid",
-    "name": "John Doe",
-    "email": "user@example.com",
+    "name": "João Silva",
+    "email": "usuario@exemplo.com",
     "role": "USER"
   },
   "expiresIn": 604800
 }
-```
+````
 
 #### **POST** `/auth/register`
-Create a new user seed.
+Criar nova conta de usuário.
 
+**Requisição:**
+````json
+{
+  "name": "João Silva",
+  "email": "usuario@exemplo.com",
+  "password": "senhaSegura123",
+  "confirmPassword": "senhaSegura123"
+}
+````
 
 #### **POST** `/auth/refresh`
-Refresh JWT token using refresh token.
+Renovar token JWT usando refresh token.
 
 #### **POST** `/auth/logout`
-Invalidate current session.
+Invalidar sessão atual.
 
 </details>
 
 <details>
-<summary><strong>👥 User Management Endpoints</strong></summary>
+<summary><strong>👥 Endpoints de Gestão de Usuários</strong></summary>
 
 #### **GET** `/users`
-List all users with pagination and filtering.
+Listar todos os usuários com paginação e filtragem.
 
-**Query Parameters:**
-- `page`: Page number (default: 1)
-- `limit`: Items per page (default: 10, max: 100)
-- `search`: Search term for name/email
-- `role`: Filter by user role
-- `status`: Filter by user status
+**Parâmetros de Query:**
+- `page`: Número da página (padrão: 1)
+- `limit`: Itens por página (padrão: 10, máx: 100)
+- `search`: Termo de busca para nome/email
+- `role`: Filtrar por função do usuário
+- `status`: Filtrar por status do usuário
 
-**Response:**
-```json
+**Resposta:**
+````json
 {
   "data": [
     {
       "id": "uuid",
-      "name": "John Doe",
-      "email": "user@example.com",
+      "name": "João Silva",
+      "email": "usuario@exemplo.com",
       "role": "USER",
       "status": "ACTIVE",
       "createdAt": "2024-01-01T00:00:00Z",
@@ -422,46 +431,46 @@ List all users with pagination and filtering.
     "totalPages": 10
   }
 }
-```
+````
 
 #### **GET** `/users/:id`
-Get user details by ID.
+Obter detalhes do usuário por ID.
 
 #### **PATCH** `/users/:id`
-Update user information.
+Atualizar informações do usuário.
 
 #### **DELETE** `/users/:id`
-Soft delete user account.
+Exclusão suave da conta do usuário.
 
 </details>
 
-### **📊 Response Format**
+### **📊 Formato de Resposta**
 
-All API responses follow a consistent format:
+Todas as respostas da API seguem um formato consistente:
 
-\`\`\`json
+````json
 {
   "success": true,
   "data": {},
-  "message": "Operation completed successfully",
+  "message": "Operação concluída com sucesso",
   "timestamp": "2024-01-01T00:00:00Z",
   "path": "/api/v1/users",
   "version": "1.0.0"
 }
-\`\`\`
+````
 
-### **❌ Error Handling**
+### **❌ Tratamento de Erros**
 
-\`\`\`json
+````json
 {
   "success": false,
   "error": {
     "code": "VALIDATION_ERROR",
-    "message": "Validation failed",
+    "message": "Falha na validação",
     "details": [
       {
         "field": "email",
-        "message": "Invalid email format"
+        "message": "Formato de email inválido"
       }
     ]
   },
@@ -469,124 +478,298 @@ All API responses follow a consistent format:
   "path": "/api/v1/auth/login",
   "requestId": "uuid"
 }
-\`\`\`
+````
 
 ---
 
-## 🔧 **Development Guide**
+## 🔧 **Guia de Desenvolvimento**
 
-### **🛠️ Development Commands**
+### **🛠️ Comandos de Desenvolvimento**
 
-```bash
-# Development
-npm run start:dev          # Start with hot reload
-npm run start:debug        # Start with debugger
-npm run start:prod         # Start production build
+````bash
+# Desenvolvimento
+npm run start:dev          # Iniciar com hot reload
+npm run start:debug        # Iniciar com debugger
+npm run start:prod         # Iniciar build de produção
 
-# Building
-npm run build              # Build for production
-npm run build:watch        # Build with watch mode
+# Build
+npm run build              # Build para produção
+npm run build:watch        # Build com modo watch
 
-# Database
-npm run db:migrate         # Run migrations
-npm run db:seed            # Seed database
-npm run db:reset           # Reset database
-npm run db:studio          # Open Prisma Studio
+# Banco de Dados
+npm run db:migrate         # Executar migrações
+npm run db:seed            # Popular banco de dados
+npm run db:reset           # Resetar banco de dados
+npm run db:studio          # Abrir Prisma Studio
 
-# Code Quality
-npm run lint               # Run ESLint
-npm run lint:fix           # Fix ESLint issues
-npm run format             # Format with Prettier
-npm run type-check         # TypeScript type checking
+# Qualidade de Código
+npm run lint               # Executar ESLint
+npm run lint:fix           # Corrigir problemas do ESLint
+npm run format             # Formatar com Prettier
+npm run type-check         # Verificação de tipos TypeScript
 
-# Testing
-npm run test               # Run unit tests
-npm run test:watch         # Run tests in watch mode
-npm run test:cov           # Generate coverage report
-npm run test:e2e           # Run end-to-end tests
-```
+# Testes
+npm run test               # Executar testes unitários
+npm run test:watch         # Executar testes em modo watch
+npm run test:cov           # Gerar relatório de cobertura
+npm run test:e2e           # Executar testes end-to-end
+````
 
-### **🔄 Git Workflow**
+### **🔄 Fluxo Git**
 
-We follow **Conventional Commits** and **GitFlow** branching strategy:
+Seguimos **Conventional Commits** e estratégia de branching **GitFlow**:
 
-```bash
-# Feature development
-git checkout -b feature/user-management
-git commit -m "feat(users): add user creation endpoint"
+````bash
+# Desenvolvimento de funcionalidade
+git checkout -b feature/gestao-usuarios
+git commit -m "feat(users): adicionar endpoint de criação de usuário"
 
-# Bug fixes
-git checkout -b fix/auth-validation
-git commit -m "fix(auth): resolve JWT validation issue"
+# Correção de bugs
+git checkout -b fix/validacao-auth
+git commit -m "fix(auth): resolver problema de validação JWT"
 
 # Releases
 git checkout -b release/v1.2.0
 git commit -m "chore(release): bump version to 1.2.0"
-```
+````
 
-### **📝 Code Style Guidelines**
+### **📝 Diretrizes de Estilo de Código**
 
 <details>
-<summary>View coding standards</summary>
+<summary>Ver padrões de codificação</summary>
 
-#### **TypeScript Best Practices**
-- Use strict TypeScript configuration
-- Prefer interfaces over types for object shapes
-- Use enums for constants with multiple values
-- Implement proper error handling with custom exceptions
+#### **Melhores Práticas TypeScript**
+- Usar configuração TypeScript estrita
+- Preferir interfaces sobre types para formas de objeto
+- Usar enums para constantes com múltiplos valores
+- Implementar tratamento adequado de erros com exceções customizadas
 
-#### **NestJS Patterns**
-- Use dependency injection for all services
-- Implement proper DTOs for request/response validation
-- Use guards for authentication and authorization
-- Implement interceptors for cross-cutting concerns
+#### **Padrões NestJS**
+- Usar injeção de dependência para todos os serviços
+- Implementar DTOs adequados para validação de request/response
+- Usar guards para autenticação e autorização
+- Implementar interceptors para preocupações transversais
 
-#### **Database Guidelines**
-- Use Prisma schema for database modeling
-- Implement proper indexing for performance
-- Use transactions for complex operations
-- Follow naming conventions for tables and columns
+#### **Diretrizes de Banco de Dados**
+- Usar schema Prisma para modelagem de banco de dados
+- Implementar indexação adequada para performance
+- Usar transações para operações complexas
+- Seguir convenções de nomenclatura para tabelas e colunas
 
 </details>
 
 ---
 
-### **📊 Coverage Requirements**
+## 🧪 **Estratégia de Testes**
 
-| Type | Minimum Coverage | Current Coverage |
-|------|------------------|------------------|
-| **Unit Tests** | 80% | ![Coverage](https://img.shields.io/badge/85%25-passing-brightgreen) |
-| **Integration Tests** | 70% | ![Coverage](https://img.shields.io/badge/75%25-passing-brightgreen) |
-| **E2E Tests** | 60% | ![Coverage](https://img.shields.io/badge/65%25-passing-brightgreen) |
+### **🎯 Pirâmide de Testes**
+
+````mermaid
+graph TD
+    A[Testes E2E<br/>10%] --> B[Testes de Integração<br/>20%]
+    B --> C[Testes Unitários<br/>70%]
+    
+    style A fill:#ffcdd2
+    style B fill:#fff3e0
+    style C fill:#e8f5e8
+````
+
+### **📊 Requisitos de Cobertura**
+
+| Tipo | Cobertura Mínima | Cobertura Atual |
+|------|------------------|-----------------|
+| **Testes Unitários** | 80% | ![Coverage](https://img.shields.io/badge/85%25-passing-brightgreen) |
+| **Testes de Integração** | 70% | ![Coverage](https://img.shields.io/badge/75%25-passing-brightgreen) |
+| **Testes E2E** | 60% | ![Coverage](https://img.shields.io/badge/65%25-passing-brightgreen) |
+
+### **🧪 Exemplos de Teste**
+
+<details>
+<summary>Exemplo de Teste Unitário</summary>
+
+````typescript
+describe('UserService', () => {
+  let service: UserService;
+  let repository: MockRepository<User>;
+
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      providers: [
+        UserService,
+        {
+          provide: getRepositoryToken(User),
+          useClass: MockRepository,
+        },
+      ],
+    }).compile();
+
+    service = module.get<UserService>(UserService);
+    repository = module.get(getRepositoryToken(User));
+  });
+
+  describe('createUser', () => {
+    it('deve criar um novo usuário com sucesso', async () => {
+      const createUserDto = {
+        name: 'João Silva',
+        email: 'joao@exemplo.com',
+        password: 'senha123',
+      };
+
+      const expectedUser = {
+        id: 'uuid',
+        ...createUserDto,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      repository.save.mockResolvedValue(expectedUser);
+
+      const result = await service.createUser(createUserDto);
+
+      expect(result).toEqual(expectedUser);
+      expect(repository.save).toHaveBeenCalledWith(
+        expect.objectContaining(createUserDto)
+      );
+    });
+  });
+});
+````
+
+</details>
 
 ---
 
-## 🚢 **Deployment**
+## 🚢 **Deploy**
 
+### **🐳 Deploy com Docker**
 
+<details>
+<summary>Configuração Docker de Produção</summary>
 
-## 📊 **Performance & Monitoring**
+````yaml
+# docker-compose.prod.yml
+version: '3.8'
 
-### **📈 Performance Metrics**
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-| Metric | Target | Current |
-|--------|--------|---------|
-| **Response Time** | < 200ms | ![Performance](https://img.shields.io/badge/150ms-excellent-brightgreen) |
-| **Throughput** | > 1000 RPS | ![Performance](https://img.shields.io/badge/1200_RPS-excellent-brightgreen) |
-| **Uptime** | > 99.9% | ![Performance](https://img.shields.io/badge/99.95%25-excellent-brightgreen) |
-| **Error Rate** | < 0.1% | ![Performance](https://img.shields.io/badge/0.05%25-excellent-brightgreen) |
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: gestaoint
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
 
-### **🔍 Monitoring Stack**
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
 
-- **📊 Metrics**: Prometheus + Grafana
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+````
+
+</details>
+
+### **☁️ Opções de Deploy em Nuvem**
+
+| Plataforma | Configuração | Custo Estimado |
+|------------|--------------|----------------|
+| **AWS ECS** | Fargate + RDS | $50-200/mês |
+| **Google Cloud Run** | Serverless + Cloud SQL | $30-150/mês |
+| **DigitalOcean** | Droplet + Managed DB | $25-100/mês |
+| **Heroku** | Dyno + Postgres | $25-75/mês |
+
+### **🔄 Pipeline CI/CD**
+
+````yaml
+# .github/workflows/deploy.yml
+name: Deploy para Produção
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - run: npm ci
+      - run: npm run test
+      - run: npm run test:e2e
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build Docker image
+        run: docker build -t api-gestaoint .
+      - name: Deploy para produção
+        run: |
+          # Comandos de deploy aqui
+````
+
+---
+
+## 📊 **Performance e Monitoramento**
+
+### **📈 Métricas de Performance**
+
+| Métrica | Meta | Atual |
+|---------|------|-------|
+| **Tempo de Resposta** | < 200ms | ![Performance](https://img.shields.io/badge/150ms-excelente-brightgreen) |
+| **Throughput** | > 1000 RPS | ![Performance](https://img.shields.io/badge/1200_RPS-excelente-brightgreen) |
+| **Uptime** | > 99.9% | ![Performance](https://img.shields.io/badge/99.95%25-excelente-brightgreen) |
+| **Taxa de Erro** | < 0.1% | ![Performance](https://img.shields.io/badge/0.05%25-excelente-brightgreen) |
+
+### **🔍 Stack de Monitoramento**
+
+- **📊 Métricas**: Prometheus + Grafana
 - **📝 Logging**: Winston + ELK Stack
-- **🚨 Alerting**: PagerDuty integration
-- **🔍 Tracing**: Jaeger for distributed tracing
-- **💾 Database Monitoring**: pgAdmin + slow query analysis
+- **🚨 Alertas**: Integração PagerDuty
+- **🔍 Tracing**: Jaeger para tracing distribuído
+- **💾 Monitoramento de Banco de Dados**: pgAdmin + análise de consultas lentas
 
 ### **🏥 Health Checks**
 
-```typescript
+````typescript
 @Controller('health')
 export class HealthController {
   @Get()
@@ -600,33 +783,33 @@ export class HealthController {
     ]);
   }
 }
-```
+````
 
 ---
 
-## 🔒 **Security**
+## 🔒 **Segurança**
 
-### **🛡️ Security Features**
+### **🛡️ Funcionalidades de Segurança**
 
-- ✅ **JWT Authentication** with refresh tokens
-- ✅ **Role-Based Access Control (RBAC)**
-- ✅ **Rate Limiting** to prevent abuse
-- ✅ **Input Validation** with class-validator
-- ✅ **SQL Injection Protection** via Prisma ORM
-- ✅ **CORS Configuration** for cross-origin requests
-- ✅ **Helmet.js** for security headers
-- ✅ **Password Hashing** with bcrypt
-- ✅ **API Versioning** for backward compatibility
-- ✅ **Request Logging** for audit trails
+- ✅ **Autenticação JWT** com refresh tokens
+- ✅ **Controle de Acesso Baseado em Funções (RBAC)**
+- ✅ **Rate Limiting** para prevenir abuso
+- ✅ **Validação de Input** com class-validator
+- ✅ **Proteção contra SQL Injection** via Prisma ORM
+- ✅ **Configuração CORS** para requisições cross-origin
+- ✅ **Helmet.js** para cabeçalhos de segurança
+- ✅ **Hash de Senhas** com bcrypt
+- ✅ **Versionamento de API** para compatibilidade retroativa
+- ✅ **Logging de Requisições** para trilhas de auditoria
 
-### **🔐 Security Best Practices**
+### **🔐 Melhores Práticas de Segurança**
 
 <details>
-<summary>View security guidelines</summary>
+<summary>Ver diretrizes de segurança</summary>
 
-#### **Authentication & Authorization**
-```typescript
-// JWT Strategy Implementation
+#### **Autenticação e Autorização**
+````typescript
+// Implementação da Estratégia JWT
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor() {
@@ -645,11 +828,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     };
   }
 }
-```
+````
 
-#### **Input Validation**
-```typescript
-// DTO with validation
+#### **Validação de Input**
+````typescript
+// DTO com validação
 export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
@@ -665,98 +848,99 @@ export class CreateUserDto {
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
   password: string;
 }
-```
+````
+
 </details>
 
-### **🚨 Security Checklist**
+### **🚨 Checklist de Segurança**
 
-- [ ] Regular dependency updates
-- [ ] Security headers configuration
-- [ ] Environment variables protection
-- [ ] Database connection encryption
-- [ ] API rate limiting implementation
-- [ ] Input sanitization and validation
-- [ ] Error message sanitization
-- [ ] Audit logging implementation
-- [ ] Penetration testing schedule
-- [ ] Security incident response plan
-
----
-
-## 🤝 **Contributing**
-
-We welcome contributions from the community! Please follow our contribution guidelines.
-
-### **🔄 Contribution Workflow**
-
-1. **🍴 Fork** the repository
-2. **🌿 Create** a feature branch: `git checkout -b feature/amazing-feature`
-3. **💻 Commit** your changes: `git commit -m 'feat: add amazing feature'`
-4. **📤 Push** to the branch: `git push origin feature/amazing-feature`
-5. **🔄 Open** a Pull Request
-
-### **📋 Pull Request Guidelines**
-
-- Follow the existing code style and conventions
-- Include tests for new functionality
-- Update documentation as needed
-- Ensure all CI checks pass
-- Provide a clear description of changes
-
-### **🐛 Bug Reports**
-
-When reporting bugs, please include:
-- Steps to reproduce the issue
-- Expected vs actual behavior
-- Environment details (OS, Node.js version, etc.)
-- Relevant logs or error messages
-
-### **💡 Feature Requests**
-
-For feature requests, please provide:
-- Clear description of the proposed feature
-- Use case and business justification
-- Potential implementation approach
-- Any relevant mockups or examples
+- [ ] Atualizações regulares de dependências
+- [ ] Configuração de cabeçalhos de segurança
+- [ ] Proteção de variáveis de ambiente
+- [ ] Criptografia de conexão com banco de dados
+- [ ] Implementação de rate limiting da API
+- [ ] Sanitização e validação de input
+- [ ] Sanitização de mensagens de erro
+- [ ] Implementação de logging de auditoria
+- [ ] Cronograma de testes de penetração
+- [ ] Plano de resposta a incidentes de segurança
 
 ---
 
-## 📝 **License**
+## 🤝 **Contribuindo**
 
-This project is licensed under the **MIT License** - see the [LICENSE](./LICENSE) file for details.
+Damos as boas-vindas a contribuições da comunidade! Por favor, siga nossas diretrizes de contribuição.
 
-```
-MIT License
+### **🔄 Fluxo de Contribuição**
+
+1. **🍴 Fork** o repositório
+2. **🌿 Criar** uma branch de funcionalidade: `git checkout -b feature/funcionalidade-incrivel`
+3. **💻 Commit** suas mudanças: `git commit -m 'feat: adicionar funcionalidade incrível'`
+4. **📤 Push** para a branch: `git push origin feature/funcionalidade-incrivel`
+5. **🔄 Abrir** um Pull Request
+
+### **📋 Diretrizes de Pull Request**
+
+- Seguir o estilo de código e convenções existentes
+- Incluir testes para novas funcionalidades
+- Atualizar documentação conforme necessário
+- Garantir que todas as verificações de CI passem
+- Fornecer uma descrição clara das mudanças
+
+### **🐛 Relatórios de Bug**
+
+Ao relatar bugs, por favor inclua:
+- Passos para reproduzir o problema
+- Comportamento esperado vs comportamento atual
+- Detalhes do ambiente (SO, versão do Node.js, etc.)
+- Logs relevantes ou mensagens de erro
+
+### **💡 Solicitações de Funcionalidade**
+
+Para solicitações de funcionalidade, por favor forneça:
+- Descrição clara da funcionalidade proposta
+- Caso de uso e justificativa de negócio
+- Abordagem potencial de implementação
+- Quaisquer mockups ou exemplos relevantes
+
+---
+
+## 📝 **Licença**
+
+Este projeto está licenciado sob a **Licença MIT** - veja o arquivo [LICENSE](./LICENSE) para detalhes.
+
+````
+Licença MIT
 
 Copyright (c) 2024 API Sistema GestãoInt
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+É concedida permissão, gratuitamente, a qualquer pessoa que obtenha uma cópia
+deste software e arquivos de documentação associados (o "Software"), para lidar
+no Software sem restrição, incluindo sem limitação os direitos
+de usar, copiar, modificar, mesclar, publicar, distribuir, sublicenciar e/ou vender
+cópias do Software, e permitir que pessoas a quem o Software é
+fornecido o façam, sujeito às seguintes condições:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-```
+O aviso de copyright acima e este aviso de permissão devem ser incluídos em todas
+as cópias ou partes substanciais do Software.
+````
 
 ---
 
 <div align="center">
 
-### **🚀 Ready to Transform Your Organization?**
+### **🚀 Pronto para Transformar Sua Organização?**
 
-**Deploy this enterprise-grade API and give your clients a competitive advantage with robust, scalable, and professional backend infrastructure!**
+**Faça o deploy desta API de nível empresarial e dê aos seus clientes uma vantagem competitiva com infraestrutura backend robusta, escalável e profissional!**
 
 ---
 
-**Made with ❤️ by the GestãoInt Team**
+**Feito com ❤️ pela Equipe GestãoInt**
 
 [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Joaoof/api-sistema-gestaoint)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/joaoof)
 [![Email](https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:contact@gestaoint.com)
 
-⭐ **Star this repository if it helped you!**
+⭐ **Dê uma estrela neste repositório se ele te ajudou!**
 
 </div>
