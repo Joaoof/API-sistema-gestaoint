@@ -14,6 +14,6 @@ export class ModuleDto {
   @Field(() => [String])
   permission: string[];
 
-  @Field(() => Boolean)
-  isActive: boolean;
+  @Field(() => Boolean, { nullable: true })
+  isActive?: boolean;
 }
