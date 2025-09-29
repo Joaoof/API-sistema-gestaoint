@@ -1,4 +1,4 @@
-import { CashMovement } from "src/core/entities/cash-movement.entity";
+import { CashMovement } from "src/core/entities/movements/cash-movement.entity";
 import { CreateCashMovementDto } from "../dtos/cash-movement.dto";
 import { randomUUID } from "crypto";
 
