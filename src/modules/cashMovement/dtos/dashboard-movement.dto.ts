@@ -4,7 +4,7 @@ export const DashboardMovementSchema = z.object({
     userId: z.string({
         required_error: "Usuário é obrigatório.",
         invalid_type_error: "Usuário inválido.",
-    }),
+    }).uuid("userId precisa ser um UUID válido."),
     date: z
         .string()
         .regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD")
