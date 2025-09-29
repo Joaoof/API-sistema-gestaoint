@@ -1,73 +1,78 @@
+// prisma/seed/company/seed.ts
+
 import { PrismaClient } from '@prisma/client'
 import * as argon2 from "argon2"
 const prisma = new PrismaClient()
 
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
+const COMPANY_EMAIL = process.env.COMPANY_EMAIL
+const COMPANY_NAME = 'the9'
+const COMPANY_ID = 'empresa-the9'
+
+const ARGON2_OPTIONS = {
+    timeCost: 2,
+    memoryCost: 2 ** 10,
+    parallelism: 1
+}
+
+
 async function main() {
     console.log("🌱 Rodando seed...");
 
-    // 1. Criar os módulos
-    await prisma.module.createMany({
-        data: [
-            { name: 'Movimentacoes', module_key: 'movimentacoes', description: 'Dashboard de Movimentações' },
-            { name: 'Formulario de Movimentação', module_key: 'formulario-movimentacao', description: 'Registro de Movimentações' },
-            { name: 'Histórico de Movimentação', module_key: 'historico-movimentacao', description: 'Histórico de Movimentações' },
-            { name: 'Configurações do Usuário', module_key: 'configuracoes', description: 'Atualizações importantes sobre o usuário' }
-        ],
-        skipDuplicates: true
-    })
+    // 1. Criar os módulos (Bloco limpo)
+    const modulesToCreate = [
+        { name: 'Movimentacoes', module_key: 'movimentacoes', description: 'Dashboard de Movimentações' },
+        { name: 'Formulario de Movimentação', module_key: 'formulario-movimentacao', description: 'Registro de Movimentações' },
+        { name: 'Histórico de Movimentação', module_key: 'historico-movimentacao', description: 'Histórico de Movimentações' },
+        { name: 'Configurações do Usuário', module_key: 'configuracoes', description: 'Atualizações importantes sobre o usuário' }
+    ];
+    await prisma.module.createMany({ data: modulesToCreate, skipDuplicates: true });
 
     // 2. Criar plano básico
     const basicPlan = await prisma.plan.upsert({
         where: { name: 'Basic' },
         update: {},
-        create: {
-            name: 'Basic',
-            description: 'Plano básico com módulos essenciais'
-        }
-    })
+        create: { name: 'Basic', description: 'Plano básico com módulos essenciais' }
+    });
 
     // 3. Buscar todos os módulos
-    const allModules = await prisma.module.findMany()
-    console.log(allModules);
-
-
+    const allModules = await prisma.module.findMany();
+    // Função auxiliar limpa (usando Map para O(1) lookup)
+    const moduleMap = new Map(allModules.map(m => [m.module_key, m]));
     const getModule = (key: string) => {
-        const found = allModules.find(m => m.module_key === key)
-        if (!found) throw new Error(`❌ Módulo com chave '${key}' não encontrado.`)
-        return found
-    }
+        const found = moduleMap.get(key);
+        if (!found) throw new Error(`❌ Módulo com chave '${key}' não encontrado.`);
+        return found;
+    };
 
     // 4. Vincular plano aos módulos
-    const planModulesData = [
-        { planId: basicPlan.id, moduleId: getModule('movimentacoes').id, permission: ['READ', 'WRITE'] },
-        { planId: basicPlan.id, moduleId: getModule('formulario-movimentacao').id, permission: ['READ', 'WRITE'] },
-        { planId: basicPlan.id, moduleId: getModule('historico-movimentacao').id, permission: ['READ', 'WRITE'] },
-        { planId: basicPlan.id, moduleId: getModule('configuracoes').id, permission: ['READ', 'WRITE'] }
-    ]
+    const planModulesData = modulesToCreate.map(m => ({
+        planId: basicPlan.id,
+        moduleId: getModule(m.module_key).id,
+        permission: ['READ', 'WRITE'],
+        isActive: true
+    }));
 
     await prisma.planModule.createMany({
-        data: planModulesData.map(pm => ({
-            ...pm,
-            isActive: true
-        })) as any,
+        data: planModulesData as any,
         skipDuplicates: true
-    })
+    });
 
-    // 5. Criar empresa se não existir
-    const companyId = 'empresa-the9'
-    const existingCompany = await prisma.company.findUnique({ where: { id: companyId } })
+    // 5. Criar empresa
+    const existingCompany = await prisma.company.findUnique({ where: { id: COMPANY_ID } });
 
     const company = existingCompany || await prisma.company.create({
         data: {
-            id: companyId,
-            name: 'the9',
-            email: 'the9@gmail.com',
-            cnpj: '123456789000231',
-            phone: '11999999999',
-            address: 'Rua das Empresas, 123',
+            id: COMPANY_ID,
+            name: COMPANY_NAME,
+            email: COMPANY_EMAIL, // 📌 Variável de Ambiente
+            cnpj: '077.434.131-95',
+            phone: '63 992981463',
+            address: 'Rua dos buritis n.1380 Araguaína Sul - 77827190',
             logoUrl: 'https://img.freepik.com/vetores-gratis/vetor-de-gradiente-de-logotipo-colorido-de-passaro_343694-1365.jpg'
         }
-    })
+    });
 
     // 6. Associar empresa ao plano
     const existingCompanyPlan = await prisma.companyPlan.findFirst({
@@ -75,7 +80,7 @@ async function main() {
             company_id: company.id,
             planId: basicPlan.id
         }
-    })
+    });
 
     if (!existingCompanyPlan) {
         await prisma.companyPlan.create({
@@ -83,39 +88,34 @@ async function main() {
                 company_id: company.id,
                 planId: basicPlan.id
             }
-        })
+        });
     }
 
-    console.log('🏢 Empresa OK:', company.id)
+    console.log('🏢 Empresa OK:', company.id);
 
-    // 7. Criar usuário admin se não existir
-    const adminEmail = 'the9@gmail.com'
+    // 7. Criar usuário admin
     const existingUser = await prisma.users.findUnique({
-        where: { email: adminEmail }
-    })
+        where: { email: ADMIN_EMAIL } // 📌 Variável de Ambiente
+    });
 
     if (!existingUser) {
         await prisma.users.create({
             data: {
-                name: 'Admin the9',
-                email: adminEmail,
-                password_hash: await argon2.hash("Senha123", {
-                    timeCost: 2, // REDUZIDO DE 3 PARA 2
-                    memoryCost: 2 ** 10, // REDUZIDO DE 2**11 PARA 2**10 (1024)
-                    parallelism: 1
-                }),
+                name: `Admin ${COMPANY_NAME}`,
+                email: ADMIN_EMAIL ?? '', // 📌 Variável de Ambiente
+                password_hash: await argon2.hash(ADMIN_PASSWORD ?? '', ARGON2_OPTIONS), // 📌 Variável de Ambiente e Otimização
                 role: 'ADMIN',
                 is_active: true,
                 company_id: company.id
             }
-        })
+        });
 
-        console.log(`👤 Usuário admin criado: ${adminEmail}`)
+        console.log(`👤 Usuário admin criado: ${ADMIN_EMAIL}`);
     } else {
-        console.log(`⚠️ Usuário admin já existe: ${adminEmail}`)
+        console.log(`⚠️ Usuário admin já existe: ${ADMIN_EMAIL}`);
     }
 
-    console.log('✅ Seed finalizado com sucesso 🚀')
+    console.log('✅ Seed finalizado com sucesso 🚀');
 }
 
 main()
