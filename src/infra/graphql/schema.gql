@@ -116,7 +116,7 @@ input LoginUserInput {
 
 type ModuleDto {
   description: String
-  isActive: Boolean!
+  isActive: Boolean
   module_key: String!
   name: String!
   permission: [String!]!

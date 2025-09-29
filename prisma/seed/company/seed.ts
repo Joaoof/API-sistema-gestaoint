@@ -99,7 +99,11 @@ async function main() {
             data: {
                 name: 'Admin the9',
                 email: adminEmail,
-                password_hash: await argon2.hash("Senha123"),
+                password_hash: await argon2.hash("Senha123", {
+                    timeCost: 2, // REDUZIDO DE 3 PARA 2
+                    memoryCost: 2 ** 10, // REDUZIDO DE 2**11 PARA 2**10 (1024)
+                    parallelism: 1
+                }),
                 role: 'ADMIN',
                 is_active: true,
                 company_id: company.id
