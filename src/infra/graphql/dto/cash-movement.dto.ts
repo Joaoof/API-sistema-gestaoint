@@ -1,31 +1,37 @@
 import { ObjectType, Field, Float } from '@nestjs/graphql';
-import { CashMovementType } from '../enum/cash-movement-type.enum';
-import { CashMovementCategory } from '../enum/cash-movement-category.enum';
+import {
+  CashMovementType,
+  CashMovementTypes,
+} from '../enum/cash-movement-type.enum';
+import {
+  CashMovementCategories,
+  CashMovementCategory,
+} from '../enum/cash-movement-category.enum';
 
 @ObjectType()
 export class CashMovementGraphQL {
-    @Field(() => String)
-    id: string;
+  @Field(() => String)
+  id: string;
 
-    @Field(() => CashMovementType)
-    type: CashMovementType;
+  @Field(() => CashMovementTypes)
+  type: CashMovementType;
 
-    @Field(() => CashMovementCategory)
-    category: CashMovementCategory;
+  @Field(() => CashMovementCategories)
+  category: CashMovementCategory;
 
-    @Field(() => Float)
-    value: number;
+  @Field(() => Float)
+  value: number;
 
-    @Field(() => String)
-    description: string;
+  @Field(() => String)
+  description: string;
 
-    @Field(() => Date, { nullable: true })
-    date: Date;
+  @Field(() => Date, { nullable: true })
+  date: Date;
 
-    @Field(() => String)
-    user_id: string;
+  @Field(() => String)
+  user_id: string;
 
-    // 👇 Nova mensagem (opcional)
-    @Field({ nullable: true })
-    message?: string;
+  // 👇 Nova mensagem (opcional)
+  @Field({ nullable: true })
+  message?: string;
 }

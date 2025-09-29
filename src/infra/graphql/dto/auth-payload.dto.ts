@@ -6,21 +6,21 @@ import { ModuleDto } from './module.dto';
 
 @ObjectType()
 export class AuthPayload {
-    @Field(() => String)
-    accessToken: string;
+  @Field(() => String)
+  accessToken: string;
 
-    @Field(() => String)
-    expiresIn: string;
+  @Field(() => String)
+  expiresIn: string;
 
-    @Field(() => UserDto)
-    user: UserDto;
+  @Field(() => UserDto)
+  user: UserDto;
 
-    @Field(() => CompanyDto)
-    company: CompanyDto;
+  @Field(() => CompanyDto)
+  company: CompanyDto;
 
-    @Field(() => PlanDto, { nullable: true })
-    plan?: PlanDto;
+  @Field(() => PlanDto, { nullable: true })
+  plan?: PlanDto;
 
-    @Field(() => ModuleDto, { nullable: true })
-    module?: ModuleDto;
+  @Field(() => ModuleDto, { nullable: true })
+  module?: ModuleDto;
 }

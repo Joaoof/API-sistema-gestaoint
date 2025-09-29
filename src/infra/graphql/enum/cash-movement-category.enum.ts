@@ -1,14 +1,17 @@
-import { registerEnumType } from "@nestjs/graphql";
+import { registerEnumType } from '@nestjs/graphql';
 
-export enum CashMovementCategory {
-    SALE = 'SALE',
-    CHANGE = 'CHANGE',
-    OTHER_IN = 'OTHER_IN',
-    EXPENSE = 'EXPENSE',
-    WITHDRAWAL = 'WITHDRAWAL',
-    PAYMENT = 'PAYMENT',
-}
+export const CashMovementCategories = {
+  SALE: 'SALE',
+  CHANGE: 'CHANGE',
+  OTHER_IN: 'OTHER_IN',
+  EXPENSE: 'EXPENSE',
+  WITHDRAWAL: 'WITHDRAWAL',
+  PAYMENT: 'PAYMENT',
+} as const;
 
-registerEnumType(CashMovementCategory, {
-    name: 'CashMovementCategory',
+export type CashMovementCategory =
+  (typeof CashMovementCategories)[keyof typeof CashMovementCategories];
+
+registerEnumType(CashMovementCategories, {
+  name: 'CashMovementCategory',
 });

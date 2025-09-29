@@ -20,7 +20,8 @@
     "paths": {
       "@infrastructure/*": ["./infrastructure/*"],
       "@core/*": ["./core/*"],
-      "@modules/*": ["src/modules/*"] // Adjust "src/modules" to your actual path
+      "@modules/*": ["src/modules/*"]
     }
-  }
+  },
+  "include": ["src/**/*.ts", "tests__/**/*.ts"] // 👈 Adicione esta linha
 }

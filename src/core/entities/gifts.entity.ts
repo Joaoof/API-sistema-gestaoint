@@ -10,8 +10,8 @@ export class Gift {
     public price: number,
     public imageUrl?: string,
     public status: 'available' | 'reserved' = 'available',
-    public createdAt: Date = new Date()
-  ) { }
+    public createdAt: Date = new Date(),
+  ) {}
 
   // Ajustado para aceitar objetos que vêm direto do Prisma
   static fromPrisma(data: {
@@ -29,8 +29,10 @@ export class Gift {
       data.description ?? '', // aqui resolvemos o problema
       toDecimal(data.price).toNumber(),
       data.imageUrl ?? undefined,
-      ['available', 'reserved'].includes(data.status) ? (data.status as 'available' | 'reserved') : 'available',
-      data.createdAt
+      ['available', 'reserved'].includes(data.status)
+        ? (data.status as 'available' | 'reserved')
+        : 'available',
+      data.createdAt,
     );
   }
 }

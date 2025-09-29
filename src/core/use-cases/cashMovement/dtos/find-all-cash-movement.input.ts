@@ -3,15 +3,15 @@ import { InputType, Field, Float } from '@nestjs/graphql';
 
 @InputType()
 export class FindAllCashMovementInput {
-    @Field({ nullable: true })
-    date?: Date;
+  @Field({ nullable: true })
+  date?: Date;
 
-    @Field()
-    description: string;
+  @Field()
+  description: string;
 
-    @Field({ nullable: true })
-    type?: 'SALE' | 'CHANGE' | 'OTHER_IN' | 'EXPENSE' | 'WITHDRAWAL' | 'PAYMENT'
+  @Field({ nullable: true })
+  type?: 'SALE' | 'CHANGE' | 'OTHER_IN' | 'EXPENSE' | 'WITHDRAWAL' | 'PAYMENT';
 
-    @Field()
-    value: number
+  @Field()
+  value: number;
 }

@@ -6,13 +6,13 @@ import { ConsoleLogger } from 'src/infra/logging/console.logger';
 
 @Global()
 @Module({
-    providers: [    
-        {
-            provide: 'LoggerService',
-            useClass: ConsoleLogger,
-        },
-        PrismaService,
-    ],
-    exports: ['LoggerService', PrismaService],
+  providers: [
+    {
+      provide: 'LoggerService',
+      useClass: ConsoleLogger,
+    },
+    PrismaService,
+  ],
+  exports: ['LoggerService', PrismaService],
 })
-export class CoreModule { }
+export class CoreModule {}

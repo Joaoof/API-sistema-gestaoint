@@ -25,124 +25,164 @@ const mockFindAllCashMovementUseCase = { execute: jest.fn() };
 const mockDashboardMovementUseCase = { execute: jest.fn() };
 
 const mockUser: User = {
-    id: MOCK_USER_ID,
-    email: 'user@test.com',
-    role: 'USER',
+  id: MOCK_USER_ID,
+  email: 'user@test.com',
+  role: 'USER',
 };
 
 const mockCreatedMovement = new CashMovement(
-    MOCK_MOVEMENT_ID,
-    MovementType.ENTRY, // Enum Prisma usado no mock de retorno do Use Case
-    MovementCategory.SALE, // Enum Prisma usado no mock de retorno do Use Case
-    100.50,
-    'Venda de produto A',
-    MOCK_DATE,
-    MOCK_USER_ID,
+  MOCK_MOVEMENT_ID,
+  MovementType.ENTRY, // Enum Prisma usado no mock de retorno do Use Case
+  MovementCategory.SALE, // Enum Prisma usado no mock de retorno do Use Case
+  100.5,
+  'Venda de produto A',
+  MOCK_DATE,
+  MOCK_USER_ID,
 );
 
 const mockDashboardResult = new DashboardMovement(200, 50, 150, 5000);
 
 describe('CashMovementResolver (Integration/GraphQL)', () => {
-    let resolver: CashMovementResolver;
+  let resolver: CashMovementResolver;
 
-    beforeEach(async () => {
-        const module: TestingModule = await Test.createTestingModule({
-            providers: [
-                CashMovementResolver,
-                { provide: CreateCashMovementUseCase, useValue: mockCreateCashMovementUseCase },
-                { provide: FindAllCashMovementUseCase, useValue: mockFindAllCashMovementUseCase },
-                { provide: DashboardMovementUseCase, useValue: mockDashboardMovementUseCase },
-            ],
-        }).compile();
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CashMovementResolver,
+        {
+          provide: CreateCashMovementUseCase,
+          useValue: mockCreateCashMovementUseCase,
+        },
+        {
+          provide: FindAllCashMovementUseCase,
+          useValue: mockFindAllCashMovementUseCase,
+        },
+        {
+          provide: DashboardMovementUseCase,
+          useValue: mockDashboardMovementUseCase,
+        },
+      ],
+    }).compile();
 
-        resolver = module.get<CashMovementResolver>(CashMovementResolver);
-        jest.clearAllMocks();
+    resolver = module.get<CashMovementResolver>(CashMovementResolver);
+    jest.clearAllMocks();
+  });
+
+  // --- 3.1 Teste: Mutation createCashMovement ---
+  describe('createCashMovement', () => {
+    // FIX: Usando CreateCashMovementInput e Enums GraphQL (GqlType/GqlCategory)
+    const input: CreateCashMovementInput = {
+      type: GqlType.ENTRY,
+      category: GqlCategory.SALE,
+      value: 100.5,
+      description: 'Venda de produto A',
+      date: MOCK_DATE,
+    } as any;
+
+    it('deve criar a movimentação e retornar o objeto GraphQL correto com mensagem de sucesso (SALE)', async () => {
+      mockCreateCashMovementUseCase.execute.mockResolvedValue(
+        mockCreatedMovement,
+      );
+
+      // Act
+      const result = await resolver.createCashMovement(input, mockUser);
+
+      // Assert
+      expect(mockCreateCashMovementUseCase.execute).toHaveBeenCalledWith(
+        // O Use Case (corrigido) espera { ...input, userId: user.id }
+        { ...input, userId: MOCK_USER_ID },
+        MOCK_USER_ID,
+      );
+      expect(result.category).toBe(MovementCategory.SALE);
     });
 
-    // --- 3.1 Teste: Mutation createCashMovement ---
-    describe('createCashMovement', () => {
-        // FIX: Usando CreateCashMovementInput e Enums GraphQL (GqlType/GqlCategory)
-        const input: CreateCashMovementInput = {
-            type: GqlType.ENTRY,
-            category: GqlCategory.SALE,
-            value: 100.50,
-            description: 'Venda de produto A',
-            date: MOCK_DATE,
-        } as any;
+    it('deve retornar mensagem correta para categoria EXPENSE', async () => {
+      // Setup: Cria um objeto de movimento mockado com a categoria EXPENSE (Prisma Enum)
+      const expenseMovement = {
+        ...mockCreatedMovement,
+        category: MovementCategory.EXPENSE,
+      };
+      mockCreateCashMovementUseCase.execute.mockResolvedValue(expenseMovement);
 
-        it('deve criar a movimentação e retornar o objeto GraphQL correto com mensagem de sucesso (SALE)', async () => {
-            mockCreateCashMovementUseCase.execute.mockResolvedValue(mockCreatedMovement);
+      // FIX: Passa o input com o enum EXPENSE (GraphQL Enum)
+      const expenseInput: CreateCashMovementInput = {
+        ...input,
+        category: GqlCategory.EXPENSE,
+      } as any;
 
-            // Act
-            const result = await resolver.createCashMovement(input, mockUser);
+      // Act
+      const result = await resolver.createCashMovement(expenseInput, mockUser);
 
-            // Assert
-            expect(mockCreateCashMovementUseCase.execute).toHaveBeenCalledWith(
-                // O Use Case (corrigido) espera { ...input, userId: user.id }
-                { ...input, userId: MOCK_USER_ID },
-                MOCK_USER_ID,
-            );
-            expect(result.category).toBe(MovementCategory.SALE);
-        });
+      // Assert
+      expect(result.message).toBe('Despesa registrada com sucesso!');
+    });
+  });
 
-        it('deve retornar mensagem correta para categoria EXPENSE', async () => {
-            // Setup: Cria um objeto de movimento mockado com a categoria EXPENSE (Prisma Enum)
-            const expenseMovement = { ...mockCreatedMovement, category: MovementCategory.EXPENSE };
-            mockCreateCashMovementUseCase.execute.mockResolvedValue(expenseMovement);
+  // --- 3.2 Teste: Query findAllCashMovement ---
+  describe('findAllCashMovement', () => {
+    it('deve listar as movimentações e mapear para DTOs de resposta', async () => {
+      const mockMovementList = [mockCreatedMovement, mockCreatedMovement];
+      mockFindAllCashMovementUseCase.execute.mockResolvedValue(
+        mockMovementList,
+      );
 
-            // FIX: Passa o input com o enum EXPENSE (GraphQL Enum)
-            const expenseInput: CreateCashMovementInput = { ...input, category: GqlCategory.EXPENSE } as any;
+      const filters: FindAllCashMovementInput = {
+        description: 'test',
+        value: 10,
+      } as any;
 
-            // Act
-            const result = await resolver.createCashMovement(expenseInput, mockUser);
+      // Act
+      const result = await resolver.findAllCashMovement(filters, mockUser);
 
-            // Assert
-            expect(result.message).toBe('Despesa registrada com sucesso!');
-        });
+      // Assert
+      expect(mockFindAllCashMovementUseCase.execute).toHaveBeenCalledWith(
+        MOCK_USER_ID,
+        filters,
+      );
+      expect(result.length).toBe(2);
+    });
+  });
+
+  // --- 3.3 Teste: Query dashboardStats ---
+  describe('dashboardStats', () => {
+    it('deve retornar as estatísticas do dashboard corretamente mapeadas', async () => {
+      mockDashboardMovementUseCase.execute.mockResolvedValue(
+        mockDashboardResult,
+      );
+
+      const input: DashboardStatsInput = {
+        date: '2025-09-29',
+        userId: MOCK_USER_ID,
+      }; // FIX: Adicionado userId ao input
+
+      // Act
+      const result = await resolver.dashboardStats(input, mockUser);
+
+      // Assert
+      expect(mockDashboardMovementUseCase.execute).toHaveBeenCalledWith(
+        MOCK_USER_ID,
+        '2025-09-29',
+      );
+      expect(result.todayEntries).toBe(200);
     });
 
-    // --- 3.2 Teste: Query findAllCashMovement ---
-    describe('findAllCashMovement', () => {
-        it('deve listar as movimentações e mapear para DTOs de resposta', async () => {
-            const mockMovementList = [mockCreatedMovement, mockCreatedMovement];
-            mockFindAllCashMovementUseCase.execute.mockResolvedValue(mockMovementList);
+    it('deve chamar o use case com data undefined quando o input for nulo', async () => {
+      mockDashboardMovementUseCase.execute.mockResolvedValue(
+        mockDashboardResult,
+      );
 
-            const filters: FindAllCashMovementInput = { description: 'test', value: 10 } as any;
+      // FIX: Passa 'undefined' explicitamente com cast para resolver o erro TS 2345.
+      await resolver.dashboardStats(
+        undefined as unknown as DashboardStatsInput,
+        mockUser,
+      );
 
-            // Act
-            const result = await resolver.findAllCashMovement(filters, mockUser);
-
-            // Assert
-            expect(mockFindAllCashMovementUseCase.execute).toHaveBeenCalledWith(MOCK_USER_ID, filters);
-            expect(result.length).toBe(2);
-        });
+      // Assert
+      // CORREÇÃO: Mudar de 'undefined' para '' (string vazia)
+      expect(mockDashboardMovementUseCase.execute).toHaveBeenCalledWith(
+        MOCK_USER_ID,
+        '',
+      );
     });
-
-    // --- 3.3 Teste: Query dashboardStats ---
-    describe('dashboardStats', () => {
-        it('deve retornar as estatísticas do dashboard corretamente mapeadas', async () => {
-            mockDashboardMovementUseCase.execute.mockResolvedValue(mockDashboardResult);
-
-            const input: DashboardStatsInput = { date: '2025-09-29', userId: MOCK_USER_ID }; // FIX: Adicionado userId ao input
-
-            // Act
-            const result = await resolver.dashboardStats(input, mockUser);
-
-            // Assert
-            expect(mockDashboardMovementUseCase.execute).toHaveBeenCalledWith(MOCK_USER_ID, '2025-09-29');
-            expect(result.todayEntries).toBe(200);
-        });
-
-        it('deve chamar o use case com data undefined quando o input for nulo', async () => {
-            mockDashboardMovementUseCase.execute.mockResolvedValue(mockDashboardResult);
-
-            // FIX: Passa 'undefined' explicitamente com cast para resolver o erro TS 2345.
-            await resolver.dashboardStats(undefined as unknown as DashboardStatsInput, mockUser);
-
-            // Assert
-            // CORREÇÃO: Mudar de 'undefined' para '' (string vazia)
-            expect(mockDashboardMovementUseCase.execute).toHaveBeenCalledWith(MOCK_USER_ID, '');
-        });
-
-    });
+  });
 });

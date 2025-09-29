@@ -4,18 +4,18 @@ import { CashMovementCategory } from '../enum/cash-movement-category.enum';
 
 @InputType()
 export class CreateCashMovementInput {
-    @Field(() => String)
-    type: CashMovementType; // ENTRY | EXIT
+  @Field(() => String)
+  type: CashMovementType; // ENTRY | EXIT
 
-    @Field(() => Float)
-    value: number;
+  @Field(() => Float)
+  value: number;
 
-    @Field(() => String)
-    category: CashMovementCategory; // SALE | EXPENSE | etc.
+  @Field(() => String)
+  category: CashMovementCategory; // SALE | EXPENSE | etc.
 
-    @Field(() => String)
-    description: string;
+  @Field(() => String)
+  description: string;
 
-    @Field({ nullable: true })
-    date: Date;
+  @Field({ nullable: true })
+  date: Date;
 }

@@ -3,15 +3,15 @@ import { ModuleDto } from './module.dto';
 
 @ObjectType()
 export class PlanDto {
-    @Field(() => String)
-    id: string;
+  @Field(() => String)
+  id: string;
 
-    @Field(() => String)
-    name: string;
+  @Field(() => String)
+  name: string;
 
-    @Field(() => String, { nullable: true })
-    description?: string;
+  @Field(() => String, { nullable: true })
+  description?: string;
 
-    @Field(() => [ModuleDto])
-    modules: ModuleDto[];
+  @Field(() => [ModuleDto])
+  modules: ModuleDto[];
 }

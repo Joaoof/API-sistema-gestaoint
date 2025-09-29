@@ -1,10 +1,14 @@
 import { FastifyReply } from 'fastify';
 
 export class FastifyReplyWrapper {
-    constructor(private reply: FastifyReply) { }
+  private reply: FastifyReply;
 
-    header(name: string, value: string) {
-        this.reply.header(name, value);
-        return this;
-    }
+  constructor(reply: FastifyReply) {
+    this.reply = reply;
+  }
+
+  header(name: string, value: string) {
+    this.reply.header(name, value);
+    return this;
+  }
 }

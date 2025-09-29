@@ -1,8 +1,7 @@
-// jest.config.js
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/src', '<rootDir>/tests__'],    // removido '<rootDir>/test'
+  roots: ['<rootDir>/src', '<rootDir>/tests__'], // removido '<rootDir>/test'
   moduleFileExtensions: ['js', 'json', 'ts'],
   testMatch: [
     '**/?(*.)+(spec|test).ts',

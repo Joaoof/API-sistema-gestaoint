@@ -4,9 +4,9 @@ import { CreateCategorySchema } from 'src/core/use-cases/dtos/create-category.co
 // import { toOpenApi } from '@anatine/zod-openapi';
 import { generateSchema } from '@anatine/zod-openapi';
 export const ProductSchemas = {
-    CreateProductDto: generateSchema(CreateProductSchema),
+  CreateProductDto: generateSchema(CreateProductSchema),
 };
 
 export const CategoriesSchemas = {
-    CreateCategoryDto: generateSchema(CreateCategorySchema)
-}
+  CreateCategoryDto: generateSchema(CreateCategorySchema),
+};

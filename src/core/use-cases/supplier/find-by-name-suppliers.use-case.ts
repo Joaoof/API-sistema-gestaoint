@@ -3,13 +3,13 @@ import { SuppliersRepository } from 'src/core/ports/supplier.repository';
 
 @Injectable()
 export class FindByNameSupplierUseCase {
-    constructor(
-        @Inject('SuppliersRepository')
-        private readonly suppliersRepository: SuppliersRepository,
-    ) { }
+  constructor(
+    @Inject('SuppliersRepository')
+    private readonly suppliersRepository: SuppliersRepository,
+  ) {}
 
-    async execute(name: string) {
-        const byName = await this.suppliersRepository.findByNameSupplier(name);
-        return byName
-    }
+  async execute(name: string) {
+    const byName = await this.suppliersRepository.findByNameSupplier(name);
+    return byName;
+  }
 }

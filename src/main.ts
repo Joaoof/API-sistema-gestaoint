@@ -1,32 +1,38 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import { CategoriesSchemas, ProductSchemas } from './shared/swagger/utils';
 import { GraphQLExceptionFilter } from './infra/filters/gql-exception.filter';
 import { PrismaService } from '../prisma/prisma.service';
 import * as cron from 'node-cron';
 
-
 async function bootstrap() {
   const adapter = new FastifyAdapter({ trustProxy: true });
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter, {
-    cors: {
-      origin: [
-        'https://gestaoint.netlify.app',   // ✅ Espaços removidos
-        'https://studio.apollographql.com',
-        'http://localhost:5173'
-      ],
-      credentials: true,
-      allowedHeaders: [
-        'Accept',
-        'Authorization',
-        'Content-Type',
-        'X-Requested-With',
-        'x-apollo-operation-name',
-      ],
-      methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
-    }
-  });
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    adapter,
+    {
+      cors: {
+        origin: [
+          'https://gestaoint.netlify.app', // ✅ Espaços removidos
+          'https://studio.apollographql.com',
+          'http://localhost:5173',
+        ],
+        credentials: true,
+        allowedHeaders: [
+          'Accept',
+          'Authorization',
+          'Content-Type',
+          'X-Requested-With',
+          'x-apollo-operation-name',
+        ],
+        methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
+      },
+    },
+  );
 
   const prisma = app.get(PrismaService);
   cron.schedule('*/5 * * * *', async () => {
@@ -61,9 +67,9 @@ async function bootstrap() {
     components: {
       schemas: {
         CreateProductDto: ProductSchemas.CreateProductDto,
-        CreateCategoryDto: CategoriesSchemas.CreateCategoryDto
+        CreateCategoryDto: CategoriesSchemas.CreateCategoryDto,
       },
-    }
+    },
   });
   SwaggerModule.setup('api-docs', app, document);
 

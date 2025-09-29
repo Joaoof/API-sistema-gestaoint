@@ -4,14 +4,13 @@ import { CompaniesRepository } from 'src/core/ports/company.repository';
 
 @Injectable()
 export class FindCompanyByIdUseCase {
-    constructor(
-        @Inject('CompaniesRepository')
-        private readonly companiesRepository: CompaniesRepository,
-    ) { }
+  constructor(
+    @Inject('CompaniesRepository')
+    private readonly companiesRepository: CompaniesRepository,
+  ) {}
 
-    async execute(id: string): Promise<Company | null> {
-
-        const teste = await this.companiesRepository.findById(id);
-        return teste
-    }
+  async execute(id: string): Promise<Company | null> {
+    const teste = await this.companiesRepository.findById(id);
+    return teste;
+  }
 }

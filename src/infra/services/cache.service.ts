@@ -1,20 +1,25 @@
-// infra/services/utils/cache.service.ts
-import { Injectable } from '@nestjs/common';
-import { CacheModule } from '@nestjs/cache-manager';
+import { Injectable, Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager'; // tipo correto
+import { CacheServicePort } from 'src/core/ports/cache.service';
 
 @Injectable()
-export class CacheServiceWrapper {
-    constructor(private cacheManager: CacheModule) { }
+export class CacheServiceWrapper implements CacheServicePort {
+  private readonly cacheManager: Cache;
 
-    async get(key: string): Promise<any> {
-        return this.cacheManager.get(key);
-    }
+  constructor(@Inject(CACHE_MANAGER) cacheManager: Cache) {
+    this.cacheManager = cacheManager;
+  }
 
-    async set(key: string, value: any, ttl?: number): Promise<void> {
-        await this.cacheManager.set(key, value, ttl);
-    }
+  async get(key: string) {
+    return this.cacheManager.get(key);
+  }
 
-    async del(key: string): Promise<void> {
-        await this.cacheManager.del(key);
-    }
+  async set(key: string, value: any, ttl?: number) {
+    await this.cacheManager.set(key, value, ttl);
+  }
+
+  async del(key: string) {
+    await this.cacheManager.del(key);
+  }
 }

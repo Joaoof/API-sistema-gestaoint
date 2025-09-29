@@ -9,31 +9,31 @@ import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class CreateSupplierUseCase {
-    constructor(
-        @Inject('SuppliersRepository')
-        private readonly suppliersRepository: SuppliersRepository,
-    ) { }
+  constructor(
+    @Inject('SuppliersRepository')
+    private readonly suppliersRepository: SuppliersRepository,
+  ) {}
 
-    async execute(dto: CreateSupplierDto): Promise<Supplier> {
-        this.validateInput(dto);
+  async execute(dto: CreateSupplierDto): Promise<Supplier> {
+    this.validateInput(dto);
 
-        const supplier = new Supplier(
-            uuidv4(),
-            dto.name,
-            dto.email ?? null,
-            dto.phone ?? null,
-            dto.address ?? null,
-            new Date()
-        );
+    const supplier = new Supplier(
+      uuidv4(),
+      dto.name,
+      dto.email ?? null,
+      dto.phone ?? null,
+      dto.address ?? null,
+      new Date(),
+    );
 
-        await this.suppliersRepository.create(supplier);
+    await this.suppliersRepository.create(supplier);
 
-        return supplier;
+    return supplier;
+  }
+
+  private validateInput(dto: CreateSupplierDto): void {
+    if (!dto.name || !dto.email || !dto.phone || !dto.address) {
+      throw new BadRequestException('Invalid supplier data provided.');
     }
-
-    private validateInput(dto: CreateSupplierDto): void {
-        if (!dto.name || !dto.email || !dto.phone || !dto.address) {
-            throw new BadRequestException('Invalid supplier data provided.');
-        }
-    }
+  }
 }

@@ -36,22 +36,6 @@ enum CashMovementType {
   EXIT
 }
 
-type CategoryDto {
-  id: ID!
-  name: String!
-  status: String!
-}
-
-type CategoryType {
-  active: Boolean!
-  color: String!
-  createdAt: String!
-  description: String
-  id: ID!
-  name: String!
-  updatedAt: String!
-}
-
 type CompanyDto {
   address: String
   email: String
@@ -67,13 +51,6 @@ input CreateCashMovementInput {
   description: String!
   type: String!
   value: Float!
-}
-
-input CreateCategoryInput {
-  active: Boolean!
-  color: String!
-  description: String
-  name: String!
 }
 
 type DashboardStats {
@@ -115,7 +92,6 @@ type ModuleDto {
 
 type Mutation {
   createCashMovement(input: CreateCashMovementInput!): CashMovementGraphQL!
-  createCategory(input: CreateCategoryInput!): CategoryType!
   login(loginUserInput: LoginUserInput!): AuthPayload!
 }
 
@@ -136,8 +112,6 @@ type PlanDto {
 
 type Query {
   cashMovements(input: FindAllCashMovementInput): [CashMovementGraphQL!]!
-  categories: [CategoryType!]!
-  categoriesActive: [CategoryDto!]!
   company(id: String!): CompanyDto!
   dashboardStats(input: DashboardStatsInput): DashboardStats!
   me: UserResponseDto!
