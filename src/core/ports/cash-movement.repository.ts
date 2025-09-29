@@ -1,6 +1,5 @@
 import { FindAllCashMovementInput } from "src/infra/graphql/dto/find-all-cash-movement.input";
-import { CashMovement } from "../entities/cash-movement.entity";
-import { DashboardMovement } from "../entities/dashboard-movement.entity";
+import { CashMovement } from "../entities/movements/cash-movement.entity";
 
 export interface CashMovementRepository {
     create(movement: CashMovement): Promise<void>
