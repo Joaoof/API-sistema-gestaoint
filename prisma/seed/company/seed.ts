@@ -20,7 +20,6 @@ const ARGON2_OPTIONS = {
 async function main() {
     console.log("🌱 Rodando seed...");
 
-    // 1. Criar os módulos (Bloco limpo)
     const modulesToCreate = [
         { name: 'Movimentacoes', module_key: 'movimentacoes', description: 'Dashboard de Movimentações' },
         { name: 'Formulario de Movimentação', module_key: 'formulario-movimentacao', description: 'Registro de Movimentações' },
@@ -29,7 +28,6 @@ async function main() {
     ];
     await prisma.module.createMany({ data: modulesToCreate, skipDuplicates: true });
 
-    // 2. Criar plano básico
     const basicPlan = await prisma.plan.upsert({
         where: { name: 'Basic' },
         update: {},
@@ -38,7 +36,6 @@ async function main() {
 
     // 3. Buscar todos os módulos
     const allModules = await prisma.module.findMany();
-    // Função auxiliar limpa (usando Map para O(1) lookup)
     const moduleMap = new Map(allModules.map(m => [m.module_key, m]));
     const getModule = (key: string) => {
         const found = moduleMap.get(key);
@@ -46,7 +43,6 @@ async function main() {
         return found;
     };
 
-    // 4. Vincular plano aos módulos
     const planModulesData = modulesToCreate.map(m => ({
         planId: basicPlan.id,
         moduleId: getModule(m.module_key).id,
@@ -91,8 +87,6 @@ async function main() {
         });
     }
 
-    console.log('🏢 Empresa OK:', company.id);
-
     // 7. Criar usuário admin
     const existingUser = await prisma.users.findUnique({
         where: { email: ADMIN_EMAIL } // 📌 Variável de Ambiente
@@ -103,7 +97,7 @@ async function main() {
             data: {
                 name: `Admin ${COMPANY_NAME}`,
                 email: ADMIN_EMAIL ?? '', // 📌 Variável de Ambiente
-                password_hash: await argon2.hash(ADMIN_PASSWORD ?? '', ARGON2_OPTIONS), // 📌 Variável de Ambiente e Otimização
+                password_hash: await argon2.hash(ADMIN_PASSWORD ?? '', ARGON2_OPTIONS),
                 role: 'ADMIN',
                 is_active: true,
                 company_id: company.id
