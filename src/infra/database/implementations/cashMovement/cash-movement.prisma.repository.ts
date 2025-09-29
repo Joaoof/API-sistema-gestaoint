@@ -4,7 +4,6 @@ import { CashMovement } from 'src/core/entities/movements/cash-movement.entity';
 import { DashboardMovement } from 'src/core/entities/dashboard-movement.entity';
 import { CashMovementRepository } from 'src/core/ports/cash-movement.repository';
 import { RedisService } from 'src/infra/cache/redis.service';
-import { FindAllCashMovementInput } from 'src/infra/graphql/dto/find-all-cash-movement.input';
 
 @Injectable()
 export class PrismaCashMovementRepository implements CashMovementRepository {
