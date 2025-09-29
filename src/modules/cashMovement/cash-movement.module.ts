@@ -5,7 +5,7 @@ import { DashboardMovementUseCase } from 'src/core/use-cases/cashMovement/dashbo
 import { FindAllCashMovementUseCase } from 'src/core/use-cases/cashMovement/find-all-cash-movement.use-case';
 import { RedisModule } from 'src/infra/cache/redis.module';
 import { PrismaCashMovementRepository } from 'src/infra/database/implementations/cashMovement/cash-movement.prisma.repository';
-import { CashMovementResolver } from 'src/infra/graphql/resolvers/cash-movement.resolver';
+import { CashMovementResolver } from 'src/infra/graphql/resolvers/movements/cash-movement.resolver';
 
 @Module({
     imports: [
