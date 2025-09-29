@@ -1,5 +1,5 @@
 import { CashMovement } from "src/core/entities/movements/cash-movement.entity";
-import { CreateCashMovementDto } from "../dtos/cash-movement.dto";
+import { CreateCashMovementDto } from "src/core/use-cases/dtos/create-cash-movement.core-dto";
 import { randomUUID } from "crypto";
 
 export class CashMovementMapper {

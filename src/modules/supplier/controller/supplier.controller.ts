@@ -14,8 +14,7 @@ import {
 
 import { CreateSupplierUseCase } from 'src/core/use-cases/supplier/create-supplier.use-case';
 import { SupplierMapper } from '../mapper/supplier.mapper';
-import { NotFoundError } from 'src/core/exceptions/api.exception';
-import { CreateSupplierDto } from '../dtos/create-supplier.dto';
+import { CreateSupplierDto } from 'src/core/use-cases/dtos/create-supplier.core-dto';
 import { SupplierResponseDto } from '../dtos/response-supplier.dto';
 import { SupplierSwaggerDto } from '../dtos/supplier/supllier.swagger';
 

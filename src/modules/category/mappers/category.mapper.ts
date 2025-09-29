@@ -1,5 +1,5 @@
 import { Category } from "src/core/entities/category.entity";
-import { CreateCategoryDto, CreateCategorySchema } from "../dtos/create-category.dto";
+import { CreateCategoryDto, CreateCategorySchema } from "../../../core/use-cases/dtos/create-category.core-dto";
 import { z } from "zod";
 import { CategoryStatus } from "@prisma/client";
 import { formatDateTimeBR } from "src/shared/utils/format-date.utils";

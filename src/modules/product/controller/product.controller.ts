@@ -18,7 +18,7 @@ import { FindAllProductsUseCase } from 'src/core/use-cases/product/find-all-prod
 import { FindProductByIdUseCase } from 'src/core/use-cases/product/find-product-by-id.use-case';
 import { ProductMapper } from '../mapper/product.mapper';
 import { NotFoundError } from 'src/core/exceptions/api.exception';
-import { CreateProductDto } from '../dtos/create-product.dto';
+import { CreateProductDto } from 'src/core/use-cases/dtos/create-product.core-dto';
 import { ProductResponseDto } from '../dtos/response-product.dto';
 import { ProductSwaggerDto } from '../dtos/product/product.swagger';
 import { CommandBus } from '@nestjs/cqrs';

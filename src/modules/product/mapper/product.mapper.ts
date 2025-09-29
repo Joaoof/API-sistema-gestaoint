@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { Product } from 'src/core/entities/product.entity';
-import { CreateProductDto, CreateProductSchema } from '../dtos/create-product.dto';
+import { CreateProductDto } from 'src/core/use-cases/dtos/create-product.core-dto';
+import { CreateProductSchema } from 'src/core/use-cases/dtos/create-product.core-dto';
 
 export class ProductMapper {
     /**

@@ -1,7 +1,7 @@
 import { Inject } from "@nestjs/common";
 import { Category } from "src/core/entities/category.entity";
 import { CategoriesRepository } from "src/core/ports/category.repository";
-import { CreateCategoryDto } from "src/modules/category/dtos/create-category.dto";
+import { CreateCategoryDto } from "../dtos/create-category.core-dto";
 import { CategoryMapper } from "src/modules/category/mappers/category.mapper";
 
 export class CreateCategoryUseCase {

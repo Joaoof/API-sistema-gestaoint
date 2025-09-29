@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { Supplier } from 'src/core/entities/supplier.entity';
-import { CreateSupplierDto, CreateSupplierSchema } from '../dtos/create-supplier.dto';
+import { CreateSupplierDto } from 'src/core/use-cases/dtos/create-supplier.core-dto';
+import { CreateSupplierSchema } from '../../../core/use-cases/dtos/create-supplier.core-dto';
 
 export class SupplierMapper {
     /**

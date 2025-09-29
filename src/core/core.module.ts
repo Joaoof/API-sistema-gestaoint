@@ -1,13 +1,12 @@
 // src/core/core.module.ts
 
 import { Module, Global } from '@nestjs/common';
-import { PrismaService } from 'prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { ConsoleLogger } from 'src/infra/logging/console.logger';
-import { LoggerService } from 'src/core/ports/logger.service';
 
 @Global()
 @Module({
-    providers: [
+    providers: [    
         {
             provide: 'LoggerService',
             useClass: ConsoleLogger,
@@ -16,4 +15,4 @@ import { LoggerService } from 'src/core/ports/logger.service';
     ],
     exports: ['LoggerService', PrismaService],
 })
-export class CoreModule {}
+export class CoreModule { }

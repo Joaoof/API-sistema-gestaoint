@@ -17,7 +17,7 @@ import {
 } from '@nestjs/swagger';
 
 import { CreateCategorySwaggerDto } from '../dtos/category/category-swagger.dto';
-import { CreateCategoryDto, CreateCategorySchema } from '../dtos/create-category.dto';
+import { CreateCategoryDto } from '../../../core/use-cases/dtos/create-category.core-dto';
 import { CategoryMapper } from '../mappers/category.mapper';
 import { FindAllCategoriesUseCase } from 'src/core/use-cases/category/find-all-categories.use.case';
 import { CreateCategoryUseCase } from 'src/core/use-cases/category/create-category.use-case';

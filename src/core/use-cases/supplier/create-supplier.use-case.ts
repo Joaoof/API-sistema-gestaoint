@@ -4,7 +4,7 @@ import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 
 import { Supplier } from 'src/core/entities/supplier.entity';
 import { SuppliersRepository } from 'src/core/ports/supplier.repository';
-import { CreateSupplierDto } from 'src/modules/supplier/dtos/create-supplier.dto'; // ajuste o caminho real
+import { CreateSupplierDto } from '../dtos/create-supplier.core-dto'; // ajuste o caminho real
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()

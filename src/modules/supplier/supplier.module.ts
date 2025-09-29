@@ -4,7 +4,7 @@ import { Module } from '@nestjs/common';
 import { SupplierController } from './controller/supplier.controller';
 import { CreateSupplierUseCase } from 'src/core/use-cases/supplier/create-supplier.use-case';
 import { PrismaSupplierRepository } from 'src/infra/database/implementations/supplier/supplier.prisma.repository';
-import { PrismaService } from 'prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { CoreModule } from 'src/core/core.module';
 import { SupplierResolver } from 'src/infra/graphql/resolvers/supplier.resolver';
 import { FindByNameSupplierUseCase } from 'src/core/use-cases/supplier/find-by-name-suppliers.use-case';

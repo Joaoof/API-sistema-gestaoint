@@ -3,7 +3,7 @@ import { ValidateInputZod } from './validate-zod.service';
 import { FindValidateUser } from './find-validate.service';
 import { CreateTokenService } from './create-token.service';
 import { UserDtoService } from './user-dto.service';
-import { LoginUserDto } from 'src/modules/auth/dto/login.dto';
+import { LoginUserDto } from 'src/core/use-cases/dtos/login-dto.core';
 import { RedisService } from 'src/infra/cache/redis.service';
 import { PrismaService } from 'prisma/prisma.service';
 

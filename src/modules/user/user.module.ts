@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { PrismaModule } from "prisma/prisma.module";
+import { PrismaModule } from "../../../prisma/prisma.module";
 import { CommandBus } from "@nestjs/cqrs";
 import { RedisModule } from "src/infra/cache/redis.module";
 import { AuthService } from "src/infra/services/auth/auth.service";

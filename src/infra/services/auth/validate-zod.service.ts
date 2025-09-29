@@ -1,7 +1,8 @@
 import { DomainValidationError } from "src/core/exceptions/domain.exception";
 import { } from "./auth.service";
 import { Injectable } from "@nestjs/common";
-import { LoginUserDto, LoginUserSchema } from "src/modules/auth/dto/login.dto";
+import { LoginUserDto } from "src/core/use-cases/dtos/login-dto.core";
+import { LoginUserSchema } from "src/core/use-cases/dtos/login-dto.core";
 
 @Injectable()
 export class ValidateInputZod {
