@@ -123,7 +123,7 @@ describe('CashMovementResolver (Integration/GraphQL)', () => {
         it('deve retornar as estatísticas do dashboard corretamente mapeadas', async () => {
             mockDashboardMovementUseCase.execute.mockResolvedValue(mockDashboardResult);
 
-            const input: DashboardStatsInput = { date: '2025-09-29' };
+            const input: DashboardStatsInput = { date: '2025-09-29', userId: MOCK_USER_ID }; // FIX: Adicionado userId ao input
 
             // Act
             const result = await resolver.dashboardStats(input, mockUser);
