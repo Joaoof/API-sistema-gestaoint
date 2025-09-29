@@ -10,7 +10,7 @@ import { CashMovementMapper } from 'src/modules/cashMovement/mappers/entry-movem
 import { CreateCashMovementInput } from '../../dto/create-cash-movement.dto';
 import { CashMovementType } from '../../enum/cash-movement-type.enum';
 import { CashMovementCategory } from '../../enum/cash-movement-category.enum';
-import { FindAllCashMovementInput } from '../../dto/find-all-cash-movement.input';
+import { FindAllCashMovementInput } from 'src/core/use-cases/cashMovement/dtos/find-all-cash-movement.input';
 import { DashboardStats } from '../../dto/dashboard-stats.entity';
 import { DashboardMovementUseCase } from 'src/core/use-cases/cashMovement/dashboard-movement.use-case';
 import { DashboardStatsInput } from '../../dto/dashboard-stats.input';

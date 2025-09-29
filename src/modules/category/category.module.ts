@@ -8,7 +8,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { FindAllCategoriesUseCase } from 'src/core/use-cases/category/find-all-categories.use.case';
 import { PrismaCategoriesRepository } from 'src/infra/database/implementations/category/category.prisma.repository';
 import { RedisModule } from 'src/infra/cache/redis.module';
-import { PrismaModule } from 'prisma/prisma.module';
+import { PrismaModule } from '../../../prisma/prisma.module';
 import { CategoriesResolver } from 'src/infra/graphql/resolvers/category.resolver';
 import { GqlCacheInterceptor } from 'src/shared/guards/gql-cache-interceptor.guard';
 import { FindActiveCategoriesUseCase } from 'src/core/use-cases/category/find-by-active-categories.use-case';

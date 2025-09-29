@@ -5,10 +5,19 @@ import { CashMovementRepository } from 'src/core/ports/cash-movement.repository'
 import { CashMovement } from 'src/core/entities/movements/cash-movement.entity';
 import { MovementCategory, MovementType } from '@prisma/client';
 import { ZodError } from 'zod';
-import { FindAllCashMovementInput } from 'src/infra/graphql/dto/find-all-cash-movement.input';
 import { DashboardMovement } from 'src/core/entities/dashboard-movement.entity';
-import { CreateCashMovementDto } from 'src/modules/cashMovement/dtos/cash-movement.dto';
+import { FindAllCashMovementInput } from './dtos/find-all-cash-movement.input';
 
+
+// NOVO: Definições Mockadas (Interfaces que espelham o que foi removido)
+interface CreateCashMovementDto {
+    type: MovementType;
+    category: MovementCategory;
+    value: number;
+    description: string;
+    user_id: string;
+    date: Date;
+}
 
 // Mock para simular o crypto.randomUUID() usado no mapper
 jest.mock('crypto', () => ({

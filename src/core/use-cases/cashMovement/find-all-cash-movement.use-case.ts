@@ -1,7 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { CashMovement } from "src/core/entities/movements/cash-movement.entity";
 import { CashMovementRepository } from "src/core/ports/cash-movement.repository";
-import { FindAllCashMovementInput } from "src/infra/graphql/dto/find-all-cash-movement.input";
+
+import { FindAllCashMovementInput } from './dtos/find-all-cash-movement.input';
+
 
 @Injectable()
 export class FindAllCashMovementUseCase {

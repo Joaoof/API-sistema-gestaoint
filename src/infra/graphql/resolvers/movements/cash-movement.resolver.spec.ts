@@ -11,7 +11,7 @@ import { User } from 'src/core/entities/user.entity';
 import { CreateCashMovementInput } from '../../dto/create-cash-movement.dto';
 import { CashMovementCategory as GqlCategory } from '../../enum/cash-movement-category.enum';
 import { CashMovementType as GqlType } from '../../enum/cash-movement-type.enum';
-import { FindAllCashMovementInput } from '../../dto/find-all-cash-movement.input';
+import { FindAllCashMovementInput } from 'src/core/use-cases/cashMovement/dtos/find-all-cash-movement.input';
 import { DashboardStatsInput } from '../../dto/dashboard-stats.input';
 import { DashboardMovement } from 'src/core/entities/dashboard-movement.entity';
 

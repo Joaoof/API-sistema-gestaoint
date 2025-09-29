@@ -1,7 +1,7 @@
 import { CashMovementMapper } from '@modules/cashMovement/mappers/entry-movement.mapper';
 import { BadRequestException, Inject } from '@nestjs/common';
-import { CashMovement } from 'src/core/entities/movements/cash-movement.entity';
-import { CashMovementRepository } from 'src/core/ports/cash-movement.repository';
+import { CashMovementRepository } from '../../ports/cash-movement.repository';
+import { CashMovement } from '../../entities/movements/cash-movement.entity';
 import { CreateCashMovementDto, CreateCashMovementSchema } from 'src/modules/cashMovement/dtos/cash-movement.dto';
 
 export class CreateCashMovementUseCase {
