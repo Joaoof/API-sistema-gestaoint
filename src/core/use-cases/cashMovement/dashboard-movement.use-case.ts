@@ -9,9 +9,12 @@ export class DashboardMovementUseCase {
 
 
     async execute(userId: string, date: string): Promise<DashboardMovement> {
+
+        const dateInput = date === '' ? undefined : date;
+
         const { userId: validUserId, date: validDate } = DashboardMovementSchema.parse({
             userId,
-            date,
+            date: dateInput,
         });
 
         return this.cashMovementRepository.dashboardMovement(validUserId, validDate);
