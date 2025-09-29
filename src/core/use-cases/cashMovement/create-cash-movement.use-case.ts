@@ -1,5 +1,5 @@
 import { Inject } from '@nestjs/common';
-import { CashMovement } from 'src/core/entities/cash-movement.entity';
+import { CashMovement } from 'src/core/entities/movements/cash-movement.entity';
 import { CashMovementRepository } from 'src/core/ports/cash-movement.repository';
 import { CreateCashMovementDto, CreateCashMovementSchema } from 'src/modules/cashMovement/dtos/cash-movement.dto';
 import { CashMovementMapper } from 'src/modules/cashMovement/mappers/entry-movement.mapper';
