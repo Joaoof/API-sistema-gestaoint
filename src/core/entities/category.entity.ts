@@ -1,6 +1,4 @@
-// src/core/entities/category.entity.ts
 import { CategoryStatus, Prisma } from "@prisma/client";
-import { formatDateTimeBR } from "../../shared/utils/format-date.utils";
 
 export class Category {
     constructor(
@@ -46,25 +44,5 @@ export class Category {
             createdAt: this.createdAt.toISOString(),
             updatedAt: this.updatedAt.toISOString()
         };
-    }
-
-    toResponseJSON() {
-        return {
-            ...this,
-            createdAt: formatDateTimeBR(this.createdAt),
-            updatedAt: formatDateTimeBR(this.updatedAt)
-        };
-    }
-
-
-    static fromPrisma(data: Prisma.CategoryGetPayload<{}>): Category {
-        return new Category(
-            data.id,
-            data.name,
-            data.description,
-            data.status,
-            data.createdAt,
-            data.updatedAt
-        );
     }
 }

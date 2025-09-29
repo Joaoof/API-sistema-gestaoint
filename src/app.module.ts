@@ -3,10 +3,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { BullModule } from '@nestjs/bull';
-import { ProductModule } from './modules/product/product.module';
 import { CategoryModule } from './modules/category/category.module';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { SupplierModule } from './modules/supplier/supplier.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver } from '@nestjs/apollo';
 import { join } from 'path';
@@ -57,9 +55,7 @@ import { RedisModule } from './infra/cache/redis.module';
     BullModule.registerQueue({
       name: 'email',
     }),
-    ProductModule,
     CategoryModule,
-    SupplierModule,
     QueuesModule,
     UserModule,
     AuthModule,

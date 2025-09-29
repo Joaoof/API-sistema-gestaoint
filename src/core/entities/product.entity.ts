@@ -1,6 +1,5 @@
 import { Prisma } from '@prisma/client';
 import { DomainValidationError } from '../exceptions/domain.exception';
-import { ProductResponseDto } from 'src/modules/product/dtos/response-product.dto';
 
 type ValidationError = { field: string; message: string };
 
