@@ -66,7 +66,7 @@ async function main() {
             cnpj: '077.434.131-95',
             phone: '63 992981463',
             address: 'Rua dos buritis n.1380 Araguaína Sul - 77827190',
-            logoUrl: 'https://img.freepik.com/vetores-gratis/vetor-de-gradiente-de-logotipo-colorido-de-passaro_343694-1365.jpg'
+            logoUrl: 'https://i.postimg.cc/jjKd3fxJ/M-os-Douradas-em-Fundo-Texturizado-Photoroom-1.png'
         }
     });
 
