@@ -8,7 +8,7 @@ export class CreateCategoryUseCase {
     constructor(@Inject('CategoriesRepository') private readonly categoriesRepository: CategoriesRepository) { }
 
     async execute(dto: CreateCategoryDto): Promise<Category> {
-        const category = CategoryMapper.toResponseJSON(dto)
+        const category = CategoryMapper.toDomain(dto)
 
         await this.categoriesRepository.create(category)
 
