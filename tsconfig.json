@@ -20,7 +20,7 @@
     "paths": {
       "@infrastructure/*": ["./infrastructure/*"],
       "@core/*": ["./core/*"],
-      "@modules/*": ["./modules/*"]
+      "@modules/*": ["src/modules/*"] // Adjust "src/modules" to your actual path
     }
   }
 }
