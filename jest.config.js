@@ -1,15 +1,19 @@
+// jest.config.js
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  rootDir: 'src',
+  roots: ['<rootDir>/src', '<rootDir>/tests__'],    // removido '<rootDir>/test'
   moduleFileExtensions: ['js', 'json', 'ts'],
-  testRegex: '.*\\.spec\\.ts$',  // pega só unit tests
+  testMatch: [
+    '**/?(*.)+(spec|test).ts',
+    '<rootDir>/tests__/architecture/**/?(*.)+(spec|test).ts',
+  ],
   transform: {
     '^.+\\.(t|j)s$': 'ts-jest',
   },
   moduleNameMapper: {
-    '^src/(.*)$': '<rootDir>/$1',
-    '^@modules/(.*)$': '<rootDir>/modules/$1',
-    '^@core/(.*)$': '<rootDir>/core/$1',
+    '^src/(.*)$': '<rootDir>/src/$1',
+    '^@modules/(.*)$': '<rootDir>/src/modules/$1',
+    '^@core/(.*)$': '<rootDir>/src/core/$1',
   },
 };
