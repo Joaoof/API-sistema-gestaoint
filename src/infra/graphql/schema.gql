@@ -76,16 +76,6 @@ input CreateCategoryInput {
   name: String!
 }
 
-input CreateProductInput {
-  categoryId: String!
-  costPrice: Float!
-  description: String
-  nameProduct: String!
-  quantity: Int!
-  salePrice: Float!
-  supplierId: String
-}
-
 type DashboardStats {
   monthlyTotal: Float!
   todayBalance: Float!
@@ -95,6 +85,7 @@ type DashboardStats {
 
 input DashboardStatsInput {
   date: String
+  userId: String!
 }
 
 """
@@ -125,7 +116,6 @@ type ModuleDto {
 type Mutation {
   createCashMovement(input: CreateCashMovementInput!): CashMovementGraphQL!
   createCategory(input: CreateCategoryInput!): CategoryType!
-  createProduct(dto: CreateProductInput!): ProductResponseDto!
   login(loginUserInput: LoginUserInput!): AuthPayload!
 }
 
@@ -144,20 +134,6 @@ type PlanDto {
   name: String!
 }
 
-type ProductResponseDto {
-  categoryId: String!
-  costPrice: Float!
-  createdAt: DateTime!
-  createdById: String!
-  description: String
-  id: String!
-  nameProduct: String!
-  quantity: Int!
-  salePrice: Float!
-  supplierId: String
-  updatedAt: DateTime!
-}
-
 type Query {
   cashMovements(input: FindAllCashMovementInput): [CashMovementGraphQL!]!
   categories: [CategoryType!]!
@@ -165,13 +141,6 @@ type Query {
   company(id: String!): CompanyDto!
   dashboardStats(input: DashboardStatsInput): DashboardStats!
   me: UserResponseDto!
-  products: [ProductResponseDto!]!
-  suppliers: [SupplierOutput!]!
-}
-
-type SupplierOutput {
-  id: ID!
-  name: String!
 }
 
 type UserDto {

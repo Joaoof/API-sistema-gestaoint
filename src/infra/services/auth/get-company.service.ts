@@ -1,5 +1,5 @@
 import { HttpException, Injectable } from "@nestjs/common";
-import { PrismaService } from "prisma/prisma.service";
+import { PrismaService } from '../../../../prisma/prisma.service';
 import { Company } from "src/core/entities/company.entity";
 import { RedisService } from "src/infra/cache/redis.service";
 

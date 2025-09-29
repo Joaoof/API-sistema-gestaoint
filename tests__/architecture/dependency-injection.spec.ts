@@ -1,4 +1,5 @@
-// tests__/architecture/dependency-injection.spec.ts
+// joaoof/api-sistema-gestaoint/api-sistema-gestaoint-3358eb9b49451d8a010dd9e2c99dca7bc80dc155/tests__/architecture/dependency-injection.spec.ts
+
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module';
 import { INestApplication } from '@nestjs/common';
@@ -12,7 +13,8 @@ describe('Dependency Injection Validation', () => {
         }).compile();
         app = moduleRef.createNestApplication();
         await app.init();
-    });
+        // CORREÇÃO: Aumentar o timeout de 5s para 30s (30000ms) para a inicialização da aplicação
+    }, 30000);
 
     afterAll(async () => {
         await app.close();

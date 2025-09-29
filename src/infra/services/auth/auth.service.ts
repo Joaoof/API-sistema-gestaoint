@@ -5,7 +5,7 @@ import { CreateTokenService } from './create-token.service';
 import { UserDtoService } from './user-dto.service';
 import { LoginUserDto } from 'src/core/use-cases/dtos/login-dto.core';
 import { RedisService } from 'src/infra/cache/redis.service';
-import { PrismaService } from 'prisma/prisma.service';
+import { PrismaService } from '../../../../prisma/prisma.service';
 
 @Injectable()
 export class AuthService {

@@ -1,9 +1,11 @@
-// src/core/ports/product.repository.ts
-import { Category } from '../entities/category.entity';
+import { Category } from 'src/core/entities/category.entity';
 
 export interface CategoriesRepository {
-    create(product: Category): Promise<void>;
+    create(category: Category): Promise<void>;
+
     findById(id: string): Promise<Category | null>;
-    findActiveCategories()
+
+    findActiveCategories(): Promise<Category[]>;
+
     findAll(): Promise<Category[]>;
 }

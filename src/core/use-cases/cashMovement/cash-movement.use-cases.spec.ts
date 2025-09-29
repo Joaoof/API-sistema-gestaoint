@@ -1,12 +1,15 @@
-import { CreateCashMovementUseCase } from './create-cash-movement.use-case';
-import { FindAllCashMovementUseCase } from './find-all-cash-movement.use-case';
-import { DashboardMovementUseCase } from './dashboard-movement.use-case';
-import { CashMovementRepository } from 'src/core/ports/cash-movement.repository';
-import { CashMovement } from 'src/core/entities/movements/cash-movement.entity';
+
+import { CashMovementRepository } from 'src/core/ports/cash-movement.repository'; // <-- Corrigido
+import { CashMovement } from '../../entities/movements/cash-movement.entity'; // <-- Corrigido
+import { DashboardMovement } from '../../entities/dashboard-movement.entity'; // <-- Corrigido
 import { MovementCategory, MovementType } from '@prisma/client';
 import { ZodError } from 'zod';
-import { DashboardMovement } from 'src/core/entities/dashboard-movement.entity';
 import { FindAllCashMovementInput } from './dtos/find-all-cash-movement.input';
+import { FindAllCashMovementUseCase } from 'src/core/use-cases/cashMovement/find-all-cash-movement.use-case';
+import { DashboardMovementUseCase } from 'src/core/use-cases/cashMovement/dashboard-movement.use-case';
+import { CreateCashMovementUseCase } from 'src/core/use-cases/cashMovement/create-cash-movement.use-case';
+
+// ... (Resto do arquivo permanece inalterado)
 
 
 // NOVO: Definições Mockadas (Interfaces que espelham o que foi removido)

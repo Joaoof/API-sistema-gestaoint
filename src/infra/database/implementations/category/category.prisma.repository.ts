@@ -3,6 +3,7 @@ import { PrismaService } from '../../../../../prisma/prisma.service';
 import { CategoriesRepository } from 'src/core/ports/category.repository';
 import { Injectable } from '@nestjs/common';
 import { RedisService } from 'src/infra/cache/redis.service';
+import { CategoryMapper } from 'src/modules/category/mappers/category.mapper';
 
 @Injectable()
 export class PrismaCategoriesRepository implements CategoriesRepository {
@@ -12,56 +13,61 @@ export class PrismaCategoriesRepository implements CategoriesRepository {
     ) { }
 
     async create(category: Category): Promise<void> {
-        await this.prisma.category.create({ data: category });
+        await this.prisma.category.create({ data: category.toJSON() });
         await this.redis.delete('categories:all');
+        await this.redis.delete(`category:${category.id}`);
     }
 
     async findById(id: string): Promise<Category | null> {
-        const cached = await this.redis.get('category');
-        if (cached) return Category.fromPrisma(JSON.parse(cached));
+        const cacheKey = `category:${id}`;
+        const cached = await this.redis.get(cacheKey);
+
+        if (cached) return CategoryMapper.toDomain(JSON.parse(cached));
 
         const data = await this.prisma.category.findUnique({ where: { id } });
         if (!data) return null;
 
-        const category = Category.fromPrisma(data);
-        await this.redis.set(`category:${id}`, 3600); // cache por 30s
+        const category = CategoryMapper.toDomain(data);
+
+        await this.redis.set(cacheKey, JSON.stringify(category.toJSON()), 3600);
         return category;
     }
 
     async findAll(): Promise<Category[]> {
         const cached = await this.redis.get('categories:all');
-        if (cached) return JSON.parse(cached).map(Category.fromPrisma);
+
+        if (cached) return JSON.parse(cached).map(CategoryMapper.toDomain);
 
         const data = await this.prisma.category.findMany();
-        await this.redis.set('categories:all', 3600);
-        return data.map(Category.fromPrisma);
+
+        const categories = data.map(CategoryMapper.toDomain);
+
+        await this.redis.set('categories:all', JSON.stringify(categories.map(c => c.toJSON())), 3600);
+
+        return categories;
     }
 
-    async findActiveCategories() {
-        return this.prisma.category.findMany({
+    async findActiveCategories(): Promise<Category[]> {
+        const data = await this.prisma.category.findMany({
             where: { status: 'ACTIVE' },
-            select: {
-                id: true,
-                name: true,
-                status: true
-            }
-        })
+        });
+
+        return data.map(CategoryMapper.toDomain);
     }
 
     async findByCategoryUser(userId: string): Promise<Category[]> {
+        const categoryCached = await this.redis.get(`categories:${userId}`);
 
-        const categoryCached = await this.redis.get(`categories:${userId}`,);
+        if (categoryCached) return JSON.parse(categoryCached).map(CategoryMapper.toDomain);
 
-        const categories = await this.prisma.category.findMany({
+        const data = await this.prisma.category.findMany({
             where: { userId },
-            select: {
-                id: true,
-                name: true,
-                status: true,
-                description: true,
-                userId: true
-            }
         });
-        return JSON.parse(categoryCached ?? '') ?? categories.map(Category.fromPrisma);
+
+        const categories = data.map(CategoryMapper.toDomain);
+
+        await this.redis.set(`categories:${userId}`, JSON.stringify(categories.map(c => c.toJSON())), 3600);
+
+        return categories;
     }
 }

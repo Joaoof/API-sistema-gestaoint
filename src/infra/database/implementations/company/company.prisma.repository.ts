@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'prisma/prisma.service';
+import { PrismaService } from '../../../../../prisma/prisma.service';
 import { RedisService } from 'src/infra/cache/redis.service';
 import { CompaniesRepository } from 'src/core/ports/company.repository';
 import { Company } from 'src/core/entities/company.entity';
@@ -28,7 +28,7 @@ export class PrismaCompaniesRepository implements CompaniesRepository {
             id: data.id,
             name: data.name,
             logoUrl: data.logoUrl ?? ''
-            
+
         });
 
         // Se você quiser expiração de 30 segundos:

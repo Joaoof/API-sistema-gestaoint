@@ -6,7 +6,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { UserModule } from '../user/user.module';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from 'src/auth/jwt.strategy';
-import { PrismaService } from 'prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { RedisModule } from 'src/infra/cache/redis.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GetByIdUserService } from 'src/infra/services/auth/get-by-id.service';

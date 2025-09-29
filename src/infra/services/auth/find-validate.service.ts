@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'prisma/prisma.service';
+import { PrismaService } from '../../../../prisma/prisma.service';
 import { ValidatePassword } from './validate-password.service';
 import { InvalidCredentialsError } from 'src/core/exceptions/invalid-credentials.exception';
 

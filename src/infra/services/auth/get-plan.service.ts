@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { PrismaService } from "prisma/prisma.service";
+import { PrismaService } from '../../../../prisma/prisma.service';
 import { CompanyWithoutPlanError } from "src/core/exceptions/company-without-plan.exception";
 import { REDIS_CLIENT } from "src/infra/cache/redis.constants";
 import { RedisService } from "src/infra/cache/redis.service";

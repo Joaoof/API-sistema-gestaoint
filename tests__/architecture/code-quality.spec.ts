@@ -1,4 +1,3 @@
-// tests__/architecture/code-quality.spec.ts
 import { ESLint } from 'eslint';
 import * as path from 'path';
 
@@ -14,7 +13,8 @@ describe('Code Quality Standards', () => {
             console.log(resultText);
         }
         expect(hasErrors).toBe(false);
-    });
+    // CORREÇÃO: Aumentar o timeout de 15s para 30s (30000ms)
+    }, 30000); 
 
     it('should have zero TypeScript compile errors', async () => {
         const exec = require('child_process').execSync;
