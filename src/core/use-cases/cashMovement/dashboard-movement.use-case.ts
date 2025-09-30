@@ -5,10 +5,13 @@ import { DashboardMovementSchema } from '../dtos/dashboard-movement.core-dto';
 
 @Injectable()
 export class DashboardMovementUseCase {
+  private readonly cashMovementRepository: CashMovementRepository;
   constructor(
     @Inject('CashMovementRepository')
-    private readonly cashMovementRepository: CashMovementRepository,
-  ) {}
+    cashMovementRepository: CashMovementRepository,
+  ) {
+    this.cashMovementRepository = cashMovementRepository;
+  }
 
   async execute(userId: string, date: string): Promise<DashboardMovement> {
     const dateInput = date === '' ? undefined : date;

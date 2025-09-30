@@ -6,10 +6,13 @@ import { FindAllCashMovementInput } from './dtos/find-all-cash-movement.input';
 
 @Injectable()
 export class FindAllCashMovementUseCase {
+  private readonly cashMovementRepository: CashMovementRepository;
   constructor(
     @Inject('CashMovementRepository')
-    private readonly cashMovementRepository: CashMovementRepository,
-  ) {}
+    cashMovementRepository: CashMovementRepository,
+  ) {
+    this.cashMovementRepository = cashMovementRepository;
+  }
 
   async execute(
     userId: string,

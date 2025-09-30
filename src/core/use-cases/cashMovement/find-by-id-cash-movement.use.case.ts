@@ -4,10 +4,13 @@ import { CashMovementRepository } from 'src/core/ports/cash-movement.repository'
 
 @Injectable()
 export class FindByIdCashMovementUseCase {
+  private readonly cashMovementRepository: CashMovementRepository;
   constructor(
     @Inject('CashMovementRepository')
-    private readonly cashMovementRepository: CashMovementRepository,
-  ) {}
+    cashMovementRepository: CashMovementRepository,
+  ) {
+    this.cashMovementRepository = cashMovementRepository;
+  }
 
   async execute(id: string): Promise<CashMovement> {
     const find = await this.cashMovementRepository.findById(id);

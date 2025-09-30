@@ -6,10 +6,13 @@ import { CreateCashMovementSchema } from '../dtos/create-cash-movement.core-dto'
 import { CreateCashMovementDto } from '../dtos/create-cash-movement.core-dto';
 
 export class CreateCashMovementUseCase {
+  private readonly cashMovementRepo: CashMovementRepository;
   constructor(
     @Inject('CashMovementRepository')
-    private readonly cashMovementRepo: CashMovementRepository,
-  ) {}
+    cashMovementRepo: CashMovementRepository,
+  ) {
+    this.cashMovementRepo = cashMovementRepo;
+  }
 
   async execute(
     dto: CreateCashMovementDto,

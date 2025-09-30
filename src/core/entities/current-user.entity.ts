@@ -1,6 +1,7 @@
-import { User } from 'src/core/entities/user.entity';
-import { PermissionDto } from 'src/infra/graphql/dto/permission.dto';
-import { PlanDto } from 'src/infra/graphql/dto/plan.dto';
+/* eslint-disable no-unused-vars */
+
+import { PermissionDto } from '../../infra/graphql/dto/permission.dto';
+import { PlanDto } from '../../infra/graphql/dto/plan.dto';
 
 export class CurrentUserDto {
   constructor(

@@ -1,4 +1,4 @@
-// src/core/ports/logger.service.ts
+/* eslint-disable no-unused-vars */
 
 export interface LoggerService {
   log(message: string): void;

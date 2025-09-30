@@ -1,4 +1,5 @@
-// src/core/ports/product.repository.ts
+/* eslint-disable no-unused-vars */
+
 import { Product } from '../entities/product.entity';
 
 export interface ProductsRepository {

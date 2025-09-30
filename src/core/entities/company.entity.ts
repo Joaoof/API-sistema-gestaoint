@@ -1,5 +1,6 @@
-import { CompanyDto } from 'src/infra/graphql/dto/company.dto';
-import { CompanyModule } from 'src/modules/company/company.module';
+/* eslint-disable no-unused-vars */
+
+import { CompanyDto } from '../../infra/graphql/dto/company.dto';
 
 export class Company {
   constructor(

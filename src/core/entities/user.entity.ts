@@ -1,4 +1,5 @@
-// src/core/entities/user.entity.ts
+/* eslint-disable no-unused-vars */
+
 export class User {
   constructor(
     public id: string,

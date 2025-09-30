@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { Category } from 'src/core/entities/category.entity';
 
 export interface CategoriesRepository {

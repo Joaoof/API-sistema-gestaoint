@@ -3,7 +3,7 @@ import { PrismaCompaniesRepository } from '../../infra/database/implementations/
 import { FindCompanyByIdUseCase } from 'src/core/use-cases/company/find-company-by-id.use-case';
 import { CompaniesResolver } from '../../infra/graphql/resolvers/companies.resolver';
 import { RedisModule } from '../../infra/cache/redis.module';
-import { PrismaModule } from 'prisma/prisma.module';
+import { PrismaModule } from '../../../prisma/prisma.module';
 
 @Module({
   imports: [PrismaModule, RedisModule],

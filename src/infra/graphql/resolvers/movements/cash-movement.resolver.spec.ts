@@ -5,12 +5,11 @@ import { FindAllCashMovementUseCase } from 'src/core/use-cases/cashMovement/find
 import { DashboardMovementUseCase } from 'src/core/use-cases/cashMovement/dashboard-movement.use-case';
 import { CashMovement } from 'src/core/entities/movements/cash-movement.entity'; // Corrigido para o alias core/entities
 import { MovementCategory, MovementType } from '@prisma/client';
+
 import { User } from 'src/core/entities/user.entity';
 
 // FIX: Importando os DTOs/Enums corretos do GraphQL para o arquivo de teste
 import { CreateCashMovementInput } from '../../dto/create-cash-movement.dto';
-import { CashMovementCategory as GqlCategory } from '../../enum/cash-movement-category.enum';
-import { CashMovementType as GqlType } from '../../enum/cash-movement-type.enum';
 import { FindAllCashMovementInput } from 'src/core/use-cases/cashMovement/dtos/find-all-cash-movement.input';
 import { DashboardStatsInput } from '../../dto/dashboard-stats.input';
 import { DashboardMovement } from 'src/core/entities/dashboard-movement.entity';
@@ -70,10 +69,9 @@ describe('CashMovementResolver (Integration/GraphQL)', () => {
 
   // --- 3.1 Teste: Mutation createCashMovement ---
   describe('createCashMovement', () => {
-    // FIX: Usando CreateCashMovementInput e Enums GraphQL (GqlType/GqlCategory)
     const input: CreateCashMovementInput = {
-      type: GqlType.ENTRY,
-      category: GqlCategory.SALE,
+      type: MovementType.ENTRY,
+      category: MovementCategory.SALE,
       value: 100.5,
       description: 'Venda de produto A',
       date: MOCK_DATE,
@@ -107,7 +105,7 @@ describe('CashMovementResolver (Integration/GraphQL)', () => {
       // FIX: Passa o input com o enum EXPENSE (GraphQL Enum)
       const expenseInput: CreateCashMovementInput = {
         ...input,
-        category: GqlCategory.EXPENSE,
+        category: MovementCategory.EXPENSE,
       } as any;
 
       // Act

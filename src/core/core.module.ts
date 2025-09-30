@@ -1,8 +1,6 @@
-// src/core/core.module.ts
-
 import { Module, Global } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ConsoleLogger } from 'src/infra/logging/console.logger';
+import { ConsoleLogger } from '../infra/logging/console.logger';
 
 @Global()
 @Module({

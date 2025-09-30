@@ -1,4 +1,5 @@
-// src/core/exceptions/DatabaseError.ts
+/* eslint-disable no-unused-vars */
+
 import { BaseError } from './base.exception';
 
 export class DatabaseError extends BaseError {

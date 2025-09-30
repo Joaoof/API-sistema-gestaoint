@@ -1,4 +1,7 @@
-import { MovementCategory, MovementType } from '@prisma/client';
+/* eslint-disable no-unused-vars */
+
+import { CashMovement as PrismaCashMovement } from '@prisma/client';
+import { MovementType, MovementCategory } from '@prisma/client';
 
 export class CashMovement {
   constructor(
@@ -33,7 +36,7 @@ export class CashMovement {
       throw new Error('Data inválida.');
   }
 
-  static fromPrisma(data: any): CashMovement {
+  static fromPrisma(data: PrismaCashMovement): CashMovement {
     return new CashMovement(
       data.id,
       data.type,

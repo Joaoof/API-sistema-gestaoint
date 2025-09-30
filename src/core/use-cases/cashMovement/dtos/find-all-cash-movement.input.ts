@@ -1,5 +1,5 @@
 // dto/find-all-cash-movement.input.ts
-import { InputType, Field, Float } from '@nestjs/graphql';
+import { InputType, Field } from '@nestjs/graphql';
 
 @InputType()
 export class FindAllCashMovementInput {

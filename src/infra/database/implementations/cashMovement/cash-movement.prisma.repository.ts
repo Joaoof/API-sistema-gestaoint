@@ -7,10 +7,12 @@ import { RedisService } from '../../../../infra/cache/redis.service';
 
 @Injectable()
 export class PrismaCashMovementRepository implements CashMovementRepository {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly redis: RedisService,
-  ) {}
+  private readonly prisma: PrismaService;
+  private readonly redis: RedisService;
+  constructor(prisma: PrismaService, redis: RedisService) {
+    this.prisma = prisma;
+    this.redis = redis;
+  }
 
   async create(movement: CashMovement): Promise<void> {
     if (!movement.user_id) {

@@ -1,9 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { PrismaService } from '../../prisma/prisma.service';
 
-// 🔽 Definição do payload do JWT
 export interface JwtPayload {
   sub: string; // ID do usuário
   name: string;
@@ -16,7 +14,7 @@ export interface JwtPayload {
 // 🔽 Estratégia JWT para autenticação
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly prisma: PrismaService) {
+  constructor() {
     if (!process.env.JWT_SECRET) {
       throw new Error('JWT_SECRET environment variable is not defined');
     }

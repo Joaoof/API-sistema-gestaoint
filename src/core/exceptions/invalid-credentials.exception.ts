@@ -1,5 +1,4 @@
 import { BaseError } from './base.exception';
-import { HttpStatus } from '@nestjs/common';
 
 export class InvalidCredentialsError extends BaseError {
   constructor() {

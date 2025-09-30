@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import {
@@ -8,6 +10,7 @@ import { CategoriesSchemas, ProductSchemas } from './shared/swagger/utils';
 import { GraphQLExceptionFilter } from './infra/filters/gql-exception.filter';
 import { PrismaService } from '../prisma/prisma.service';
 import * as cron from 'node-cron';
+import compress from '@fastify/compress';
 
 async function bootstrap() {
   const adapter = new FastifyAdapter({ trustProxy: true });
@@ -74,7 +77,7 @@ async function bootstrap() {
   SwaggerModule.setup('api-docs', app, document);
 
   // Plugins
-  await app.register(require('@fastify/compress'));
+  await app.register(compress as any);
 
   // Porta principal
   const port = process.env.PORT || 3000;

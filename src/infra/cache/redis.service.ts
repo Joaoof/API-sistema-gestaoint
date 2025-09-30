@@ -3,7 +3,10 @@ import { Redis } from 'ioredis';
 
 @Injectable()
 export class RedisService implements OnModuleDestroy {
-  constructor(@Inject('REDIS_CLIENT') private readonly redisClient: Redis) {}
+  private readonly redisClient: Redis;
+  constructor(@Inject('REDIS_CLIENT') redisClient: Redis) {
+    this.redisClient = redisClient;
+  }
 
   onModuleDestroy(): void {
     this.redisClient.disconnect();

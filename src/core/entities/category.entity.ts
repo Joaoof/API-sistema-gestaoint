@@ -1,4 +1,6 @@
-import { CategoryStatus, Prisma } from '@prisma/client';
+/* eslint-disable no-unused-vars */
+
+import { CategoryStatus } from '@prisma/client';
 
 export class Category {
   constructor(

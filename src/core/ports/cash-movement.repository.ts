@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+
 import { FindAllCashMovementInput } from '../use-cases/cashMovement/dtos/find-all-cash-movement.input';
 import { CashMovement } from '../entities/movements/cash-movement.entity';
 

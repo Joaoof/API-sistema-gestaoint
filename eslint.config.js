@@ -1,38 +1,40 @@
-const globals = require('globals');
-const js = require('@eslint/js');
-const { FlatCompat } = require('@eslint/eslintrc');
-// Importa o parser TS usando o require padrão do Node.js
-const typescriptEslintParser = require('@typescript-eslint/parser');
+import globals from 'globals';
+import js from '@eslint/js';
+import { FlatCompat } from '@eslint/eslintrc';
+import typescriptEslintParser from '@typescript-eslint/parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+// Resolve __dirname em ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Cria compat para usar configs antigas
 const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
-// Carrega as regras base do recommended-type-checked de uma vez
+// Base do recommended-type-checked
 const tsBaseConfig = compat.config({
   extends: ['plugin:@typescript-eslint/recommended-type-checked'],
 })[0];
 
-module.exports = [
-  // 1. Arquivos Ignorados Globalmente
+export default [
+  // 1️⃣ Ignorar arquivos
   {
-    ignores: ['dist/**', 'src/schema.gql'],
+    ignores: ['dist/**', 'src/schema.gql', 'prisma/seed/**/*.ts'],
   },
 
-  // 2. Configuração Padrão JavaScript (aplica-se a todos os arquivos)
+  // 2️⃣ Configuração JS padrão
   js.configs.recommended,
 
-  // 3. Configuração Prettier (aplica-se em todo lugar, corrige a maioria dos erros)
+  // 3️⃣ Prettier
   ...compat.extends('plugin:prettier/recommended'),
-  
-  // 4. Configuração Específica para Arquivos TypeScript (APENAS arquivos .ts)
+
+  // 4️⃣ TypeScript
   {
     files: ['**/*.ts'],
-
-    // 4a. Espalha plugins e rules carregadas do config base
     ...tsBaseConfig,
-
-    // 4b. Habilita o parser TypeScript e as opções de tipagem (sobrescreve o languageOptions do base)
     languageOptions: {
       parser: typescriptEslintParser,
       parserOptions: {
@@ -45,18 +47,18 @@ module.exports = [
         ...globals.jest,
       },
     },
-
-    // 4c. Custom Rules (Sobrescreve regras do base com as suas customizadas)
     rules: {
-      // Espalha as regras originais do base para podermos aplicar overrides
       ...tsBaseConfig.rules,
-
-      // Overrides existentes
-      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
+      ],
       '@typescript-eslint/no-unsafe-argument': 'warn',
-      'no-restricted-imports': 'warn',
-
-      // Regra de arquitetura (Core layer must not import infra or modules)
       'no-restricted-imports': [
         'warn',
         {
@@ -69,12 +71,30 @@ module.exports = [
         },
       ],
     },
-
-    // 4d. Settings
     settings: {
       'import/resolver': {
         typescript: { project: ['./tsconfig.json'] },
       },
+    },
+  },
+
+  // 5️⃣ Override para arquivos de ports
+  {
+    files: ['src/core/ports/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off',
+    },
+  },
+
+  // 6️⃣ Override específico para seeds
+  {
+    files: ['prisma/seed/**/*.ts'],
+    languageOptions: {
+      parser: undefined, // desativa parser TS
+    },
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
     },
   },
 ];

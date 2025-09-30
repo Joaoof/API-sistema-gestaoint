@@ -1,8 +1,6 @@
-// joaoof/api-sistema-gestaoint/api-sistema-gestaoint-3358eb9b49451d8a010dd9e2c99dca7bc80dc155/tests__/architecture/dependency-injection.spec.ts
-
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, Type } from '@nestjs/common';
 
 describe('Dependency Injection Validation', () => {
   let app: INestApplication;
@@ -22,9 +20,16 @@ describe('Dependency Injection Validation', () => {
 
   it('all providers should resolve without errors', async () => {
     const providers = Reflect.getMetadata('providers', AppModule) || [];
+
     for (const provider of providers) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      expect(app.get(provider as any)).toBeDefined();
+      const token =
+        provider && typeof provider === 'object' && 'provide' in provider
+          ? (provider as any).provide
+          : provider;
+
+      if (token) {
+        expect(app.get(token as string | symbol | Type<any>)).toBeDefined();
+      }
     }
   });
 

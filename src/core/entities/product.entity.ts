@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+
 import { Prisma } from '@prisma/client';
 import { DomainValidationError } from '../exceptions/domain.exception';
 

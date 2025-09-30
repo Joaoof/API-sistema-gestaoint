@@ -43,13 +43,9 @@ describe('CashMovement Use Cases (Unit)', () => {
   let dashboardUseCase: DashboardMovementUseCase;
 
   beforeEach(() => {
-    createUseCase = new CreateCashMovementUseCase(mockCashMovementRepo as any);
-    findAllUseCase = new FindAllCashMovementUseCase(
-      mockCashMovementRepo as any,
-    );
-    dashboardUseCase = new DashboardMovementUseCase(
-      mockCashMovementRepo as any,
-    );
+    createUseCase = new CreateCashMovementUseCase(mockCashMovementRepo);
+    findAllUseCase = new FindAllCashMovementUseCase(mockCashMovementRepo);
+    dashboardUseCase = new DashboardMovementUseCase(mockCashMovementRepo);
     jest.clearAllMocks();
   });
 

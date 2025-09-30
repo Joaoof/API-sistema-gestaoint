@@ -50,7 +50,7 @@ describe('CashMovement Entity (Unit)', () => {
     expect(() => {
       new CashMovement(
         baseData.id,
-        'INVALID_TYPE' as any,
+        'INVALID_TYPE' as MovementType,
         baseData.category,
         baseData.value,
         baseData.description,
