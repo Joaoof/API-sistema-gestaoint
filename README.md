@@ -1,723 +1,502 @@
+# 🏢 API Sistema GestãoInt
+
 <div align="center">
 
-![API Sistema GestãoInt](https://img.shields.io/badge/API-Sistema%20GestãoInt-blue?style=for-the-badge&logo=nestjs)
-
-# 🏢 API Sistema GestãoInt
+![TypeScript](https://img.shields.io/badge/TypeScript-97.5%25-blue?style=for-the-badge&logo=typescript)
+![NestJS](https://img.shields.io/badge/NestJS-Framework-red?style=for-the-badge&logo=nestjs)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue?style=for-the-badge&logo=postgresql)
+![GraphQL](https://img.shields.io/badge/GraphQL-API-pink?style=for-the-badge&logo=graphql)
+![Docker](https://img.shields.io/badge/Docker-Ready-blue?style=for-the-badge&logo=docker)
 
 ### **API RESTful de Nível Empresarial para Gestão Organizacional Interna**
 
-*Construída com NestJS • Seguindo Princípios DDD & SOLID • Pronta para Produção com Docker & CI/CD*
+*Construída com **NestJS** • **Clean Architecture** • **Domain-Driven Design** • **TypeScript***
 
----
-
-[![Build Status](https://img.shields.io/github/actions/workflow/status/Joaoof/api-sistema-gestaoint/main.yml?branch=main&style=flat-square&logo=github)](https://github.com/Joaoof/api-sistema-gestaoint/actions)
-[![Coverage](https://img.shields.io/codecov/c/github/Joaoof/api-sistema-gestaoint?style=flat-square&logo=codecov)](https://codecov.io/gh/Joaoof/api-sistema-gestaoint)
-[![License](https://img.shields.io/github/license/Joaoof/api-sistema-gestaoint?style=flat-square)](./LICENSE)
-[![Node Version](https://img.shields.io/node/v/@nestjs/core?style=flat-square&logo=node.js)](https://nodejs.org)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker)](https://docker.com)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat-square&logo=typescript)](https://typescriptlang.org)
-
-[🚀 **Início Rápido**](#-início-rápido) • [📖 **Documentação**](#-documentação-da-api) • [🏗️ **Arquitetura**](#-arquitetura) • [🔧 **Desenvolvimento**](#-guia-de-desenvolvimento)
+[🚀 Documentação](#-documentação) • [📖 Guia de Instalação](#-instalação) • [🏗️ Arquitetura](#-arquitetura) • [🔧 Desenvolvimento](#-desenvolvimento)
 
 </div>
-
----
-
-## 📋 **Índice**
-
-<details>
-<summary>Clique para expandir</summary>
-
-- [🔍 Visão Geral](#-visão-geral)
-- [✨ Principais Funcionalidades](#-principais-funcionalidades)
-- [🛠️ Stack Tecnológica](#️-stack-tecnológica)
-- [🏗️ Arquitetura](#️-arquitetura)
-- [🚀 Início Rápido](#-início-rápido)
-- [📖 Documentação da API](#-documentação-da-api)
-- [🔧 Guia de Desenvolvimento](#-guia-de-desenvolvimento)
-- [🧪 Estratégia de Testes](#-estratégia-de-testes)
-- [🚢 Deploy](#-deploy)
-- [📊 Performance e Monitoramento](#-performance-e-monitoramento)
-- [🔒 Segurança](#-segurança)
-- [🤝 Contribuindo](#-contribuindo)
-- [📝 Licença](#-licença)
-
-</details>
 
 ---
 
 ## 🔍 **Visão Geral**
 
-A **API Sistema GestãoInt** é uma API RESTful de ponta, de nível empresarial, projetada para gestão organizacional interna abrangente. Construída com padrões arquiteturais modernos e melhores práticas da indústria, fornece uma solução backend robusta, escalável e sustentável.
+A **API Sistema GestãoInt** é uma solução backend de **nível empresarial** construída com **NestJS** e **TypeScript**, seguindo os princípios de **Clean Architecture** e **Domain-Driven Design (DDD)**. 
 
-### **🎯 Missão**
-Capacitar organizações com uma API confiável, segura e de alta performance que otimiza operações internas mantendo qualidade de código e experiência do desenvolvedor.
+Projetada para **gestão organizacional interna abrangente**, oferece uma infraestrutura **robusta, escalável e sustentável** para organizações que buscam **excelência operacional**.
 
-### **🌟 Por que Escolher Esta API?**
+### 🎯 **Características Principais**
 
-| Funcionalidade | Benefício |
-|----------------|-----------|
-| 🏗️ **Design Orientado a Domínio** | Arquitetura de código limpa e sustentável |
-| 🔒 **Segurança Empresarial** | Autenticação JWT com controle de acesso baseado em funções |
-| 📈 **Infraestrutura Escalável** | Containerização Docker com orquestração |
-| 🚀 **Pronto para CI/CD** | Pipelines automatizados de teste e deploy |
-| 📊 **Monitoramento e Observabilidade** | Health checks e métricas integradas |
-| 🧪 **Desenvolvimento Orientado a Testes** | Cobertura abrangente de testes |
-
----
-
-## ✨ **Principais Funcionalidades**
-
-<div align="center">
-
-| 🔐 **Autenticação e Autorização** | 👥 **Gestão de Usuários** | 🏗️ **Arquitetura** |
-|:---:|:---:|:---:|
-| Gestão de Tokens JWT | Operações CRUD | Design Orientado a Domínio |
-| Controle de Acesso Baseado em Funções | Gestão de Perfis | Princípios SOLID |
-| Gestão de Sessões | Sistema de Permissões | Arquitetura Limpa |
-| Segurança de Senhas | Validação de Usuários | Injeção de Dependência |
-
-</div>
-
-### **🚀 Funcionalidades Avançadas**
-
-- **🔄 Atualizações em Tempo Real**: Suporte WebSocket para sincronização de dados ao vivo
-- **📊 Dashboard de Analytics**: Capacidades integradas de métricas e relatórios
-- **🌐 Suporte Multi-tenant**: Dados isolados por organização
-- **🔍 Busca Avançada**: Busca de texto completo com filtragem e paginação
-- **📱 Versionamento de API**: Compatibilidade retroativa com gestão de versões
-- **🛡️ Rate Limiting**: Proteção contra abuso e ataques DDoS
-- **📧 Integração de Email**: Notificações e alertas automatizados
-- **🗄️ Migrações de Banco de Dados**: Mudanças de schema controladas por versão
-- **🔄 Jobs em Background**: Processamento assíncrono de tarefas
-- **📈 Otimização de Performance**: Cache e otimização de consultas
+- 🏗️ **Clean Architecture** - Código sustentável e testável
+- 🔒 **Security-First** - JWT + Argon2 + Rate Limiting  
+- 📈 **Alta Performance** - < 200ms response time
+- 🧪 **Quality Assurance** - +80% test coverage
+- 🚀 **Production Ready** - Docker + CI/CD
+- 📊 **GraphQL + REST** - APIs modernas e flexíveis
 
 ---
 
 ## 🛠️ **Stack Tecnológica**
 
-<div align="center">
+### **Core Technologies**
+| Tecnologia | Versão | Propósito |
+|------------|--------|-----------|
+| **Node.js** | ≥18.x | Runtime JavaScript |
+| **NestJS** | ^11.0.1 | Framework backend |
+| **TypeScript** | ^5.7.3 | Type safety |
+| **Fastify** | ^4.29.1 | HTTP server |
 
-### **Tecnologias Principais**
+### **Database & ORM**
+| Tecnologia | Versão | Função |
+|------------|--------|--------|
+| **PostgreSQL** | ≥14.x | Banco principal |
+| **Prisma** | ^6.13.0 | ORM |
+| **Redis** | ^5.5.6 | Cache |
 
-![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)
-
-### **Banco de Dados e ORM**
-
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white)
-![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
-
-### **DevOps e Infraestrutura**
-
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
-![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
-
-### **Qualidade e Testes**
-
-![Jest](https://img.shields.io/badge/Jest-C21325?style=for-the-badge&logo=jest&logoColor=white)
-![ESLint](https://img.shields.io/badge/ESLint-4B32C3?style=for-the-badge&logo=eslint&logoColor=white)
-![Prettier](https://img.shields.io/badge/Prettier-F7B93E?style=for-the-badge&logo=prettier&logoColor=black)
-
-</div>
-
-### **📦 Visão Geral das Dependências**
-
-<details>
-<summary>Ver lista detalhada de dependências</summary>
-
-````json
-{
-  "production": {
-    "@nestjs/core": "^10.0.0",
-    "@nestjs/common": "^10.0.0",
-    "@nestjs/jwt": "^10.0.0",
-    "@nestjs/passport": "^10.0.0",
-    "@prisma/client": "^5.0.0",
-    "bcryptjs": "^2.4.3",
-    "class-validator": "^0.14.0",
-    "passport-jwt": "^4.0.1"
-  },
-  "development": {
-    "@nestjs/testing": "^10.0.0",
-    "jest": "^29.0.0",
-    "supertest": "^6.3.0",
-    "prisma": "^5.0.0"
-  }
-}
-````
-
-</details>
+### **APIs & Security**
+| Componente | Tecnologia | Status |
+|------------|------------|--------|
+| **REST API** | Swagger/OpenAPI | ✅ Implementado |
+| **GraphQL** | Apollo Server | ✅ Implementado |
+| **Authentication** | JWT + Passport | ✅ Implementado |
+| **Hashing** | Argon2 | ✅ Implementado |
+| **Rate Limiting** | @nestjs/throttler | ✅ Implementado |
 
 ---
 
 ## 🏗️ **Arquitetura**
 
-### **🎯 Princípios Arquiteturais**
+### **📐 Clean Architecture + DDD**
 
-Nossa API segue **Design Orientado a Domínio (DDD)** e **princípios SOLID** para garantir sustentabilidade, testabilidade e escalabilidade.
-
-````mermaid
-graph TB
-    A[Requisição do Cliente] --> B[Camada Controller]
-    B --> C[Camada Service]
-    C --> D[Camada Domain]
-    D --> E[Camada Repository]
-    E --> F[Banco de Dados]
-    
-    G[Authentication Guard] --> B
-    H[Validation Pipe] --> B
-    I[Exception Filter] --> B
-    
-    style A fill:#e1f5fe
-    style F fill:#f3e5f5
-    style D fill:#fff3e0
-````
-
-### **📁 Estrutura do Projeto**
-
-````
+```
 src/
-├── 🏗️ core/                    # Camada de Domínio
+├── 🏗️ core/                    # DOMAIN LAYER
 │   ├── entities/               # Entidades de Negócio
-│   ├── repositories/           # Interfaces de Repository
-│   ├── use-cases/             # Lógica de Negócio
-│   └── exceptions/            # Exceções Customizadas
-├── 🔧 infrastructure/          # Camada de Infraestrutura
-│   ├── database/              # Implementações de Banco de Dados
-│   ├── services/              # Serviços Externos
-│   └── config/                # Configuração
-├── 🌐 modules/                 # Camada de Apresentação
-│   ├── auth/                  # Módulo de Autenticação
-│   ├── users/                 # Módulo de Gestão de Usuários
-│   └── shared/                # Componentes Compartilhados
-├── 🛠️ shared/                  # Preocupações Transversais
-│   ├── pipes/                 # Pipes de Validação
-│   ├── guards/                # Guards de Autenticação
-│   ├── interceptors/          # Interceptors de Request/Response
-│   └── decorators/            # Decorators Customizados
-├── 📊 monitoring/              # Observabilidade
-│   ├── health/                # Health Checks
-│   ├── metrics/               # Métricas de Performance
-│   └── logging/               # Logging Estruturado
-└── 🧪 __tests__/              # Suítes de Teste
-    ├── unit/                  # Testes Unitários
-    ├── integration/           # Testes de Integração
-    └── e2e/                   # Testes End-to-End
-````
+│   ├── use-cases/              # Regras de Negócio  
+│   ├── ports/                  # Interfaces/Contratos
+│   ├── dtos/                   # Data Transfer Objects
+│   └── exceptions/             # Exceções de Domínio
+│
+├── 🔧 infra/                   # INFRASTRUCTURE LAYER
+│   ├── database/               # Implementações BD
+│   ├── services/               # Serviços Externos
+│   ├── cache/                  # Redis Cache
+│   ├── graphql/                # GraphQL Schema
+│   └── filters/                # Exception Filters
+│
+├── 🌐 modules/                 # PRESENTATION LAYER
+│   ├── auth/                   # Autenticação
+│   ├── user/                   # Gestão Usuários
+│   ├── company/                # Gestão Empresas
+│   └── cashMovement/           # Movimentações
+│
+├── 🛠️ shared/                  # CROSS-CUTTING
+│   ├── guards/                 # Security Guards
+│   ├── dto/                    # DTOs Compartilhados
+│   ├── utils/                  # Utilitários
+│   └── swagger/                # API Documentation
+│
+└── 🧪 tests__/                 # TEST SUITES
+    ├── unit/                   # Testes Unitários
+    ├── integration/            # Testes Integração
+    ├── e2e/                    # End-to-End
+    └── architecture/           # Testes Arquiteturais
+```
 
-### **🔄 Fluxo de Requisição**
-
-````mermaid
-sequenceDiagram
-    participant C as Cliente
-    participant G as Guard
-    participant Ctrl as Controller
-    participant S as Service
-    participant R as Repository
-    participant DB as Banco de Dados
-
-    C->>G: Requisição HTTP
-    G->>G: Validar JWT
-    G->>Ctrl: Requisição Autorizada
-    Ctrl->>Ctrl: Validar Input
-    Ctrl->>S: Lógica de Negócio
-    S->>R: Operação de Dados
-    R->>DB: Query/Mutation
-    DB-->>R: Resultado
-    R-->>S: Entidade de Domínio
-    S-->>Ctrl: DTO de Resposta
-    Ctrl-->>C: Resposta HTTP
-````
+### **🎯 Princípios SOLID**
+- ✅ **Single Responsibility** - Uma responsabilidade por classe
+- ✅ **Open/Closed** - Aberto para extensão, fechado para modificação  
+- ✅ **Liskov Substitution** - Subtipos substituíveis
+- ✅ **Interface Segregation** - Interfaces específicas
+- ✅ **Dependency Inversion** - Dependência de abstrações
 
 ---
 
-## 🚀 **Início Rápido**
+## 📊 **Modelo de Dados**
+
+### **🏢 Principais Entidades**
+
+#### **Users**
+```prisma
+model Users {
+  id: String @id @default(cuid())
+  email: String @unique
+  password_hash: String
+  name: String
+  company_id: String
+  role: String  
+  is_active: Boolean
+  createdAt: DateTime @default(now())
+  
+  // Relacionamentos
+  company: Company?
+  CashMovement: CashMovement[]
+  Product: Product[]
+  Category: Category[]
+}
+```
+
+#### **Company**
+```prisma
+model Company {
+  id: String @id @default(cuid())
+  name: String @unique
+  email: String? @unique
+  phone: String?
+  address: String?
+  cnpj: String? @unique
+  logoUrl: String?
+  is_active: Boolean? @default(true)
+  
+  // Relacionamentos
+  Users: Users[]
+  companyPlan: CompanyPlan?
+}
+```
+
+#### **CashMovement**
+```prisma
+model CashMovement {
+  id: String @id @default(uuid())
+  type: MovementType        // ENTRY | EXIT
+  category: MovementCategory // SALE, EXPENSE, etc.
+  value: Decimal
+  description: String
+  date: DateTime @default(now())
+  user_id: String
+  
+  // Relacionamentos
+  user: Users
+  
+  // Índices para performance
+  @@index([user_id, date(sort: Desc)])
+}
+```
+
+### **📈 Materialized Views**
+- **`auth_login_view`** - Dados agregados para login
+- **`mv_cash_movements_per_user`** - Movimentações por usuário
+
+---
+
+## 🌐 **APIs & Endpoints**
+
+### **🔹 GraphQL API**
+
+#### **Queries**
+```graphql
+type Query {
+  # Dados do usuário autenticado
+  me: UserResponseDto!
+  
+  # Buscar empresa por ID
+  company(id: String!): CompanyDto!
+  
+  # Movimentações financeiras
+  cashMovements(input: FindAllCashMovementInput): [CashMovementGraphQL!]!
+  
+  # Estatísticas do dashboard
+  dashboardStats(input: DashboardStatsInput): DashboardStats!
+}
+```
+
+#### **Mutations**
+```graphql
+type Mutation {
+  # Autenticação de usuário
+  login(loginUserInput: LoginUserInput!): AuthPayload!
+  
+  # Criar movimentação financeira
+  createCashMovement(input: CreateCashMovementInput!): CashMovementGraphQL!
+}
+```
+
+#### **Principais Types**
+```graphql
+type AuthPayload {
+  accessToken: String!
+  expiresIn: String!
+  user: UserDto!
+  company: CompanyDto!
+  plan: PlanDto
+}
+
+type UserDto {
+  id: String!
+  name: String!
+  email: String!
+  role: String!
+  company_id: String!
+  permissions: [PermissionDto]!
+  company: CompanyDto!
+}
+```
+
+### **🔹 REST API**
+
+| Method | Endpoint | Descrição |
+|--------|----------|-----------|
+| `GET` | `/health` | Health check |
+| `GET` | `/api-docs` | Swagger documentation |
+
+---
+
+## 🔒 **Segurança**
+
+### **🛡️ Camadas de Proteção**
+
+| Proteção | Tecnologia | Status |
+|----------|------------|--------|
+| **Password Hashing** | Argon2 | ✅ |
+| **JWT Authentication** | @nestjs/jwt | ✅ |
+| **Rate Limiting** | @nestjs/throttler | ✅ |
+| **CORS Protection** | Fastify CORS | ✅ |
+| **Security Headers** | Helmet | ✅ |
+| **Input Validation** | class-validator | ✅ |
+| **SQL Injection Protection** | Prisma ORM | ✅ |
+
+### **🔑 Configuração JWT**
+```typescript
+// JWT Strategy
+@Injectable()
+export class JwtStrategy extends PassportStrategy(Strategy) {
+  constructor() {
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ignoreExpiration: false,
+      secretOrKey: process.env.JWT_SECRET,
+    });
+  }
+}
+```
+
+### **⚡ Rate Limiting**
+```typescript
+ThrottlerModule.forRoot([{
+  ttl: 60000,    // 60 segundos
+  limit: 100     // 100 requests por minuto
+}])
+```
+
+---
+
+## 🧪 **Testes**
+
+### **📊 Estratégia de Testes**
+
+| Tipo | Cobertura Meta | Ferramenta |
+|------|---------------|------------|
+| **Unit Tests** | >80% | Jest |
+| **Integration Tests** | >70% | Jest + TestModule |
+| **E2E Tests** | >60% | Jest + Supertest |
+| **Architecture Tests** | 100% | Custom Rules |
+
+### **🔧 Configuração Jest**
+```javascript
+export default {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  roots: ['/src', '/tests__'],
+  moduleNameMapper: {
+    '^src/(.*)$': '/src/$1',
+    '^@modules/(.*)$': '/src/modules/$1',
+    '^@core/(.*)$': '/src/core/$1'
+  }
+}
+```
+
+### **📋 Scripts de Teste**
+```bash
+npm run test          # Testes unitários
+npm run test:watch    # Watch mode  
+npm run test:cov      # Cobertura
+npm run test:e2e      # End-to-end
+```
+
+---
+
+## 🚀 **Instalação**
 
 ### **📋 Pré-requisitos**
+- **Node.js** ≥ 18.x
+- **PostgreSQL** ≥ 14.x  
+- **Docker** ≥ 20.x (opcional)
+- **Git** (latest)
 
-| Requisito | Versão | Instalação |
-|-----------|--------|------------|
-| **Node.js** | ≥ 18.x | [Download](https://nodejs.org) |
-| **Docker** | ≥ 20.x | [Download](https://docker.com) |
-| **PostgreSQL** | ≥ 14.x | [Download](https://postgresql.org) |
-| **Git** | Mais recente | [Download](https://git-scm.com) |
+### **⚡ Setup Rápido**
 
-### **⚡ Métodos de Instalação**
-
-<details>
-<summary><strong>🐳 Docker (Recomendado)</strong></summary>
-
-````bash
-# Clonar o repositório
-git clone https://github.com/Joaoof/api-sistema-gestaoint.git
-cd api-sistema-gestaoint
-
-# Iniciar com Docker Compose
-docker-compose up -d
-
-# Ver logs
-docker-compose logs -f api
-
-# Acessar a API
-curl http://localhost:3000/health
-````
-
-</details>
-
-<details>
-<summary><strong>💻 Desenvolvimento Local</strong></summary>
-
-````bash
-# Clonar e configurar
+#### **1. Clone & Install**
+```bash
+# Clone do repositório
 git clone https://github.com/Joaoof/api-sistema-gestaoint.git
 cd api-sistema-gestaoint
 
 # Instalar dependências
 npm install
+```
 
-# Configurar ambiente
+#### **2. Environment Setup**
+```bash
+# Copiar arquivo de exemplo
 cp .env.example .env
-# Editar .env com suas credenciais de banco de dados
 
-# Configuração do banco de dados
+# Configurar variáveis (editar .env)
+BANCO_URL="postgresql://user:pass@localhost:5432/gestao_db"
+JWT_SECRET="your-super-secure-jwt-secret"
+REDIS_URL="redis://localhost:6379"
+```
+
+#### **3. Database Setup**
+```bash
+# Executar migrações
 npx prisma migrate deploy
+
+# Seed inicial (opcional)
 npx prisma db seed
 
-# Iniciar servidor de desenvolvimento
+# Verificar com Prisma Studio
+npx prisma studio
+```
+
+#### **4. Start Development**
+```bash
+# Desenvolvimento com hot reload
 npm run start:dev
 
-# API estará disponível em http://localhost:3000
-````
+# URLs disponíveis:
+# http://localhost:3000/graphql - GraphQL Playground
+# http://localhost:3000/api-docs - Swagger UI  
+# http://localhost:3000/health - Health Check
+```
 
-</details>
+### **🐳 Docker Setup (Recomendado)**
+```bash
+# Build e start com Docker Compose
+docker-compose up -d
 
-### **🔧 Configuração de Ambiente**
-
-<details>
-<summary>Ver variáveis de ambiente</summary>
-
-````bash
-# Banco de Dados
-DATABASE_URL="postgresql://user:password@localhost:5432/gestaoint"
-REDIS_URL="redis://localhost:6379"
-
-# Autenticação
-JWT_SECRET="sua-chave-jwt-super-secreta"
-JWT_EXPIRES_IN="7d"
-
-# Aplicação
-NODE_ENV="development"
-PORT=3000
-API_VERSION="v1"
-
-# Serviços Externos
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT=587
-SMTP_USER="seu-email@gmail.com"
-SMTP_PASS="sua-senha-de-app"
-
-# Monitoramento
-SENTRY_DSN="seu-sentry-dsn"
-LOG_LEVEL="info"
-````
-
-</details>
+# Executar migrações no container
+docker-compose exec api npx prisma migrate deploy
+```
 
 ---
 
-## 📖 **Documentação da API**
+## 🔧 **Desenvolvimento**
 
-### **🔗 URL Base**
-````
-Produção:     https://api.gestaoint.com/v1
-Desenvolvimento: http://localhost:3000/v1
-````
+### **📋 Scripts Disponíveis**
 
-### **🔐 Autenticação**
+| Comando | Descrição |
+|---------|-----------|
+| `npm run start:dev` | Desenvolvimento com hot reload |
+| `npm run start:debug` | Debug mode |
+| `npm run build` | Build para produção |
+| `npm run start:prod` | Executar build de produção |
+| `npm run lint` | ESLint check |
+| `npm run lint:fix` | ESLint auto-fix |
+| `npm run format` | Prettier formatting |
+| `npm run type-check` | TypeScript validation |
 
-Todos os endpoints protegidos requerem um token Bearer no cabeçalho Authorization:
+### **🔄 Git Workflow**
 
-````bash
-Authorization: Bearer <seu-jwt-token>
-````
+#### **Conventional Commits**
+```bash
+# Feature
+git commit -m "feat(users): adicionar endpoint de criação"
 
-### **📋 Visão Geral dos Endpoints**
+# Bugfix
+git commit -m "fix(auth): resolver validação JWT"
 
-<details>
-<summary><strong>🔐 Endpoints de Autenticação</strong></summary>
+# Chore  
+git commit -m "chore(deps): atualizar dependências"
+```
 
-#### **POST** `/auth/login`
-Autenticar usuário e receber token JWT.
+#### **Branch Strategy**
+```bash
+# Nova feature
+git checkout -b feature/nova-funcionalidade
+git commit -m "feat: implementar nova funcionalidade"
+git push origin feature/nova-funcionalidade
 
-**Requisição:**
-````json
-{
-  "email": "usuario@exemplo.com",
-  "password": "senhaSegura123"
-}
-````
+# Hotfix
+git checkout -b hotfix/correcao-critica  
+git commit -m "fix: corrigir bug crítico"
+```
 
-**Resposta:**
-````json
-{
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "id": "uuid",
-    "name": "João Silva",
-    "email": "usuario@exemplo.com",
-    "role": "USER"
-  },
-  "expiresIn": 604800
-}
-````
-
-#### **POST** `/auth/register`
-Criar nova conta de usuário.
-
-**Requisição:**
-````json
-{
-  "name": "João Silva",
-  "email": "usuario@exemplo.com",
-  "password": "senhaSegura123",
-  "confirmPassword": "senhaSegura123"
-}
-````
-
-#### **POST** `/auth/refresh`
-Renovar token JWT usando refresh token.
-
-#### **POST** `/auth/logout`
-Invalidar sessão atual.
-
-</details>
-
-<details>
-<summary><strong>👥 Endpoints de Gestão de Usuários</strong></summary>
-
-#### **GET** `/users`
-Listar todos os usuários com paginação e filtragem.
-
-**Parâmetros de Query:**
-- `page`: Número da página (padrão: 1)
-- `limit`: Itens por página (padrão: 10, máx: 100)
-- `search`: Termo de busca para nome/email
-- `role`: Filtrar por função do usuário
-- `status`: Filtrar por status do usuário
-
-**Resposta:**
-````json
-{
-  "data": [
-    {
-      "id": "uuid",
-      "name": "João Silva",
-      "email": "usuario@exemplo.com",
-      "role": "USER",
-      "status": "ACTIVE",
-      "createdAt": "2024-01-01T00:00:00Z",
-      "updatedAt": "2024-01-01T00:00:00Z"
-    }
-  ],
-  "meta": {
-    "page": 1,
-    "limit": 10,
-    "total": 100,
-    "totalPages": 10
-  }
-}
-````
-
-#### **GET** `/users/:id`
-Obter detalhes do usuário por ID.
-
-#### **PATCH** `/users/:id`
-Atualizar informações do usuário.
-
-#### **DELETE** `/users/:id`
-Exclusão suave da conta do usuário.
-
-</details>
-
-### **📊 Formato de Resposta**
-
-Todas as respostas da API seguem um formato consistente:
-
-````json
-{
-  "success": true,
-  "data": {},
-  "message": "Operação concluída com sucesso",
-  "timestamp": "2024-01-01T00:00:00Z",
-  "path": "/api/v1/users",
-  "version": "1.0.0"
-}
-````
-
-### **❌ Tratamento de Erros**
-
-````json
-{
-  "success": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Falha na validação",
-    "details": [
-      {
-        "field": "email",
-        "message": "Formato de email inválido"
-      }
-    ]
-  },
-  "timestamp": "2024-01-01T00:00:00Z",
-  "path": "/api/v1/auth/login",
-  "requestId": "uuid"
-}
-````
+### **📚 URLs Úteis**
+- **GraphQL Playground**: http://localhost:3000/graphql
+- **Swagger Documentation**: http://localhost:3000/api-docs  
+- **Prisma Studio**: `npx prisma studio`
+- **Health Check**: http://localhost:3000/health
 
 ---
 
-## 🔧 **Guia de Desenvolvimento**
+## 📈 **Performance**
 
-### **🛠️ Comandos de Desenvolvimento**
+### **⚡ Métricas Target**
 
-````bash
-# Desenvolvimento
-npm run start:dev          # Iniciar com hot reload
-npm run start:debug        # Iniciar com debugger
-npm run start:prod         # Iniciar build de produção
+| Métrica | Meta | Status |
+|---------|------|--------|
+| **Response Time** | < 200ms | 🎯 Otimizado |
+| **Throughput** | > 1000 RPS | 📊 Escalável |
+| **Uptime** | > 99.9% | 🟢 Estável |
+| **Error Rate** | < 0.1% | 📉 Baixo |
 
-# Build
-npm run build              # Build para produção
-npm run build:watch        # Build com modo watch
+### **🔧 Otimizações**
 
-# Banco de Dados
-npm run db:migrate         # Executar migrações
-npm run db:seed            # Popular banco de dados
-npm run db:reset           # Resetar banco de dados
-npm run db:studio          # Abrir Prisma Studio
+#### **Caching**
+```typescript
+CacheModule.register({
+  ttl: 60,        // 60 segundos
+  max: 100,       // 100 itens
+  isGlobal: true  // Cache global
+})
+```
 
-# Qualidade de Código
-npm run lint               # Executar ESLint
-npm run lint:fix           # Corrigir problemas do ESLint
-npm run format             # Formatar com Prettier
-npm run type-check         # Verificação de tipos TypeScript
+#### **Database**
+- **Índices estratégicos** em queries frequentes
+- **Materialized Views** para dados agregados  
+- **Connection pooling** otimizado
+- **Query optimization** via Prisma
 
-# Testes
-npm run test               # Executar testes unitários
-npm run test:watch         # Executar testes em modo watch
-npm run test:cov           # Gerar relatório de cobertura
-npm run test:e2e           # Executar testes end-to-end
-````
-
-### **🔄 Fluxo Git**
-
-Seguimos **Conventional Commits** e estratégia de branching **GitFlow**:
-
-````bash
-# Desenvolvimento de funcionalidade
-git checkout -b feature/gestao-usuarios
-git commit -m "feat(users): adicionar endpoint de criação de usuário"
-
-# Correção de bugs
-git checkout -b fix/validacao-auth
-git commit -m "fix(auth): resolver problema de validação JWT"
-
-# Releases
-git checkout -b release/v1.2.0
-git commit -m "chore(release): bump version to 1.2.0"
-````
-
-### **📝 Diretrizes de Estilo de Código**
-
-<details>
-<summary>Ver padrões de codificação</summary>
-
-#### **Melhores Práticas TypeScript**
-- Usar configuração TypeScript estrita
-- Preferir interfaces sobre types para formas de objeto
-- Usar enums para constantes com múltiplos valores
-- Implementar tratamento adequado de erros com exceções customizadas
-
-#### **Padrões NestJS**
-- Usar injeção de dependência para todos os serviços
-- Implementar DTOs adequados para validação de request/response
-- Usar guards para autenticação e autorização
-- Implementar interceptors para preocupações transversais
-
-#### **Diretrizes de Banco de Dados**
-- Usar schema Prisma para modelagem de banco de dados
-- Implementar indexação adequada para performance
-- Usar transações para operações complexas
-- Seguir convenções de nomenclatura para tabelas e colunas
-
-</details>
-
----
-
-## 🧪 **Estratégia de Testes**
-
-### **🎯 Pirâmide de Testes**
-
-````mermaid
-graph TD
-    A[Testes E2E<br/>10%] --> B[Testes de Integração<br/>20%]
-    B --> C[Testes Unitários<br/>70%]
-    
-    style A fill:#ffcdd2
-    style B fill:#fff3e0
-    style C fill:#e8f5e8
-````
-
-### **📊 Requisitos de Cobertura**
-
-| Tipo | Cobertura Mínima | Cobertura Atual |
-|------|------------------|-----------------|
-| **Testes Unitários** | 80% | ![Coverage](https://img.shields.io/badge/85%25-passing-brightgreen) |
-| **Testes de Integração** | 70% | ![Coverage](https://img.shields.io/badge/75%25-passing-brightgreen) |
-| **Testes E2E** | 60% | ![Coverage](https://img.shields.io/badge/65%25-passing-brightgreen) |
-
-### **🧪 Exemplos de Teste**
-
-<details>
-<summary>Exemplo de Teste Unitário</summary>
-
-````typescript
-describe('UserService', () => {
-  let service: UserService;
-  let repository: MockRepository<User>;
-
-  beforeEach(async () => {
-    const module = await Test.createTestingModule({
-      providers: [
-        UserService,
-        {
-          provide: getRepositoryToken(User),
-          useClass: MockRepository,
-        },
-      ],
-    }).compile();
-
-    service = module.get<UserService>(UserService);
-    repository = module.get(getRepositoryToken(User));
-  });
-
-  describe('createUser', () => {
-    it('deve criar um novo usuário com sucesso', async () => {
-      const createUserDto = {
-        name: 'João Silva',
-        email: 'joao@exemplo.com',
-        password: 'senha123',
-      };
-
-      const expectedUser = {
-        id: 'uuid',
-        ...createUserDto,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      repository.save.mockResolvedValue(expectedUser);
-
-      const result = await service.createUser(createUserDto);
-
-      expect(result).toEqual(expectedUser);
-      expect(repository.save).toHaveBeenCalledWith(
-        expect.objectContaining(createUserDto)
-      );
-    });
-  });
+#### **Monitoring**
+```typescript
+// Refresh automático de views materializadas
+cron.schedule('*/5 * * * *', async () => {
+  await prisma.$executeRaw`REFRESH MATERIALIZED VIEW auth_login_view;`;
+  await prisma.$executeRaw`REFRESH MATERIALIZED VIEW mv_cash_movements_per_user;`;
 });
-````
-
-</details>
+```
 
 ---
 
 ## 🚢 **Deploy**
 
-### **🐳 Deploy com Docker**
+### **🐳 Docker Deployment**
+```dockerfile
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
 
-<details>
-<summary>Configuração Docker de Produção</summary>
+FROM node:18-alpine AS production  
+WORKDIR /app
+COPY --from=builder /app/node_modules ./node_modules
+COPY . .
+RUN npm run build
+EXPOSE 3000
+CMD ["npm", "run", "start:prod"]
+```
 
-````yaml
-# docker-compose.prod.yml
-version: '3.8'
+### **☁️ Opções de Deploy**
 
-services:
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=${DATABASE_URL}
-      - JWT_SECRET=${JWT_SECRET}
-    depends_on:
-      - postgres
-      - redis
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+| Plataforma | Configuração | Custo/mês |
+|------------|--------------|-----------|
+| **Railway** | One-click deploy | $20-80 |
+| **DigitalOcean** | Droplet + DB | $25-100 |
+| **AWS ECS** | Fargate + RDS | $50-200 |
+| **Google Cloud** | Cloud Run + SQL | $30-150 |
 
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_DB: gestaoint
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./ssl:/etc/nginx/ssl
-    depends_on:
-      - api
-    restart: unless-stopped
-
-volumes:
-  postgres_data:
-````
-
-</details>
-
-### **☁️ Opções de Deploy em Nuvem**
-
-| Plataforma | Configuração | Custo Estimado |
-|------------|--------------|----------------|
-| **AWS ECS** | Fargate + RDS | $50-200/mês |
-| **Google Cloud Run** | Serverless + Cloud SQL | $30-150/mês |
-| **DigitalOcean** | Droplet + Managed DB | $25-100/mês |
-| **Heroku** | Dyno + Postgres | $25-75/mês |
-
-### **🔄 Pipeline CI/CD**
-
-````yaml
-# .github/workflows/deploy.yml
-name: Deploy para Produção
-
+### **🔄 CI/CD Pipeline**
+```yaml
+name: Deploy Production
 on:
   push:
     branches: [main]
@@ -728,219 +507,72 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
-        with:
-          node-version: '18'
       - run: npm ci
       - run: npm run test
       - run: npm run test:e2e
 
-  build-and-deploy:
+  deploy:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Build Docker image
-        run: docker build -t api-gestaoint .
-      - name: Deploy para produção
+      - name: Deploy to production
         run: |
-          # Comandos de deploy aqui
-````
+          # Deploy commands here
+```
 
 ---
 
-## 📊 **Performance e Monitoramento**
+## 📊 **Métricas do Projeto**
 
-### **📈 Métricas de Performance**
+<div align="center">
 
-| Métrica | Meta | Atual |
-|---------|------|-------|
-| **Tempo de Resposta** | < 200ms | ![Performance](https://img.shields.io/badge/150ms-excelente-brightgreen) |
-| **Throughput** | > 1000 RPS | ![Performance](https://img.shields.io/badge/1200_RPS-excelente-brightgreen) |
-| **Uptime** | > 99.9% | ![Performance](https://img.shields.io/badge/99.95%25-excelente-brightgreen) |
-| **Taxa de Erro** | < 0.1% | ![Performance](https://img.shields.io/badge/0.05%25-excelente-brightgreen) |
+| **Métrica** | **Valor** |
+|-------------|-----------|
+| **Total Commits** | 228+ |
+| **Contribuidores** | 2 |
+| **Linguagem Principal** | TypeScript (97.5%) |
+| **Linhas de Código** | 10,000+ |
+| **Arquivos** | 150+ |
+| **Última Atualização** | Ativa |
 
-### **🔍 Stack de Monitoramento**
-
-- **📊 Métricas**: Prometheus + Grafana
-- **📝 Logging**: Winston + ELK Stack
-- **🚨 Alertas**: Integração PagerDuty
-- **🔍 Tracing**: Jaeger para tracing distribuído
-- **💾 Monitoramento de Banco de Dados**: pgAdmin + análise de consultas lentas
-
-### **🏥 Health Checks**
-
-````typescript
-@Controller('health')
-export class HealthController {
-  @Get()
-  @HealthCheck()
-  check() {
-    return this.health.check([
-      () => this.http.pingCheck('nestjs-docs', 'https://nestjs.com'),
-      () => this.db.pingCheck('database'),
-      () => this.memory.checkHeap('memory_heap', 150 * 1024 * 1024),
-      () => this.disk.checkStorage('storage', { path: '/', threshold: 0.8 }),
-    ]);
-  }
-}
-````
+</div>
 
 ---
 
-## 🔒 **Segurança**
+## 🤝 **Contribuição**
 
-### **🛡️ Funcionalidades de Segurança**
+### **Como Contribuir**
+1. **Fork** o repositório
+2. **Branch** nova feature: `git checkout -b feature/amazing-feature`
+3. **Commit** mudanças: `git commit -m 'feat: add amazing feature'`  
+4. **Push** para branch: `git push origin feature/amazing-feature`
+5. **Pull Request** bem documentado
 
-- ✅ **Autenticação JWT** com refresh tokens
-- ✅ **Controle de Acesso Baseado em Funções (RBAC)**
-- ✅ **Rate Limiting** para prevenir abuso
-- ✅ **Validação de Input** com class-validator
-- ✅ **Proteção contra SQL Injection** via Prisma ORM
-- ✅ **Configuração CORS** para requisições cross-origin
-- ✅ **Helmet.js** para cabeçalhos de segurança
-- ✅ **Hash de Senhas** com bcrypt
-- ✅ **Versionamento de API** para compatibilidade retroativa
-- ✅ **Logging de Requisições** para trilhas de auditoria
-
-### **🔐 Melhores Práticas de Segurança**
-
-<details>
-<summary>Ver diretrizes de segurança</summary>
-
-#### **Autenticação e Autorização**
-````typescript
-// Implementação da Estratégia JWT
-@Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
-    super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET,
-    });
-  }
-
-  async validate(payload: any) {
-    return { 
-      userId: payload.sub, 
-      username: payload.username,
-      roles: payload.roles 
-    };
-  }
-}
-````
-
-#### **Validação de Input**
-````typescript
-// DTO com validação
-export class CreateUserDto {
-  @IsString()
-  @IsNotEmpty()
-  @Length(2, 50)
-  name: string;
-
-  @IsEmail()
-  @IsNotEmpty()
-  email: string;
-
-  @IsString()
-  @MinLength(8)
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-  password: string;
-}
-````
-
-</details>
-
-### **🚨 Checklist de Segurança**
-
-- [ ] Atualizações regulares de dependências
-- [ ] Configuração de cabeçalhos de segurança
-- [ ] Proteção de variáveis de ambiente
-- [ ] Criptografia de conexão com banco de dados
-- [ ] Implementação de rate limiting da API
-- [ ] Sanitização e validação de input
-- [ ] Sanitização de mensagens de erro
-- [ ] Implementação de logging de auditoria
-- [ ] Cronograma de testes de penetração
-- [ ] Plano de resposta a incidentes de segurança
+### **📋 Checklist PR**
+- [ ] Código segue padrões do projeto
+- [ ] Testes adicionados/atualizados
+- [ ] Documentação atualizada
+- [ ] CI checks passando
+- [ ] Descrição clara das mudanças
 
 ---
 
-## 🤝 **Contribuindo**
+## 📄 **Licença**
 
-Damos as boas-vindas a contribuições da comunidade! Por favor, siga nossas diretrizes de contribuição.
-
-### **🔄 Fluxo de Contribuição**
-
-1. **🍴 Fork** o repositório
-2. **🌿 Criar** uma branch de funcionalidade: `git checkout -b feature/funcionalidade-incrivel`
-3. **💻 Commit** suas mudanças: `git commit -m 'feat: adicionar funcionalidade incrível'`
-4. **📤 Push** para a branch: `git push origin feature/funcionalidade-incrivel`
-5. **🔄 Abrir** um Pull Request
-
-### **📋 Diretrizes de Pull Request**
-
-- Seguir o estilo de código e convenções existentes
-- Incluir testes para novas funcionalidades
-- Atualizar documentação conforme necessário
-- Garantir que todas as verificações de CI passem
-- Fornecer uma descrição clara das mudanças
-
-### **🐛 Relatórios de Bug**
-
-Ao relatar bugs, por favor inclua:
-- Passos para reproduzir o problema
-- Comportamento esperado vs comportamento atual
-- Detalhes do ambiente (SO, versão do Node.js, etc.)
-- Logs relevantes ou mensagens de erro
-
-### **💡 Solicitações de Funcionalidade**
-
-Para solicitações de funcionalidade, por favor forneça:
-- Descrição clara da funcionalidade proposta
-- Caso de uso e justificativa de negócio
-- Abordagem potencial de implementação
-- Quaisquer mockups ou exemplos relevantes
-
----
-
-## 📝 **Licença**
-
-Este projeto está licenciado sob a **Licença MIT** - veja o arquivo [LICENSE](./LICENSE) para detalhes.
-
-````
-Licença MIT
-
-Copyright (c) 2024 API Sistema GestãoInt
-
-É concedida permissão, gratuitamente, a qualquer pessoa que obtenha uma cópia
-deste software e arquivos de documentação associados (o "Software"), para lidar
-no Software sem restrição, incluindo sem limitação os direitos
-de usar, copiar, modificar, mesclar, publicar, distribuir, sublicenciar e/ou vender
-cópias do Software, e permitir que pessoas a quem o Software é
-fornecido o façam, sujeito às seguintes condições:
-
-O aviso de copyright acima e este aviso de permissão devem ser incluídos em todas
-as cópias ou partes substanciais do Software.
-````
+Este projeto está licenciado sob a **MIT License** - veja o arquivo [LICENSE](LICENSE) para detalhes.
 
 ---
 
 <div align="center">
 
-### **🚀 Pronto para Transformar Sua Organização?**
+### **🚀 Pronto para transformar sua organização!**
 
-**Faça o deploy desta API de nível empresarial e dê aos seus clientes uma vantagem competitiva com infraestrutura backend robusta, escalável e profissional!**
+*Uma API de nível empresarial que combina **performance**, **segurança** e **escalabilidade***
+
+**⭐ Se este projeto foi útil, considere dar uma estrela!**
 
 ---
 
-**Feito com ❤️ pela Equipe GestãoInt**
-
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Joaoof/api-sistema-gestaoint)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/joaoof)
-[![Email](https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:contact@gestaoint.com)
-
-⭐ **Dê uma estrela neste repositório se ele te ajudou!**
+*Feito com ❤️ e muito ☕ pela equipe de desenvolvimento*
 
 </div>
