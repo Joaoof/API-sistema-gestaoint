@@ -177,7 +177,7 @@ A **API Sistema GestãoInt** é uma solução backend de **nível empresarial** 
 
 A aplicação segue os princípios de **Clean Architecture** e **Domain-Driven Design**, garantindo separação clara de responsabilidades e independência de frameworks.
 
-\`\`\`
+```
 ┌─────────────────────────────────────────────────────────────┐
 │                    PRESENTATION LAYER                        │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
@@ -209,11 +209,11 @@ A aplicação segue os princípios de **Clean Architecture** e **Domain-Driven D
 │  │ Repositories │  │ Redis        │  │ Services     │      │
 │  └──────────────┘  └──────────────┘  └──────────────┘      │
 └─────────────────────────────────────────────────────────────┘
-\`\`\`
+```
 
 ### **📂 Estrutura de Diretórios**
 
-\`\`\`
+```
 src/
 ├── 🏗️ core/                      # DOMAIN LAYER
 │   ├── entities/                 # Entidades de negócio
@@ -285,14 +285,14 @@ src/
 │
 ├── app.module.ts                 # Módulo raiz
 └── main.ts                       # Entry point
-\`\`\`
+```
 
 ### **🎯 Princípios SOLID**
 
 #### **S - Single Responsibility Principle**
 Cada classe tem uma única responsabilidade bem definida.
 
-\`\`\`typescript
+```typescript
 // ✅ BOM: Responsabilidade única
 class UserRepository {
   async findById(id: string): Promise<User> { }
@@ -301,12 +301,12 @@ class UserRepository {
 class UserValidator {
   validate(user: User): ValidationResult { }
 }
-\`\`\`
+```
 
 #### **O - Open/Closed Principle**
 Aberto para extensão, fechado para modificação.
 
-\`\`\`typescript
+```typescript
 // ✅ BOM: Extensível via interface
 interface PaymentStrategy {
   process(amount: number): Promise<void>;
@@ -314,34 +314,34 @@ interface PaymentStrategy {
 
 class CreditCardPayment implements PaymentStrategy { }
 class PixPayment implements PaymentStrategy { }
-\`\`\`
+```
 
 #### **L - Liskov Substitution Principle**
 Subtipos devem ser substituíveis por seus tipos base.
 
-\`\`\`typescript
+```typescript
 // ✅ BOM: Substituível
 abstract class Repository<T> {
   abstract findById(id: string): Promise<T>;
 }
 
 class UserRepository extends Repository<User> { }
-\`\`\`
+```
 
 #### **I - Interface Segregation Principle**
 Interfaces específicas são melhores que interfaces gerais.
 
-\`\`\`typescript
+```typescript
 // ✅ BOM: Interfaces segregadas
 interface Readable { read(): Promise<Data>; }
 interface Writable { write(data: Data): Promise<void>; }
 interface Deletable { delete(id: string): Promise<void>; }
-\`\`\`
+```
 
 #### **D - Dependency Inversion Principle**
 Dependa de abstrações, não de implementações concretas.
 
-\`\`\`typescript
+```typescript
 // ✅ BOM: Depende de abstração
 class UserService {
   constructor(
@@ -349,7 +349,7 @@ class UserService {
     private readonly emailService: IEmailService,     // Interface
   ) {}
 }
-\`\`\`
+```
 
 ---
 
@@ -367,7 +367,7 @@ Certifique-se de ter instalado:
 
 ### **⚡ Instalação Rápida**
 
-\`\`\`bash
+```bash
 # 1. Clone o repositório
 git clone https://github.com/Joaoof/api-sistema-gestaoint.git
 cd api-sistema-gestaoint
@@ -391,11 +391,11 @@ npx prisma db seed
 
 # 6. Inicie o servidor de desenvolvimento
 npm run start:dev
-\`\`\`
+```
 
 ### **🐳 Instalação com Docker**
 
-\`\`\`bash
+```bash
 # 1. Clone o repositório
 git clone https://github.com/Joaoof/api-sistema-gestaoint.git
 cd api-sistema-gestaoint
@@ -413,17 +413,17 @@ docker-compose exec api npx prisma migrate dev
 # API: http://localhost:3000
 # Swagger: http://localhost:3000/api
 # GraphQL Playground: http://localhost:3000/graphql
-\`\`\`
+```
 
 ### **✅ Verificação da Instalação**
 
-\`\`\`bash
+```bash
 # Verifique se a API está rodando
 curl http://localhost:3000/health
 
 # Resposta esperada:
 # {"status":"ok","timestamp":"2025-09-30T12:00:00.000Z"}
-\`\`\`
+```
 
 ---
 
@@ -433,7 +433,7 @@ curl http://localhost:3000/health
 
 Crie um arquivo `.env` na raiz do projeto:
 
-\`\`\`env
+```env
 # Application
 NODE_ENV=development
 PORT=3000
@@ -477,13 +477,13 @@ SENTRY_DSN=your-sentry-dsn
 
 # Logs
 LOG_LEVEL=debug
-\`\`\`
+```
 
 ### **🗄️ Configuração do Banco de Dados**
 
 #### **PostgreSQL Local**
 
-\`\`\`bash
+```bash
 # Criar banco de dados
 createdb gestaoint
 
@@ -492,11 +492,11 @@ npx prisma migrate dev
 
 # Visualizar banco de dados
 npx prisma studio
-\`\`\`
+```
 
 #### **PostgreSQL Docker**
 
-\`\`\`yaml
+```yaml
 # docker-compose.yml
 version: '3.8'
 
@@ -524,11 +524,11 @@ services:
 volumes:
   postgres_data:
   redis_data:
-\`\`\`
+```
 
 ### **🔄 Migrações do Prisma**
 
-\`\`\`bash
+```bash
 # Criar uma nova migração
 npx prisma migrate dev --name add_new_feature
 
@@ -543,7 +543,7 @@ npx prisma generate
 
 # Visualizar banco de dados
 npx prisma studio
-\`\`\`
+```
 
 ---
 
@@ -551,7 +551,7 @@ npx prisma studio
 
 ### **🏢 Diagrama ER**
 
-\`\`\`
+```
 ┌─────────────┐         ┌─────────────┐         ┌─────────────┐
 │   Company   │────────<│    Users    │>────────│ CashMovement│
 │             │         │             │         │             │
@@ -587,13 +587,13 @@ npx prisma studio
                         │ description │         
                         │ user_id     │         
                         └─────────────┘         
-\`\`\`
+```
 
 ### **📋 Entidades Principais**
 
 #### **Users**
 
-\`\`\`prisma
+```prisma
 model Users {
   id            String          @id @default(cuid())
   email         String          @unique
@@ -614,11 +614,11 @@ model Users {
   @@index([email])
   @@index([company_id])
 }
-\`\`\`
+```
 
 #### **Company**
 
-\`\`\`prisma
+```prisma
 model Company {
   id          String        @id @default(cuid())
   name        String        @unique
@@ -637,11 +637,11 @@ model Company {
   
   @@index([cnpj])
 }
-\`\`\`
+```
 
 #### **CashMovement**
 
-\`\`\`prisma
+```prisma
 enum MovementType {
   ENTRY
   EXIT
@@ -674,11 +674,11 @@ model CashMovement {
   @@index([date])
   @@index([type])
 }
-\`\`\`
+```
 
 #### **Product**
 
-\`\`\`prisma
+```prisma
 model Product {
   id          String    @id @default(cuid())
   name        String
@@ -698,11 +698,11 @@ model Product {
   @@index([category_id])
   @@index([user_id])
 }
-\`\`\`
+```
 
 #### **Category**
 
-\`\`\`prisma
+```prisma
 model Category {
   id          String    @id @default(cuid())
   name        String
@@ -717,11 +717,11 @@ model Category {
   
   @@index([user_id])
 }
-\`\`\`
+```
 
 #### **CompanyPlan**
 
-\`\`\`prisma
+```prisma
 enum PlanType {
   FREE
   BASIC
@@ -744,7 +744,7 @@ model CompanyPlan {
   
   @@index([company_id])
 }
-\`\`\`
+```
 
 ---
 
@@ -756,17 +756,17 @@ A API REST está disponível em `http://localhost:3000/api` e documentada com Sw
 
 #### **Base URL**
 
-\`\`\`
+```
 http://localhost:3000/api/v1
-\`\`\`
+```
 
 #### **Autenticação**
 
 Todas as rotas protegidas requerem um token JWT no header:
 
-\`\`\`http
+```http
 Authorization: Bearer <seu-token-jwt>
-\`\`\`
+```
 
 ### **🔐 Auth Endpoints**
 
@@ -774,7 +774,7 @@ Authorization: Bearer <seu-token-jwt>
 
 Registra um novo usuário.
 
-\`\`\`http
+```http
 POST /api/v1/auth/register
 Content-Type: application/json
 
@@ -784,11 +784,11 @@ Content-Type: application/json
   "name": "João Silva",
   "company_id": "optional-company-id"
 }
-\`\`\`
+```
 
 **Response 201:**
 
-\`\`\`json
+```json
 {
   "user": {
     "id": "clx1234567890",
@@ -801,13 +801,13 @@ Content-Type: application/json
   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
-\`\`\`
+```
 
 #### **POST /auth/login**
 
 Autentica um usuário existente.
 
-\`\`\`http
+```http
 POST /api/v1/auth/login
 Content-Type: application/json
 
@@ -815,11 +815,11 @@ Content-Type: application/json
   "email": "user@example.com",
   "password": "SecurePass123!"
 }
-\`\`\`
+```
 
 **Response 200:**
 
-\`\`\`json
+```json
 {
   "user": {
     "id": "clx1234567890",
@@ -830,29 +830,29 @@ Content-Type: application/json
   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
-\`\`\`
+```
 
 #### **POST /auth/refresh**
 
 Renova o access token usando o refresh token.
 
-\`\`\`http
+```http
 POST /api/v1/auth/refresh
 Content-Type: application/json
 
 {
   "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
-\`\`\`
+```
 
 #### **POST /auth/logout**
 
 Invalida o token atual (requer autenticação).
 
-\`\`\`http
+```http
 POST /api/v1/auth/logout
 Authorization: Bearer <token>
-\`\`\`
+```
 
 ### **👥 Users Endpoints**
 
@@ -860,10 +860,10 @@ Authorization: Bearer <token>
 
 Lista todos os usuários (requer autenticação).
 
-\`\`\`http
+```http
 GET /api/v1/users?page=1&limit=10&search=joão
 Authorization: Bearer <token>
-\`\`\`
+```
 
 **Query Parameters:**
 - `page` (opcional): Número da página (default: 1)
@@ -872,7 +872,7 @@ Authorization: Bearer <token>
 
 **Response 200:**
 
-\`\`\`json
+```json
 {
   "data": [
     {
@@ -895,22 +895,22 @@ Authorization: Bearer <token>
     "totalPages": 10
   }
 }
-\`\`\`
+```
 
 #### **GET /users/:id**
 
 Busca um usuário por ID.
 
-\`\`\`http
+```http
 GET /api/v1/users/clx1234567890
 Authorization: Bearer <token>
-\`\`\`
+```
 
 #### **PATCH /users/:id**
 
 Atualiza um usuário.
 
-\`\`\`http
+```http
 PATCH /api/v1/users/clx1234567890
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -919,16 +919,16 @@ Content-Type: application/json
   "name": "João Silva Santos",
   "role": "ADMIN"
 }
-\`\`\`
+```
 
 #### **DELETE /users/:id**
 
 Remove um usuário (soft delete).
 
-\`\`\`http
+```http
 DELETE /api/v1/users/clx1234567890
 Authorization: Bearer <token>
-\`\`\`
+```
 
 ### **🏢 Company Endpoints**
 
@@ -936,7 +936,7 @@ Authorization: Bearer <token>
 
 Cria uma nova empresa.
 
-\`\`\`http
+```http
 POST /api/v1/companies
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -948,31 +948,31 @@ Content-Type: application/json
   "cnpj": "12.345.678/0001-90",
   "address": "Rua Exemplo, 123 - São Paulo, SP"
 }
-\`\`\`
+```
 
 #### **GET /companies**
 
 Lista todas as empresas.
 
-\`\`\`http
+```http
 GET /api/v1/companies?page=1&limit=10
 Authorization: Bearer <token>
-\`\`\`
+```
 
 #### **GET /companies/:id**
 
 Busca uma empresa por ID.
 
-\`\`\`http
+```http
 GET /api/v1/companies/cly9876543210
 Authorization: Bearer <token>
-\`\`\`
+```
 
 #### **PATCH /companies/:id**
 
 Atualiza uma empresa.
 
-\`\`\`http
+```http
 PATCH /api/v1/companies/cly9876543210
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -981,7 +981,7 @@ Content-Type: application/json
   "phone": "+55 11 91234-5678",
   "logoUrl": "https://example.com/logo.png"
 }
-\`\`\`
+```
 
 ### **💰 Cash Movement Endpoints**
 
@@ -989,7 +989,7 @@ Content-Type: application/json
 
 Registra uma nova movimentação financeira.
 
-\`\`\`http
+```http
 POST /api/v1/cash-movements
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -1001,16 +1001,16 @@ Content-Type: application/json
   "description": "Venda de produto X",
   "date": "2025-09-30T14:30:00.000Z"
 }
-\`\`\`
+```
 
 #### **GET /cash-movements**
 
 Lista movimentações com filtros.
 
-\`\`\`http
+```http
 GET /api/v1/cash-movements?type=ENTRY&startDate=2025-09-01&endDate=2025-09-30
 Authorization: Bearer <token>
-\`\`\`
+```
 
 **Query Parameters:**
 - `type`: ENTRY | EXIT
@@ -1024,14 +1024,14 @@ Authorization: Bearer <token>
 
 Retorna resumo financeiro.
 
-\`\`\`http
+```http
 GET /api/v1/cash-movements/summary?startDate=2025-09-01&endDate=2025-09-30
 Authorization: Bearer <token>
-\`\`\`
+```
 
 **Response 200:**
 
-\`\`\`json
+```json
 {
   "period": {
     "startDate": "2025-09-01T00:00:00.000Z",
@@ -1050,7 +1050,7 @@ Authorization: Bearer <token>
     "INVESTMENT": 3500.00
   }
 }
-\`\`\`
+```
 
 ### **📦 Product Endpoints**
 
@@ -1058,7 +1058,7 @@ Authorization: Bearer <token>
 
 Cria um novo produto.
 
-\`\`\`http
+```http
 POST /api/v1/products
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -1070,31 +1070,31 @@ Content-Type: application/json
   "stock": 100,
   "category_id": "cat123456"
 }
-\`\`\`
+```
 
 #### **GET /products**
 
 Lista produtos com filtros.
 
-\`\`\`http
+```http
 GET /api/v1/products?category_id=cat123456&search=exemplo&page=1&limit=20
 Authorization: Bearer <token>
-\`\`\`
+```
 
 #### **GET /products/:id**
 
 Busca um produto por ID.
 
-\`\`\`http
+```http
 GET /api/v1/products/prod123456
 Authorization: Bearer <token>
-\`\`\`
+```
 
 #### **PATCH /products/:id**
 
 Atualiza um produto.
 
-\`\`\`http
+```http
 PATCH /api/v1/products/prod123456
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -1103,16 +1103,16 @@ Content-Type: application/json
   "price": 89.90,
   "stock": 150
 }
-\`\`\`
+```
 
 #### **DELETE /products/:id**
 
 Remove um produto.
 
-\`\`\`http
+```http
 DELETE /api/v1/products/prod123456
 Authorization: Bearer <token>
-\`\`\`
+```
 
 ### **🔮 GraphQL API**
 
