@@ -1,42 +1,25 @@
-import globals from 'globals';
-import js from '@eslint/js';
-import { FlatCompat } from '@eslint/eslintrc';
-import typescriptEslintParser from '@typescript-eslint/parser';
-import path from 'path';
-import { fileURLToPath } from 'url';
+const path = require('path');
+const { FlatCompat } = require('@eslint/eslintrc');
+const js = require('@eslint/js');
+const globals = require('globals');
 
-// Resolve __dirname em ESM
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const compat = new FlatCompat({ baseDirectory: __dirname });
 
-// Cria compat para usar configs antigas
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-// Base do recommended-type-checked
 const tsBaseConfig = compat.config({
   extends: ['plugin:@typescript-eslint/recommended-type-checked'],
 })[0];
 
-export default [
-  // 1️⃣ Ignorar arquivos
+module.exports = [
   {
     ignores: ['dist/**', 'src/schema.gql', 'prisma/seed/**/*.ts'],
   },
-
-  // 2️⃣ Configuração JS padrão
   js.configs.recommended,
-
-  // 3️⃣ Prettier
   ...compat.extends('plugin:prettier/recommended'),
-
-  // 4️⃣ TypeScript
   {
     files: ['**/*.ts'],
     ...tsBaseConfig,
     languageOptions: {
-      parser: typescriptEslintParser,
+      parser: require('@typescript-eslint/parser'),
       parserOptions: {
         tsconfigRootDir: __dirname,
         project: ['./tsconfig.json'],
@@ -65,7 +48,7 @@ export default [
           patterns: [
             {
               group: ['src/infra/*', 'src/modules/*'],
-              message: 'Core layer must not import infra or modules',
+              message: 'Core layer must not import infra ou modules',
             },
           ],
         },
@@ -77,20 +60,16 @@ export default [
       },
     },
   },
-
-  // 5️⃣ Override para arquivos de ports
   {
     files: ['src/core/ports/**/*.ts'],
     rules: {
       '@typescript-eslint/no-unused-vars': 'off',
     },
   },
-
-  // 6️⃣ Override específico para seeds
   {
     files: ['prisma/seed/**/*.ts'],
     languageOptions: {
-      parser: undefined, // desativa parser TS
+      parser: undefined,
     },
     rules: {
       '@typescript-eslint/no-unused-vars': 'off',
