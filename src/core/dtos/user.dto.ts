@@ -32,6 +32,6 @@ export class UserDto {
   @Field(() => PlanDto, { nullable: true })
   plan?: PlanDto;
 
-  @Field(() => [PermissionDto], { nullable: 'items' }) // ✅ Correto
+  @Field(() => [PermissionDto], { nullable: 'items' })
   permissions: PermissionDto[];
 }

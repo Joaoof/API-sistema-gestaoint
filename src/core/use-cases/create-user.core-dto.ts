@@ -1,7 +1,7 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 import { User } from 'src/core/entities/user.entity';
-import { PermissionDto } from '../../../infra/graphql/dto/permission.dto'; // ✅ Importe correto
-import { PlanDto } from '../../../infra/graphql/dto/plan.dto';
+import { PermissionDto } from '../dtos/permission.dto';
+import { PlanDto } from '../dtos/plan.dto';
 
 @ObjectType()
 export class UserResponseDto {

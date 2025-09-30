@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DashboardMovement } from 'src/core/entities/dashboard-movement.entity';
-import { CashMovementRepository } from 'src/core/ports/cash-movement.repository';
-import { DashboardMovementSchema } from '../dtos/dashboard-movement.core-dto';
+import { CashMovementRepository } from '../../ports/cash-movement.repository';
+import { DashboardMovementSchema } from '../../dtos/dashboard-movement.core-dto';
 
 @Injectable()
 export class DashboardMovementUseCase {

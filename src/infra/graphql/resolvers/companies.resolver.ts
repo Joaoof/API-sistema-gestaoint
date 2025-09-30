@@ -1,6 +1,6 @@
 import { Resolver, Query, Args } from '@nestjs/graphql';
 import { FindCompanyByIdUseCase } from 'src/core/use-cases/company/find-company-by-id.use-case';
-import { CompanyDto } from '../dto/company.dto';
+import { CompanyDto } from 'src/core/dtos/company.dto';
 import { Company } from 'src/core/entities/company.entity';
 
 @Resolver(() => Company)

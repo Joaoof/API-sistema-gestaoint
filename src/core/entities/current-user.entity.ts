@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 
-import { PermissionDto } from '../../infra/graphql/dto/permission.dto';
-import { PlanDto } from '../../infra/graphql/dto/plan.dto';
+import { PermissionDto } from '../dtos/permission.dto';
+import { PlanDto } from '../dtos/plan.dto';
 
 export class CurrentUserDto {
   constructor(

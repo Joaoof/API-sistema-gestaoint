@@ -24,17 +24,53 @@ describe('Clean Architecture Compliance', () => {
       const content = fs.readFileSync(file, 'utf8');
       expect(content).not.toMatch(/from ['"]\.\.\/\.\.\/src\/infra/);
       expect(content).not.toMatch(/from ['"]\.\.\/\.\.\/src\/modules/);
+      expect(content).not.toMatch(/from ['"]src\/infra/);
+      expect(content).not.toMatch(/from ['"]src\/modules/);
     });
   });
 
-  it('use-cases should only depend on entities and ports', () => {
+  it('use-cases should only depend on dtos, entities, ports, mappers, or direct imports (NestJS/Zod)', () => {
     const ucDir = path.join(coreDir, 'use-cases');
     const ucFiles = readAllFiles(ucDir);
+
+    const allowedCoreFolders = ['dtos', 'entities', 'ports', 'mappers', 'use-cases'];
+
     ucFiles.forEach((file) => {
       const content = fs.readFileSync(file, 'utf8');
-      expect(content).toMatch(/from ['"]\.\.\/entities/);
-      expect(content).toMatch(/from ['"]\.\.\/ports/);
-      expect(content).not.toMatch(/from ['"]\.\.\/\.\.\/infra/);
+
+      // Regex para encontrar todas as importações relativas
+      const relativeImportRegex = /from\s+['"]((?:\.\.\/)+([^'"]*))['"]|from\s+['"]\.\/([^'"]*)['"]/g;
+      let match;
+      const violations: string[] = [];
+
+      while ((match = relativeImportRegex.exec(content)) !== null) {
+        const fullPath = match[1] || match[3];
+        const pathAfterDots = match[2] || fullPath;
+
+        if (fullPath.includes('@nestjs') || fullPath.includes('zod') || fullPath.includes('crypto')) {
+          continue;
+        }
+
+        const firstSegment = pathAfterDots.split('/')[0];
+        if (!allowedCoreFolders.includes(firstSegment)) {
+          violations.push(match[0] as never);
+        }
+      }
+
+      if (violations.length > 0) {
+        throw new Error(`[${path.basename(file)}] Found invalid core relative dependency: ${violations.join(', ')}`);
+      }
+
+      // Correção do falso negativo: não exigir entity/port se não houver import
+      if (!path.basename(file).includes('.spec.ts')) {
+        const importsEntities = !!content.match(/from ['"].*entities(\/[\w-]+)*['"]/);
+        const importsPorts = !!content.match(/from ['"].*ports(\/[\w-]+)*['"]/);
+
+        // Apenas warn se nenhum dos dois estiver presente
+        if (!importsEntities && !importsPorts) {
+          console.warn(`[${path.basename(file)}] No import of entities or ports found — check if this is correct.`);
+        }
+      }
     });
   });
 

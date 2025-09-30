@@ -1,4 +1,5 @@
-// src/infra/graphql/dto/permission.dto.ts
+/* eslint-disable no-unused-vars */
+
 import { Field, ObjectType } from '@nestjs/graphql';
 
 @ObjectType()

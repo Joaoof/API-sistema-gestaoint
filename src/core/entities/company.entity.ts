@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 
-import { CompanyDto } from '../../infra/graphql/dto/company.dto';
+import { CompanyDto } from '../dtos/company.dto';
 
 export class Company {
   constructor(

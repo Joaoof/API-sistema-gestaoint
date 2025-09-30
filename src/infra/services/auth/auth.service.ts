@@ -3,7 +3,7 @@ import { ValidateInputZod } from './validate-zod.service';
 import { FindValidateUser } from './find-validate.service';
 import { CreateTokenService } from './create-token.service';
 import { UserDtoService } from './user-dto.service';
-import { LoginUserDto } from 'src/core/use-cases/dtos/login-dto.core';
+import { LoginUserDto } from 'src/core/dtos/login-dto.core';
 import { RedisService } from '../../../infra/cache/redis.service';
 import { PrismaService } from '../../../../prisma/prisma.service';
 
@@ -24,11 +24,11 @@ export class AuthService {
     prisma: PrismaService,
   ) {
     this.validateInputZod = validateInputZod;
-    (this.findAndValidateUser = findAndValidateUser),
-      (this.createTokenService = createTokenService),
-      (this.buildUserDto = buildUserDto),
-      (this.redisService = redisService),
-      (this.prisma = prisma);
+    this.findAndValidateUser = findAndValidateUser;
+    this.createTokenService = createTokenService;
+    this.buildUserDto = buildUserDto;
+    this.redisService = redisService;
+    this.prisma = prisma;
   }
 
   async login(dto: LoginUserDto): Promise<any> {

@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../../prisma/prisma.service';
-import { CashMovement } from 'src/core/entities/movements/cash-movement.entity';
-import { DashboardMovement } from 'src/core/entities/dashboard-movement.entity';
-import { CashMovementRepository } from 'src/core/ports/cash-movement.repository';
+import { CashMovement } from '../../../../core/entities/movements/cash-movement.entity';
+import { DashboardMovement } from '../../../../core/entities/dashboard-movement.entity';
+import { CashMovementRepository } from '../../../../core/ports/cash-movement.repository';
 import { RedisService } from '../../../../infra/cache/redis.service';
 
 @Injectable()

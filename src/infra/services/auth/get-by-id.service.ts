@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service';
-import { UserResponseDto } from 'src/core/use-cases/dtos/create-user.core-dto';
+import { UserResponseDto } from 'src/core/use-cases/create-user.core-dto';
 
 @Injectable()
 export class GetByIdUserService {

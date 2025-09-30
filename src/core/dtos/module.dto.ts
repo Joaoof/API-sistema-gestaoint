@@ -1,10 +1,11 @@
+/* eslint-disable no-unused-vars */
+
 import { Field, ObjectType } from '@nestjs/graphql';
-import { ModuleDto } from './module.dto';
 
 @ObjectType()
-export class PlanDto {
+export class ModuleDto {
   @Field(() => String)
-  id: string;
+  module_key: string;
 
   @Field(() => String)
   name: string;
@@ -12,6 +13,9 @@ export class PlanDto {
   @Field(() => String, { nullable: true })
   description?: string;
 
-  @Field(() => [ModuleDto])
-  modules: ModuleDto[];
+  @Field(() => [String])
+  permission: string[];
+
+  @Field(() => Boolean, { nullable: true })
+  isActive?: boolean;
 }

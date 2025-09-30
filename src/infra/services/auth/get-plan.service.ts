@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { CompanyWithoutPlanError } from 'src/core/exceptions/company-without-plan.exception';
 import { RedisService } from '../../../infra/cache/redis.service';
-import { PlanDto } from '../../../infra/graphql/dto/plan.dto';
+import { PlanDto } from 'src/core/dtos/plan.dto';
 
 @Injectable()
 export class GetPlanService {

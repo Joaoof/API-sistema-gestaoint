@@ -6,7 +6,7 @@ import { User } from 'src/core/entities/user.entity';
 import { CashMovementGraphQL } from '../../dto/cash-movement.dto';
 import { CreateCashMovementUseCase } from 'src/core/use-cases/cashMovement/create-cash-movement.use-case';
 import { FindAllCashMovementUseCase } from 'src/core/use-cases/cashMovement/find-all-cash-movement.use-case';
-import { CashMovementMapper } from '../../../../modules/cashMovement/mappers/entry-movement.mapper';
+import { CashMovementMapper } from '../../../../core/mappers/cash-movement.mapper';
 import { CreateCashMovementInput } from '../../dto/create-cash-movement.dto';
 import { CashMovementType } from '../../enum/cash-movement-type.enum';
 import { CashMovementCategory } from '../../enum/cash-movement-category.enum';

@@ -1,18 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CashMovementResolver } from './cash-movement.resolver';
-import { CreateCashMovementUseCase } from 'src/core/use-cases/cashMovement/create-cash-movement.use-case';
-import { FindAllCashMovementUseCase } from 'src/core/use-cases/cashMovement/find-all-cash-movement.use-case';
-import { DashboardMovementUseCase } from 'src/core/use-cases/cashMovement/dashboard-movement.use-case';
-import { CashMovement } from 'src/core/entities/movements/cash-movement.entity'; // Corrigido para o alias core/entities
+import { CreateCashMovementUseCase } from '../../../../core/use-cases/cashMovement/create-cash-movement.use-case';
+import { FindAllCashMovementUseCase } from '../../../../core/use-cases/cashMovement/find-all-cash-movement.use-case';
+import { DashboardMovementUseCase } from '../../../../core/use-cases/cashMovement/dashboard-movement.use-case';
+import { CashMovement } from '../../../../core/entities/movements/cash-movement.entity'; // Corrigido para o alias core/entities
 import { MovementCategory, MovementType } from '@prisma/client';
 
-import { User } from 'src/core/entities/user.entity';
+import { User } from '../../../../core/entities/user.entity';
 
 // FIX: Importando os DTOs/Enums corretos do GraphQL para o arquivo de teste
 import { CreateCashMovementInput } from '../../dto/create-cash-movement.dto';
-import { FindAllCashMovementInput } from 'src/core/use-cases/cashMovement/dtos/find-all-cash-movement.input';
+import { FindAllCashMovementInput } from '../../../../core/use-cases/cashMovement/dtos/find-all-cash-movement.input';
 import { DashboardStatsInput } from '../../dto/dashboard-stats.input';
-import { DashboardMovement } from 'src/core/entities/dashboard-movement.entity';
+import { DashboardMovement } from '../../../../core/entities/dashboard-movement.entity';
 
 // --- Mocks ---
 const MOCK_USER_ID = 'b738c8c5-23f2-4d01-a1c2-678901234567'; // Usando UUID válido

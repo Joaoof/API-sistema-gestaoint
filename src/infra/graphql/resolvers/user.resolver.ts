@@ -4,7 +4,7 @@ import { Query, Resolver } from '@nestjs/graphql';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { GqlAuthGuard } from 'src/auth/guards/auth.guard';
 import { PrismaService } from '../../../../prisma/prisma.service';
-import { UserResponseDto } from 'src/core/use-cases/dtos/create-user.core-dto';
+import { UserResponseDto } from 'src/core/use-cases/create-user.core-dto';
 
 @Resolver(() => UserResponseDto)
 export class UserResolver {
