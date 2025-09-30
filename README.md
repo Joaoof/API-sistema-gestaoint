@@ -2581,7 +2581,7 @@ Este projeto está sob a licença **UNLICENSED**. Veja o arquivo [LICENSE](LICEN
 
 ## 📞 Suporte
 
-- 📧 Email: [seu-email@example.com](mailto:seu-email@example.com)
+- 📧 Email: [seu-email@example.com](mailto:joaodeus400@gmail.com)
 - 🐛 Issues: [GitHub Issues](https://github.com/Joaoof/api-sistema-gestaoint/issues)
 - 💬 Discussions: [GitHub Discussions](https://github.com/Joaoof/api-sistema-gestaoint/discussions)
 
