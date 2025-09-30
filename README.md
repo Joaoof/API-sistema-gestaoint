@@ -1355,7 +1355,7 @@ A **API Sistema GestãoInt** é uma solução backend de **nível empresarial** 
 
 A aplicação segue os princípios de **Clean Architecture** e **Domain-Driven Design**, garantindo separação clara de responsabilidades e independência de frameworks.
 
-\`\`\`
+```
 ┌─────────────────────────────────────────────────────────────┐
 │                    PRESENTATION LAYER                        │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
@@ -1387,11 +1387,11 @@ A aplicação segue os princípios de **Clean Architecture** e **Domain-Driven D
 │  │ Repositories │  │ Redis        │  │ Services     │      │
 │  └──────────────┘  └──────────────┘  └──────────────┘      │
 └─────────────────────────────────────────────────────────────┘
-\`\`\`
+```
 
 ### **📂 Estrutura de Diretórios**
 
-\`\`\`
+```
 src/
 ├── 🏗️ core/                      # DOMAIN LAYER
 │   ├── entities/                 # Entidades de negócio
@@ -1463,14 +1463,14 @@ src/
 │
 ├── app.module.ts                 # Módulo raiz
 └── main.ts                       # Entry point
-\`\`\`
+```
 
 ### **🎯 Princípios SOLID**
 
 #### **S - Single Responsibility Principle**
 Cada classe tem uma única responsabilidade bem definida.
 
-\`\`\`typescript
+```typescript
 // ✅ BOM: Responsabilidade única
 class UserRepository {
   async findById(id: string): Promise<User> { }
@@ -1479,12 +1479,12 @@ class UserRepository {
 class UserValidator {
   validate(user: User): ValidationResult { }
 }
-\`\`\`
+```
 
 #### **O - Open/Closed Principle**
 Aberto para extensão, fechado para modificação.
 
-\`\`\`typescript
+```typescript
 // ✅ BOM: Extensível via interface
 interface PaymentStrategy {
   process(amount: number): Promise<void>;
@@ -1492,34 +1492,34 @@ interface PaymentStrategy {
 
 class CreditCardPayment implements PaymentStrategy { }
 class PixPayment implements PaymentStrategy { }
-\`\`\`
+```
 
 #### **L - Liskov Substitution Principle**
 Subtipos devem ser substituíveis por seus tipos base.
 
-\`\`\`typescript
+```typescript
 // ✅ BOM: Substituível
 abstract class Repository<T> {
   abstract findById(id: string): Promise<T>;
 }
 
 class UserRepository extends Repository<User> { }
-\`\`\`
+```
 
 #### **I - Interface Segregation Principle**
 Interfaces específicas são melhores que interfaces gerais.
 
-\`\`\`typescript
+```typescript
 // ✅ BOM: Interfaces segregadas
 interface Readable { read(): Promise<Data>; }
 interface Writable { write(data: Data): Promise<void>; }
 interface Deletable { delete(id: string): Promise<void>; }
-\`\`\`
+```
 
 #### **D - Dependency Inversion Principle**
 Dependa de abstrações, não de implementações concretas.
 
-\`\`\`typescript
+```typescript
 // ✅ BOM: Depende de abstração
 class UserService {
   constructor(
@@ -1527,7 +1527,7 @@ class UserService {
     private readonly emailService: IEmailService,     // Interface
   ) {}
 }
-\`\`\`
+```
 
 ---
 
@@ -1545,7 +1545,7 @@ Certifique-se de ter instalado:
 
 ### **⚡ Instalação Rápida**
 
-\`\`\`bash
+```bash
 # 1. Clone o repositório
 git clone https://github.com/Joaoof/api-sistema-gestaoint.git
 cd api-sistema-gestaoint
@@ -1569,11 +1569,11 @@ npx prisma db seed
 
 # 6. Inicie o servidor de desenvolvimento
 npm run start:dev
-\`\`\`
+```
 
 ### **🐳 Instalação com Docker**
 
-\`\`\`bash
+```bash
 # 1. Clone o repositório
 git clone https://github.com/Joaoof/api-sistema-gestaoint.git
 cd api-sistema-gestaoint
@@ -1591,17 +1591,17 @@ docker-compose exec api npx prisma migrate dev
 # API: http://localhost:3000
 # Swagger: http://localhost:3000/api
 # GraphQL Playground: http://localhost:3000/graphql
-\`\`\`
+```
 
 ### **✅ Verificação da Instalação**
 
-\`\`\`bash
+```bash
 # Verifique se a API está rodando
 curl http://localhost:3000/health
 
 # Resposta esperada:
 # {"status":"ok","timestamp":"2025-09-30T12:00:00.000Z"}
-\`\`\`
+```
 
 ---
 
@@ -1611,7 +1611,7 @@ curl http://localhost:3000/health
 
 Crie um arquivo `.env` na raiz do projeto:
 
-\`\`\`env
+```env
 # Application
 NODE_ENV=development
 PORT=3000
@@ -1655,13 +1655,13 @@ SENTRY_DSN=your-sentry-dsn
 
 # Logs
 LOG_LEVEL=debug
-\`\`\`
+```
 
 ### **🗄️ Configuração do Banco de Dados**
 
 #### **PostgreSQL Local**
 
-\`\`\`bash
+```bash
 # Criar banco de dados
 createdb gestaoint
 
@@ -1670,11 +1670,11 @@ npx prisma migrate dev
 
 # Visualizar banco de dados
 npx prisma studio
-\`\`\`
+```
 
 #### **PostgreSQL Docker**
 
-\`\`\`yaml
+```yaml
 # docker-compose.yml
 version: '3.8'
 
@@ -1702,11 +1702,11 @@ services:
 volumes:
   postgres_data:
   redis_data:
-\`\`\`
+```
 
 ### **🔄 Migrações do Prisma**
 
-\`\`\`bash
+```bash
 # Criar uma nova migração
 npx prisma migrate dev --name add_new_feature
 
@@ -1721,7 +1721,7 @@ npx prisma generate
 
 # Visualizar banco de dados
 npx prisma studio
-\`\`\`
+```
 
 ---
 
@@ -1729,7 +1729,7 @@ npx prisma studio
 
 ### **🏢 Diagrama ER**
 
-\`\`\`
+```
 ┌─────────────┐         ┌─────────────┐         ┌─────────────┐
 │   Company   │────────<│    Users    │>────────│ CashMovement│
 │             │         │             │         │             │
@@ -1765,13 +1765,13 @@ npx prisma studio
                         │ description │         
                         │ user_id     │         
                         └─────────────┘         
-\`\`\`
+```
 
 ### **📋 Entidades Principais**
 
 #### **Users**
 
-\`\`\`prisma
+```prisma
 model Users {
   id            String          @id @default(cuid())
   email         String          @unique
@@ -1792,11 +1792,11 @@ model Users {
   @@index([email])
   @@index([company_id])
 }
-\`\`\`
+```
 
 #### **Company**
 
-\`\`\`prisma
+```prisma
 model Company {
   id          String        @id @default(cuid())
   name        String        @unique
@@ -1815,11 +1815,11 @@ model Company {
   
   @@index([cnpj])
 }
-\`\`\`
+```
 
 #### **CashMovement**
 
-\`\`\`prisma
+```prisma
 enum MovementType {
   ENTRY
   EXIT
@@ -1852,11 +1852,11 @@ model CashMovement {
   @@index([date])
   @@index([type])
 }
-\`\`\`
+```
 
 #### **Product**
 
-\`\`\`prisma
+```prisma
 model Product {
   id          String    @id @default(cuid())
   name        String
@@ -1876,11 +1876,11 @@ model Product {
   @@index([category_id])
   @@index([user_id])
 }
-\`\`\`
+```
 
 #### **Category**
 
-\`\`\`prisma
+```prisma
 model Category {
   id          String    @id @default(cuid())
   name        String
@@ -1895,11 +1895,11 @@ model Category {
   
   @@index([user_id])
 }
-\`\`\`
+```
 
 #### **CompanyPlan**
 
-\`\`\`prisma
+```prisma
 enum PlanType {
   FREE
   BASIC
@@ -1922,7 +1922,7 @@ model CompanyPlan {
   
   @@index([company_id])
 }
-\`\`\`
+```
 
 ---
 
@@ -1934,17 +1934,17 @@ A API REST está disponível em `http://localhost:3000/api` e documentada com Sw
 
 #### **Base URL**
 
-\`\`\`
+```
 http://localhost:3000/api/v1
-\`\`\`
+```
 
 #### **Autenticação**
 
 Todas as rotas protegidas requerem um token JWT no header:
 
-\`\`\`http
+```http
 Authorization: Bearer <seu-token-jwt>
-\`\`\`
+```
 
 ### **🔐 Auth Endpoints**
 
@@ -1952,7 +1952,7 @@ Authorization: Bearer <seu-token-jwt>
 
 Registra um novo usuário.
 
-\`\`\`http
+```http
 POST /api/v1/auth/register
 Content-Type: application/json
 
@@ -1962,11 +1962,11 @@ Content-Type: application/json
   "name": "João Silva",
   "company_id": "optional-company-id"
 }
-\`\`\`
+```
 
 **Response 201:**
 
-\`\`\`json
+```json
 {
   "user": {
     "id": "clx1234567890",
@@ -1979,13 +1979,13 @@ Content-Type: application/json
   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
-\`\`\`
+```
 
 #### **POST /auth/login**
 
 Autentica um usuário existente.
 
-\`\`\`http
+```http
 POST /api/v1/auth/login
 Content-Type: application/json
 
@@ -1993,11 +1993,11 @@ Content-Type: application/json
   "email": "user@example.com",
   "password": "SecurePass123!"
 }
-\`\`\`
+```
 
 **Response 200:**
 
-\`\`\`json
+```json
 {
   "user": {
     "id": "clx1234567890",
@@ -2008,29 +2008,29 @@ Content-Type: application/json
   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
-\`\`\`
+```
 
 #### **POST /auth/refresh**
 
 Renova o access token usando o refresh token.
 
-\`\`\`http
+```http
 POST /api/v1/auth/refresh
 Content-Type: application/json
 
 {
   "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
-\`\`\`
+```
 
 #### **POST /auth/logout**
 
 Invalida o token atual (requer autenticação).
 
-\`\`\`http
+```http
 POST /api/v1/auth/logout
 Authorization: Bearer <token>
-\`\`\`
+```
 
 ### **👥 Users Endpoints**
 
@@ -2038,10 +2038,10 @@ Authorization: Bearer <token>
 
 Lista todos os usuários (requer autenticação).
 
-\`\`\`http
+```http
 GET /api/v1/users?page=1&limit=10&search=joão
 Authorization: Bearer <token>
-\`\`\`
+```
 
 **Query Parameters:**
 - `page` (opcional): Número da página (default: 1)
@@ -2050,7 +2050,7 @@ Authorization: Bearer <token>
 
 **Response 200:**
 
-\`\`\`json
+```json
 {
   "data": [
     {
@@ -2073,22 +2073,22 @@ Authorization: Bearer <token>
     "totalPages": 10
   }
 }
-\`\`\`
+```
 
 #### **GET /users/:id**
 
 Busca um usuário por ID.
 
-\`\`\`http
+```http
 GET /api/v1/users/clx1234567890
 Authorization: Bearer <token>
-\`\`\`
+```
 
 #### **PATCH /users/:id**
 
 Atualiza um usuário.
 
-\`\`\`http
+```http
 PATCH /api/v1/users/clx1234567890
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -2097,16 +2097,16 @@ Content-Type: application/json
   "name": "João Silva Santos",
   "role": "ADMIN"
 }
-\`\`\`
+```
 
 #### **DELETE /users/:id**
 
 Remove um usuário (soft delete).
 
-\`\`\`http
+```http
 DELETE /api/v1/users/clx1234567890
 Authorization: Bearer <token>
-\`\`\`
+```
 
 ### **🏢 Company Endpoints**
 
@@ -2114,7 +2114,7 @@ Authorization: Bearer <token>
 
 Cria uma nova empresa.
 
-\`\`\`http
+```http
 POST /api/v1/companies
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -2126,31 +2126,31 @@ Content-Type: application/json
   "cnpj": "12.345.678/0001-90",
   "address": "Rua Exemplo, 123 - São Paulo, SP"
 }
-\`\`\`
+```
 
 #### **GET /companies**
 
 Lista todas as empresas.
 
-\`\`\`http
+```http
 GET /api/v1/companies?page=1&limit=10
 Authorization: Bearer <token>
-\`\`\`
+```
 
 #### **GET /companies/:id**
 
 Busca uma empresa por ID.
 
-\`\`\`http
+```http
 GET /api/v1/companies/cly9876543210
 Authorization: Bearer <token>
-\`\`\`
+```
 
 #### **PATCH /companies/:id**
 
 Atualiza uma empresa.
 
-\`\`\`http
+```http
 PATCH /api/v1/companies/cly9876543210
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -2159,7 +2159,7 @@ Content-Type: application/json
   "phone": "+55 11 91234-5678",
   "logoUrl": "https://example.com/logo.png"
 }
-\`\`\`
+```
 
 ### **💰 Cash Movement Endpoints**
 
@@ -2167,7 +2167,7 @@ Content-Type: application/json
 
 Registra uma nova movimentação financeira.
 
-\`\`\`http
+```http
 POST /api/v1/cash-movements
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -2179,16 +2179,16 @@ Content-Type: application/json
   "description": "Venda de produto X",
   "date": "2025-09-30T14:30:00.000Z"
 }
-\`\`\`
+```
 
 #### **GET /cash-movements**
 
 Lista movimentações com filtros.
 
-\`\`\`http
+```http
 GET /api/v1/cash-movements?type=ENTRY&startDate=2025-09-01&endDate=2025-09-30
 Authorization: Bearer <token>
-\`\`\`
+```
 
 **Query Parameters:**
 - `type`: ENTRY | EXIT
@@ -2202,14 +2202,14 @@ Authorization: Bearer <token>
 
 Retorna resumo financeiro.
 
-\`\`\`http
+```http
 GET /api/v1/cash-movements/summary?startDate=2025-09-01&endDate=2025-09-30
 Authorization: Bearer <token>
-\`\`\`
+```
 
 **Response 200:**
 
-\`\`\`json
+```json
 {
   "period": {
     "startDate": "2025-09-01T00:00:00.000Z",
@@ -2228,7 +2228,7 @@ Authorization: Bearer <token>
     "INVESTMENT": 3500.00
   }
 }
-\`\`\`
+```
 
 ### **📦 Product Endpoints**
 
@@ -2236,7 +2236,7 @@ Authorization: Bearer <token>
 
 Cria um novo produto.
 
-\`\`\`http
+```http
 POST /api/v1/products
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -2248,31 +2248,31 @@ Content-Type: application/json
   "stock": 100,
   "category_id": "cat123456"
 }
-\`\`\`
+```
 
 #### **GET /products**
 
 Lista produtos com filtros.
 
-\`\`\`http
+```http
 GET /api/v1/products?category_id=cat123456&search=exemplo&page=1&limit=20
 Authorization: Bearer <token>
-\`\`\`
+```
 
 #### **GET /products/:id**
 
 Busca um produto por ID.
 
-\`\`\`http
+```http
 GET /api/v1/products/prod123456
 Authorization: Bearer <token>
-\`\`\`
+```
 
 #### **PATCH /products/:id**
 
 Atualiza um produto.
 
-\`\`\`http
+```http
 PATCH /api/v1/products/prod123456
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -2281,16 +2281,16 @@ Content-Type: application/json
   "price": 89.90,
   "stock": 150
 }
-\`\`\`
+```
 
 #### **DELETE /products/:id**
 
 Remove um produto.
 
-\`\`\`http
+```http
 DELETE /api/v1/products/prod123456
 Authorization: Bearer <token>
-\`\`\`
+```
 
 ### **🔮 GraphQL API**
 
@@ -2449,7 +2449,7 @@ A API utiliza **JWT** para autenticação stateless e segura.
 
 #### **Estrutura do Token**
 
-\`\`\`json
+```json
 {
   "header": {
     "alg": "HS256",
@@ -2468,7 +2468,7 @@ A API utiliza **JWT** para autenticação stateless e segura.
 
 #### **Uso do Token**
 
-\`\`\`typescript
+```typescript
 // No cliente (exemplo com Axios)
 import axios from 'axios';
 
@@ -2493,7 +2493,7 @@ const response = await api.get('/users/me');
 
 A API utiliza **Argon2** para hashing de senhas, considerado o algoritmo mais seguro atualmente.
 
-\`\`\`typescript
+```typescript
 import * as argon2 from 'argon2';
 
 // Hash de senha
@@ -2512,7 +2512,7 @@ const isValid = await argon2.verify(hash, password);
 
 Proteção contra abuso com rate limiting configurável:
 
-\`\`\`typescript
+```typescript
 // Configuração padrão
 {
   ttl: 60,      // 60 segundos
@@ -2528,7 +2528,7 @@ Proteção contra abuso com rate limiting configurável:
 
 ### **🛡️ Guards & Roles**
 
-\`\`\`typescript
+```typescript
 // Proteger rota com autenticação
 @UseGuards(JwtAuthGuard)
 @Get('profile')
@@ -2553,7 +2553,7 @@ deleteUser(@Param('id') id: string) {
 
 A aplicação mantém **+80% de cobertura de código** com testes em múltiplas camadas.
 
-\`\`\`bash
+```bash
 # Executar todos os testes
 npm run test
 
@@ -2576,7 +2576,7 @@ npm run test:debug
 
 Testes de unidades isoladas (funções, classes, métodos).
 
-\`\`\`typescript
+```typescript
 // user.service.spec.ts
 describe('UserService', () => {
   let service: UserService;
@@ -2617,7 +2617,7 @@ describe('UserService', () => {
 
 Testes de integração entre componentes.
 
-\`\`\`typescript
+```typescript
 // auth.integration.spec.ts
 describe('Auth Integration', () => {
   let app: INestApplication;
@@ -2669,7 +2669,7 @@ describe('Auth Integration', () => {
 
 Testes end-to-end simulando fluxos completos.
 
-\`\`\`typescript
+```typescript
 // cash-movement.e2e-spec.ts
 describe('Cash Movement E2E', () => {
   let app: INestApplication;
@@ -2741,7 +2741,7 @@ describe('Cash Movement E2E', () => {
 
 Testes que validam a arquitetura do projeto.
 
-\`\`\`typescript
+```typescript
 // architecture.spec.ts
 describe('Architecture Tests', () => {
   it('should follow clean architecture layers', () => {
@@ -2749,8 +2749,8 @@ describe('Architecture Tests', () => {
     const coreFiles = glob.sync('src/core/**/*.ts');
     coreFiles.forEach((file) => {
       const content = fs.readFileSync(file, 'utf-8');
-      expect(content).not.toMatch(/from ['"].*\/infra\//);
-      expect(content).not.toMatch(/from ['"].*\/modules\//);
+      expect(content).not.toMatch(/from ['"].*/infra//);
+      expect(content).not.toMatch(/from ['"].*/modules//);
     });
   });
 
@@ -2759,7 +2759,7 @@ describe('Architecture Tests', () => {
     const serviceFiles = glob.sync('src/**/*.service.ts');
     serviceFiles.forEach((file) => {
       const content = fs.readFileSync(file, 'utf-8');
-      expect(content).toMatch(/@Injectable\(\)/);
+      expect(content).toMatch(/@Injectable()/);
     });
   });
 
@@ -2768,7 +2768,7 @@ describe('Architecture Tests', () => {
     const controllerFiles = glob.sync('src/**/*.controller.ts');
     controllerFiles.forEach((file) => {
       const content = fs.readFileSync(file, 'utf-8');
-      if (content.match(/@Post\(|@Put\(|@Patch\(/)) {
+      if (content.match(/@Post(|@Put(|@Patch(/)) {
         expect(content).toMatch(/Dto/);
       }
     });
@@ -2778,7 +2778,7 @@ describe('Architecture Tests', () => {
 
 ### **📈 Relatório de Cobertura**
 
-\`\`\`bash
+```bash
 # Gerar relatório de cobertura
 npm run test:cov
 
@@ -2809,7 +2809,7 @@ All files             |   85.23 |    78.45 |   82.67 |   86.12 |
 
 #### **Dockerfile**
 
-\`\`\`dockerfile
+```dockerfile
 # Build stage
 FROM node:18-alpine AS builder
 
@@ -2842,7 +2842,7 @@ CMD ["npm", "run", "start:prod"]
 
 #### **docker-compose.yml**
 
-\`\`\`yaml
+```yaml
 version: '3.8'
 
 services:
@@ -2893,7 +2893,7 @@ volumes:
 
 #### **Vercel / Railway / Render**
 
-\`\`\`bash
+```bash
 # 1. Instalar CLI
 npm install -g vercel
 
@@ -2910,7 +2910,7 @@ Consulte a documentação específica de cada provedor para deploy de aplicaçõ
 
 ### **🔄 CI/CD com GitHub Actions**
 
-\`\`\`yaml
+```yaml
 # .github/workflows/ci-cd.yml
 name: CI/CD Pipeline
 
@@ -3029,7 +3029,7 @@ A API é otimizada para alta performance:
 
 #### **1. Fastify (vs Express)**
 
-\`\`\`typescript
+```typescript
 // Fastify é ~2x mais rápido que Express
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
@@ -3042,7 +3042,7 @@ const app = await NestFactory.create<NestFastifyApplication>(
 
 #### **2. Redis Cache**
 
-\`\`\`typescript
+```typescript
 // Cache de queries frequentes
 @Injectable()
 export class UserService {
@@ -3070,7 +3070,7 @@ export class UserService {
 
 #### **3. Database Query Optimization**
 
-\`\`\`typescript
+```typescript
 // Usar select específico ao invés de buscar tudo
 const users = await prisma.users.findMany({
   select: {
@@ -3100,7 +3100,7 @@ const user = await prisma.users.findUnique({
 
 #### **4. Connection Pooling**
 
-\`\`\`typescript
+```typescript
 // Configuração do Prisma para connection pooling
 datasource db {
   provider = "postgresql"
@@ -3114,7 +3114,7 @@ datasource db {
 
 #### **5. Compression**
 
-\`\`\`typescript
+```typescript
 // Compressão de respostas HTTP
 import compression from '@fastify/compress';
 
@@ -3126,7 +3126,7 @@ app.register(compression, {
 
 #### **6. Pagination**
 
-\`\`\`typescript
+```typescript
 // Sempre usar paginação em listagens
 @Get()
 async findAll(
@@ -3154,7 +3154,7 @@ async findAll(
 
 ### **📈 Monitoring**
 
-\`\`\`typescript
+```typescript
 // Prometheus metrics
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
@@ -3180,7 +3180,7 @@ export class AppModule {}
 
 Proteção de headers HTTP.
 
-\`\`\`typescript
+```typescript
 import helmet from '@fastify/helmet';
 
 app.register(helmet, {
@@ -3199,7 +3199,7 @@ app.register(helmet, {
 
 Proteção contra abuso e DDoS.
 
-\`\`\`typescript
+```typescript
 @Module({
   imports: [
     ThrottlerModule.forRoot([
@@ -3217,7 +3217,7 @@ export class AppModule {}
 
 Validação rigorosa com Zod.
 
-\`\`\`typescript
+```typescript
 import { z } from 'zod';
 
 export const CreateUserSchema = z.object({
@@ -3237,7 +3237,7 @@ export const CreateUserSchema = z.object({
 
 Prisma ORM previne SQL injection automaticamente.
 
-\`\`\`typescript
+```typescript
 // ✅ SEGURO: Prisma usa prepared statements
 const user = await prisma.users.findUnique({
   where: { email: userInput },
@@ -3251,7 +3251,7 @@ const user = await prisma.$queryRaw`
 
 #### **5. CORS Configuration**
 
-\`\`\`typescript
+```typescript
 app.enableCors({
   origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
   credentials: true,
@@ -3262,7 +3262,7 @@ app.enableCors({
 
 #### **6. Secrets Management**
 
-\`\`\`env
+```env
 # ❌ NUNCA commite secrets no código
 # ✅ Use variáveis de ambiente
 
@@ -3272,7 +3272,7 @@ DATABASE_URL=postgresql://user:pass@localhost:5432/db
 
 #### **7. Logging Seguro**
 
-\`\`\`typescript
+```typescript
 // ❌ NUNCA logue informações sensíveis
 logger.log(`User logged in: ${user.email}, password: ${user.password}`);
 
@@ -3311,7 +3311,7 @@ Contribuições são bem-vindas! Siga estas diretrizes:
 
 ### **📋 Padrões de Código**
 
-\`\`\`bash
+```bash
 # Antes de commitar, execute:
 
 # 1. Linter
