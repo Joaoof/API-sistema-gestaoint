@@ -2057,13 +2057,16 @@ All files             |   85.23 |    78.45 |   82.67 |   86.12 |
 
 ```bash
 # 1. Instalar CLI
-npm install -g vercel
+npm install -g @railway/cli
 
-# 2. Login
-vercel login
+# 2. Login (browser-based)
+railway login
 
-# 3. Deploy
-vercel --prod
+# 3. Inicializar projeto e fazer deploy
+# O Railway fará o build e deploy automaticamente 
+# após a inicialização e push, ou via link com o GitHub.
+# Para deploy manual do diretório atual:
+railway up
 ```
 
 #### **AWS / GCP / Azure**
