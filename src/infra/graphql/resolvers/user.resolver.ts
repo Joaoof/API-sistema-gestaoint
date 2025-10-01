@@ -16,9 +16,11 @@ export class UserResolver {
   @Query(() => UserResponseDto)
   @UseGuards(GqlAuthGuard)
   async me(@CurrentUser() userPayload: any): Promise<UserResponseDto> {
-    // ✅ Use o ID do payload para buscar o usuário completo
+
+    const userId = userPayload.id || userPayload.sub;
+    console.log('ID buscado no DB:', userId); // Adicione esta linha
     const user = await this.prisma.users.findUnique({
-      where: { id: userPayload.id || userPayload.sub },
+      where: { id: userId },
       include: {
         company: {
           include: {
