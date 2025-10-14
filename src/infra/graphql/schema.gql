@@ -91,6 +91,7 @@ type ModuleDto {
 }
 
 type Mutation {
+  cashMovementDelete(movementId: String!): Boolean!
   createCashMovement(input: CreateCashMovementInput!): CashMovementGraphQL!
   login(loginUserInput: LoginUserInput!): AuthPayload!
 }

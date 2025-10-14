@@ -6,6 +6,7 @@ import { FindAllCashMovementUseCase } from '../../core/use-cases/cashMovement/fi
 import { RedisModule } from '../../infra/cache/redis.module';
 import { PrismaCashMovementRepository } from '../../infra/database/implementations/cashMovement/cash-movement.prisma.repository';
 import { CashMovementResolver } from '../../infra/graphql/resolvers/movements/cash-movement.resolver';
+import { DeleteCashMovement } from '../../core/use-cases/cashMovement/delete-cash-movement.use-case';
 
 @Module({
   imports: [PrismaModule, RedisModule],
@@ -14,6 +15,7 @@ import { CashMovementResolver } from '../../infra/graphql/resolvers/movements/ca
     CashMovementResolver,
     FindAllCashMovementUseCase,
     DashboardMovementUseCase,
+    DeleteCashMovement,
     {
       provide: 'CashMovementRepository',
       useClass: PrismaCashMovementRepository,
@@ -25,4 +27,4 @@ import { CashMovementResolver } from '../../infra/graphql/resolvers/movements/ca
     DashboardMovementUseCase,
   ],
 })
-export class CashMovementModule {}
+export class CashMovementModule { }
