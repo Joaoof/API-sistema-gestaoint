@@ -160,4 +160,23 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
       },
     });
   }
+
+  async deleteCashMovement(userId: string, movementId: string): Promise<void> {
+    const searchId = await this.prisma.cashMovement.findUnique({
+      where: {
+        id: movementId
+      }
+    })
+    if (!searchId) return;
+
+    if (searchId.user_id !== userId) {
+      throw new Error("Você não tem permissão para deletar esse movimento")
+    }
+
+    await this.prisma.cashMovement.delete({
+      where: {
+        id: movementId,
+      },
+    });
+  }
 }
