@@ -161,13 +161,13 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
     });
   }
 
-  async deleteCashMovement(userId: string, movementId: string): Promise<void> {
+  async deleteCashMovement(userId: string, movementId: string): Promise<boolean> {
     const searchId = await this.prisma.cashMovement.findUnique({
       where: {
         id: movementId
       }
     })
-    if (!searchId) return;
+    if (!searchId) return false;
 
     if (searchId.user_id !== userId) {
       throw new Error("Você não tem permissão para deletar esse movimento")
@@ -178,5 +178,7 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
         id: movementId,
       },
     });
+
+    return true;
   }
 }

@@ -14,20 +14,24 @@ import { FindAllCashMovementInput } from 'src/core/use-cases/cashMovement/dtos/f
 import { DashboardStats } from '../../dto/dashboard-stats.entity';
 import { DashboardMovementUseCase } from 'src/core/use-cases/cashMovement/dashboard-movement.use-case';
 import { DashboardStatsInput } from '../../dto/dashboard-stats.input';
+import { DeleteCashMovement } from '../../../../core/use-cases/cashMovement/delete-cash-movement.use-case';
 
 @Resolver(() => CashMovementGraphQL)
 export class CashMovementResolver {
   private readonly createCashMovementUseCase: CreateCashMovementUseCase;
   private readonly findAllCashMovementUseCase: FindAllCashMovementUseCase;
   private readonly dashboardMovementUseCase: DashboardMovementUseCase;
+  private readonly deleteCashMovementUseCase: DeleteCashMovement;
   constructor(
     createCashMovementUseCase: CreateCashMovementUseCase,
     findAllCashMovementUseCase: FindAllCashMovementUseCase,
     dashboardMovementUseCase: DashboardMovementUseCase,
+    deleteCashMovementUseCase: DeleteCashMovement,
   ) {
     this.createCashMovementUseCase = createCashMovementUseCase;
     this.findAllCashMovementUseCase = findAllCashMovementUseCase;
     this.dashboardMovementUseCase = dashboardMovementUseCase;
+    this.deleteCashMovementUseCase = deleteCashMovementUseCase;
   }
 
   @Mutation(() => CashMovementGraphQL)
@@ -96,5 +100,20 @@ export class CashMovementResolver {
       date ?? '',
     );
     return dashboard.toJSON();
+  }
+
+  @Mutation(() => Boolean)
+  @UseGuards(GqlAuthGuard)
+  async cashMovementDelete(
+    @Args('movementId') movementId: string,
+    @CurrentUser() user: User,
+  ): Promise<boolean> {
+    try {
+      await this.deleteCashMovementUseCase.execute(user.id, movementId);
+      return true;
+    } catch (error) {
+      // opcional: aqui você pode logar o erro ou lançar GraphQL error customizado
+      throw new Error(error.message);
+    }
   }
 }

@@ -11,4 +11,5 @@ export interface CashMovementRepository {
     filters?: FindAllCashMovementInput,
   ): Promise<CashMovement[]>;
   dashboardMovement(userId: string, date?: string): Promise<any>;
+  deleteCashMovement(userId: string, movementId: string): Promise<boolean>
 }
