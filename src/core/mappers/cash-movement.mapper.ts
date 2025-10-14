@@ -10,7 +10,7 @@ export class CashMovementMapper {
       dto.category,
       dto.value,
       dto.description,
-      new Date(),
+      dto.date,
       dto.user_id ?? userId,
     );
   }

@@ -25,7 +25,7 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
         category: movement.category,
         value: movement.value,
         description: movement.description,
-        date: movement.date ?? new Date(),
+        date: movement.date,
         user_id: movement.user_id,
       },
     });

@@ -10,7 +10,7 @@ export class CashMovement {
     public category: MovementCategory,
     public value: number,
     public description: string,
-    public readonly date: Date = new Date(),
+    public readonly date: Date,
     public readonly user_id?: string,
   ) {
     this.validate();
