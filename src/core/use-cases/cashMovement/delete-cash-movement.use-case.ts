@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { CashMovementRepository } from '../../ports/cash-movement.repository';
 
 @Injectable()
-export class DeleteCashMovement {
+export class DeleteCashMovementUseCase {
     constructor(
         @Inject('CashMovementRepository')
         private readonly cashMovementRepository: CashMovementRepository,

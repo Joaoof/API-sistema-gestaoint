@@ -92,6 +92,7 @@ type ModuleDto {
 
 type Mutation {
   cashMovementDelete(movementId: String!): Boolean!
+  cashMovementUpdate(movementId: String!, movementUpdateCash: UpdateCashMovementInput!): Boolean!
   createCashMovement(input: CreateCashMovementInput!): CashMovementGraphQL!
   login(loginUserInput: LoginUserInput!): AuthPayload!
 }
@@ -116,6 +117,14 @@ type Query {
   company(id: String!): CompanyDto!
   dashboardStats(input: DashboardStatsInput): DashboardStats!
   me: UserResponseDto!
+}
+
+input UpdateCashMovementInput {
+  category: String!
+  date: DateTime
+  description: String!
+  type: String!
+  value: Float!
 }
 
 type UserDto {

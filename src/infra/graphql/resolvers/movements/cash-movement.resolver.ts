@@ -14,19 +14,22 @@ import { FindAllCashMovementInput } from 'src/core/use-cases/cashMovement/dtos/f
 import { DashboardStats } from '../../dto/dashboard-stats.entity';
 import { DashboardMovementUseCase } from 'src/core/use-cases/cashMovement/dashboard-movement.use-case';
 import { DashboardStatsInput } from '../../dto/dashboard-stats.input';
-import { DeleteCashMovement } from '../../../../core/use-cases/cashMovement/delete-cash-movement.use-case';
+import { DeleteCashMovementUseCase } from '../../../../core/use-cases/cashMovement/delete-cash-movement.use-case';
+import { UpdateCashMovementInput } from '../../dto/update-input.dto';
+import { UpdateCashMovementUseCase } from 'src/core/use-cases/cashMovement/update-cash-movement.use-case';
 
 @Resolver(() => CashMovementGraphQL)
 export class CashMovementResolver {
   private readonly createCashMovementUseCase: CreateCashMovementUseCase;
   private readonly findAllCashMovementUseCase: FindAllCashMovementUseCase;
   private readonly dashboardMovementUseCase: DashboardMovementUseCase;
-  private readonly deleteCashMovementUseCase: DeleteCashMovement;
+  private readonly deleteCashMovementUseCase: DeleteCashMovementUseCase;
+  private readonly updateCashMovementUseCase: UpdateCashMovementUseCase
   constructor(
     createCashMovementUseCase: CreateCashMovementUseCase,
     findAllCashMovementUseCase: FindAllCashMovementUseCase,
     dashboardMovementUseCase: DashboardMovementUseCase,
-    deleteCashMovementUseCase: DeleteCashMovement,
+    deleteCashMovementUseCase: DeleteCashMovementUseCase,
   ) {
     this.createCashMovementUseCase = createCashMovementUseCase;
     this.findAllCashMovementUseCase = findAllCashMovementUseCase;
@@ -112,8 +115,16 @@ export class CashMovementResolver {
       await this.deleteCashMovementUseCase.execute(user.id, movementId);
       return true;
     } catch (error) {
-      // opcional: aqui você pode logar o erro ou lançar GraphQL error customizado
       throw new Error(error.message);
     }
+  }
+
+  @Mutation(() => Boolean)
+  @UseGuards(GqlAuthGuard)
+  async cashMovementUpdate(
+    @Args('movementId', { type: () => String }) movementId: string,
+    @Args('movementUpdateCash') movementUpdateCash: UpdateCashMovementInput,
+  ): Promise<boolean> {
+    return this.updateCashMovementUseCase.execute(movementId, movementUpdateCash);
   }
 }

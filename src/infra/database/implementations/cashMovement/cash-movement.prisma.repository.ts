@@ -181,4 +181,22 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
 
     return true;
   }
+
+  async updateMovement(movementId: string, movement: CashMovement) {
+    const searchId = await this.prisma.cashMovement.findUnique({
+      where: {
+        id: movementId
+      }
+    })
+    if (!searchId) return false;
+
+    await this.prisma.cashMovement.update({
+      where: {
+        id: movementId
+      },
+      data: movement
+    })
+
+    return true;
+  }
 }
