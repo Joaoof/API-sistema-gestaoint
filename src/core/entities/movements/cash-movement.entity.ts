@@ -43,7 +43,7 @@ export class CashMovement {
       data.category,
       Number(data.value),
       data.description,
-      new Date(data.date),
+      data.date,
       data.user_id,
     );
   }

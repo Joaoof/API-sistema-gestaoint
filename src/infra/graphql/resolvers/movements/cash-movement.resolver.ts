@@ -15,7 +15,7 @@ import { DashboardStats } from '../../dto/dashboard-stats.entity';
 import { DashboardMovementUseCase } from 'src/core/use-cases/cashMovement/dashboard-movement.use-case';
 import { DashboardStatsInput } from '../../dto/dashboard-stats.input';
 import { DeleteCashMovementUseCase } from '../../../../core/use-cases/cashMovement/delete-cash-movement.use-case';
-import { UpdateCashMovementInput } from '../../dto/update-input.dto';
+import { UpdateCashMovementInput } from '../../../../core/use-cases/cashMovement/dtos/update-cash-movement.input';
 import { UpdateCashMovementUseCase } from 'src/core/use-cases/cashMovement/update-cash-movement.use-case';
 
 @Resolver(() => CashMovementGraphQL)
@@ -30,11 +30,13 @@ export class CashMovementResolver {
     findAllCashMovementUseCase: FindAllCashMovementUseCase,
     dashboardMovementUseCase: DashboardMovementUseCase,
     deleteCashMovementUseCase: DeleteCashMovementUseCase,
+    updateCashMovementUseCase: UpdateCashMovementUseCase
   ) {
     this.createCashMovementUseCase = createCashMovementUseCase;
     this.findAllCashMovementUseCase = findAllCashMovementUseCase;
     this.dashboardMovementUseCase = dashboardMovementUseCase;
     this.deleteCashMovementUseCase = deleteCashMovementUseCase;
+    this.updateCashMovementUseCase = updateCashMovementUseCase;
   }
 
   @Mutation(() => CashMovementGraphQL)

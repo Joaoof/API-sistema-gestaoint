@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { CashMovementRepository } from "src/core/ports/cash-movement.repository";
-import { UpdateCashMovementInput } from '../../../infra/graphql/dto/update-input.dto';
+import { UpdateCashMovementInput } from './dtos/update-cash-movement.input';
 
 @Injectable()
 export class UpdateCashMovementUseCase {
@@ -11,6 +11,9 @@ export class UpdateCashMovementUseCase {
 
     async execute(movementId: string, movement: UpdateCashMovementInput) {
         const cashMovement = await this.cashMovementRepository.findById(movementId);
+
+        console.log('VEJAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', cashMovement);
+
 
         if (!cashMovement) return false;
 
