@@ -2,7 +2,7 @@
 
 import { FindAllCashMovementInput } from '../use-cases/cashMovement/dtos/find-all-cash-movement.input';
 import { CashMovement } from '../entities/movements/cash-movement.entity';
-import { UpdateCashMovementInput } from '../../infra/graphql/dto/update-input.dto';
+import { UpdateCashMovementInput } from '../use-cases/cashMovement/dtos/update-cash-movement.input';
 
 export interface CashMovementRepository {
   create(movement: CashMovement): Promise<void>;
