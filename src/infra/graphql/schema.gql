@@ -36,6 +36,12 @@ enum CashMovementType {
   EXIT
 }
 
+input ChangePasswordInput {
+  confirmPassword: String!
+  currentPassword: String!
+  newPassword: String!
+}
+
 type CompanyDto {
   address: String
   email: String
@@ -93,6 +99,7 @@ type ModuleDto {
 type Mutation {
   cashMovementDelete(movementId: String!): Boolean!
   cashMovementUpdate(movementId: String!, movementUpdateCash: UpdateCashMovementInput!): Boolean!
+  changePassword(input: ChangePasswordInput!): String!
   createCashMovement(input: CreateCashMovementInput!): CashMovementGraphQL!
   login(loginUserInput: LoginUserInput!): AuthPayload!
 }

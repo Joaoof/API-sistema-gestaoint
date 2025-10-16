@@ -1,16 +1,20 @@
 // src/infra/graphql/resolvers/user.resolver.ts
 import { UseGuards } from '@nestjs/common';
-import { Query, Resolver } from '@nestjs/graphql';
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { GqlAuthGuard } from 'src/auth/guards/auth.guard';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { UserResponseDto } from 'src/core/use-cases/create-user.core-dto';
+import { ChangePasswordInput } from '../../../core/use-cases/cashMovement/dtos/change-password.input';
+import { ChangePasswordUseCase } from 'src/core/use-cases/users/change-password.use-case';
 
 @Resolver(() => UserResponseDto)
 export class UserResolver {
   private readonly prisma: PrismaService;
-  constructor(prisma: PrismaService) {
+  private readonly changePasswordUseCase: ChangePasswordUseCase;
+  constructor(prisma: PrismaService, changePasswordUseCase: ChangePasswordUseCase) {
     this.prisma = prisma;
+    this.changePasswordUseCase = changePasswordUseCase;
   }
 
   @Query(() => UserResponseDto)
@@ -93,4 +97,29 @@ export class UserResolver {
 
     return response;
   }
+
+  @Mutation(() => String) // Retorna uma string de sucesso
+  @UseGuards(GqlAuthGuard)
+  async changePassword(
+    @Args('input') input: ChangePasswordInput,
+    @CurrentUser() userPayload: any,
+  ): Promise<string> {
+
+    const userId = userPayload.id || userPayload.sub;
+
+    if (input.newPassword !== input.confirmPassword) {
+      throw new Error('A nova senha e a confirmação não coincidem.');
+    }
+
+    const result = await this.changePasswordUseCase.execute(userId, input);
+
+    if (result === 'Usuário não encontrado') {
+      throw new Error('Usuário autenticado não encontrado na base.');
+    }
+
+    return 'Senha alterada com sucesso! Você será desconectado em breve.';
+  } catch(e: any) {
+    throw new Error('Falha ao alterar senha. Verifique a senha atual ou tente novamente.');
+  }
 }
+

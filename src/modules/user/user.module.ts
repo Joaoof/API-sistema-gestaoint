@@ -13,6 +13,8 @@ import { ValidateInputZod } from '../../infra/services/auth/validate-zod.service
 import { CreateTokenService } from '../../infra/services/auth/create-token.service';
 import { UserDtoService } from '../../infra/services/auth/user-dto.service';
 import { GetByIdUserService } from '../../infra/services/auth/get-by-id.service';
+import { ChangePasswordUseCase } from 'src/core/use-cases/users/change-password.use-case';
+import { PrismaCashMovementRepository } from 'src/infra/database/implementations/cashMovement/cash-movement.prisma.repository';
 
 @Module({
   imports: [PrismaModule, RedisModule],
@@ -29,6 +31,11 @@ import { GetByIdUserService } from '../../infra/services/auth/get-by-id.service'
     UserDtoService,
     UserResolver,
     GetByIdUserService,
+    ChangePasswordUseCase,
+    {
+      provide: 'UserRepository',
+      useClass: PrismaCashMovementRepository
+    }
   ],
   exports: [
     AuthService,
@@ -42,4 +49,4 @@ import { GetByIdUserService } from '../../infra/services/auth/get-by-id.service'
     UserDtoService,
   ],
 })
-export class UserModule {}
+export class UserModule { }
