@@ -7,7 +7,10 @@ import {
   CashMovementCategories,
   CashMovementCategory,
 } from '../enum/cash-movement-category.enum';
-import { MovementTypePayment, MovementTypePayments } from '../enum/cash-movement-type-payment.enum';
+import {
+  MovementTypePayment,
+  MovementTypePayments
+} from '../enum/cash-movement-type-payment.enum';
 
 @ObjectType()
 export class CashMovementGraphQL {
