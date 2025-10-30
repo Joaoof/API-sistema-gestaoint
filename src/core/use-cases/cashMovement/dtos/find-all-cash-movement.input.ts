@@ -9,6 +9,9 @@ export class FindAllCashMovementInput {
   @Field()
   description: string;
 
+  @Field()
+  typePayment: 'CASH' | 'PIX' | 'CARD_CREDIT' | 'DEBIT_CARD' | 'OTHER';
+
   @Field({ nullable: true })
   type?: 'SALE' | 'CHANGE' | 'OTHER_IN' | 'EXPENSE' | 'WITHDRAWAL' | 'PAYMENT';
 

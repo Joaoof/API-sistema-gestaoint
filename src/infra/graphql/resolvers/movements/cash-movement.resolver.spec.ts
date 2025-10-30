@@ -4,7 +4,7 @@ import { CreateCashMovementUseCase } from '../../../../core/use-cases/cashMoveme
 import { FindAllCashMovementUseCase } from '../../../../core/use-cases/cashMovement/find-all-cash-movement.use-case';
 import { DashboardMovementUseCase } from '../../../../core/use-cases/cashMovement/dashboard-movement.use-case';
 import { CashMovement } from '../../../../core/entities/movements/cash-movement.entity'; // Corrigido para o alias core/entities
-import { MovementCategory, MovementType } from '@prisma/client';
+import { MovementCategory, MovementType, MovementTypePayment } from '@prisma/client';
 
 import { User } from '../../../../core/entities/user.entity';
 
@@ -33,6 +33,7 @@ const mockCreatedMovement = new CashMovement(
   MOCK_MOVEMENT_ID,
   MovementType.ENTRY, // Enum Prisma usado no mock de retorno do Use Case
   MovementCategory.SALE, // Enum Prisma usado no mock de retorno do Use Case
+  MovementTypePayment.CASH,
   100.5,
   'Venda de produto A',
   MOCK_DATE,

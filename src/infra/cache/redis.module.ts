@@ -2,6 +2,8 @@
 import { Module } from '@nestjs/common';
 import Redis from 'ioredis';
 import { RedisService } from './redis.service';
+import 'dotenv/config';
+
 
 const REDIS_URL = process.env.REDIS_URL;
 
@@ -41,4 +43,4 @@ redisClient.on('ready', () => {
   ],
   exports: ['REDIS_CLIENT', RedisService],
 })
-export class RedisModule {}
+export class RedisModule { }

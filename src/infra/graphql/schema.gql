@@ -27,6 +27,7 @@ type CashMovementGraphQL {
   id: String!
   message: String
   type: CashMovementType!
+  typePayment: MovementTypePayment!
   user_id: String!
   value: Float!
 }
@@ -56,6 +57,7 @@ input CreateCashMovementInput {
   date: DateTime
   description: String!
   type: String!
+  typePayment: String!
   value: Float!
 }
 
@@ -80,6 +82,7 @@ input FindAllCashMovementInput {
   date: DateTime
   description: String!
   type: String
+  typePayment: String!
   value: Float!
 }
 
@@ -94,6 +97,14 @@ type ModuleDto {
   module_key: String!
   name: String!
   permission: [String!]!
+}
+
+enum MovementTypePayment {
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  OTHER
+  PIX
 }
 
 type Mutation {

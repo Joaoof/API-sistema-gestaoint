@@ -7,6 +7,7 @@ import {
   CashMovementCategories,
   CashMovementCategory,
 } from '../enum/cash-movement-category.enum';
+import { MovementTypePayment, MovementTypePayments } from '../enum/cash-movement-type-payment.enum';
 
 @ObjectType()
 export class CashMovementGraphQL {
@@ -18,6 +19,9 @@ export class CashMovementGraphQL {
 
   @Field(() => CashMovementCategories)
   category: CashMovementCategory;
+
+  @Field(() => MovementTypePayments)
+  typePayment: MovementTypePayment;
 
   @Field(() => Float)
   value: number;

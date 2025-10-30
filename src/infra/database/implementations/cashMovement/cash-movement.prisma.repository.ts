@@ -23,6 +23,7 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
       data: {
         type: movement.type,
         category: movement.category,
+        typePayment: movement.typePayment,
         value: movement.value,
         description: movement.description,
         date: movement.date,
@@ -69,6 +70,7 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
         user_id: true,
         type: true,
         category: true,
+        typePayment: true,
         value: true,
         description: true,
         date: true,

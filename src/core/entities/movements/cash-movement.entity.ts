@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 
-import { CashMovement as PrismaCashMovement } from '@prisma/client';
+import { MovementTypePayment, CashMovement as PrismaCashMovement } from '@prisma/client';
 import { MovementType, MovementCategory } from '@prisma/client';
 
 export class CashMovement {
@@ -8,6 +8,7 @@ export class CashMovement {
     public readonly id: string,
     public type: MovementType,
     public category: MovementCategory,
+    public typePayment: MovementTypePayment,
     public value: number,
     public description: string,
     public readonly date: Date,
@@ -41,6 +42,7 @@ export class CashMovement {
       data.id,
       data.type,
       data.category,
+      data.typePayment,
       Number(data.value),
       data.description,
       data.date,

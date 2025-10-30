@@ -17,6 +17,7 @@ import { DashboardStatsInput } from '../../dto/dashboard-stats.input';
 import { DeleteCashMovementUseCase } from '../../../../core/use-cases/cashMovement/delete-cash-movement.use-case';
 import { UpdateCashMovementInput } from '../../../../core/use-cases/cashMovement/dtos/update-cash-movement.input';
 import { UpdateCashMovementUseCase } from 'src/core/use-cases/cashMovement/update-cash-movement.use-case';
+import { MovementTypePayment } from '../../enum/cash-movement-type-payment.enum';
 
 @Resolver(() => CashMovementGraphQL)
 export class CashMovementResolver {
@@ -71,6 +72,7 @@ export class CashMovementResolver {
       id: cashMovementResolver.id,
       type: cashMovementResolver.type as CashMovementType,
       category: cashMovementResolver.category as CashMovementCategory,
+      typePayment: cashMovementResolver.typePayment as MovementTypePayment,
       value: cashMovementResolver.value,
       description: cashMovementResolver.description,
       date: cashMovementResolver.date,
