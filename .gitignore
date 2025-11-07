@@ -68,4 +68,3 @@ src/schema.gql
 
 # .eslintignore
 tests__/**
-src/infra/**
