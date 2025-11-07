@@ -8,8 +8,8 @@ import {
   CashMovementCategory,
 } from '../enum/cash-movement-category.enum';
 import {
+  MovementTypePayments,
   MovementTypePayment,
-  MovementTypePayments
 } from '../enum/cash-movement-type-payment.enum';
 
 @ObjectType()

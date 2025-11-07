@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { MovementType, MovementCategory, MovementTypePayment } from '@prisma/client';
+import {
+  MovementType,
+  MovementCategory,
+  MovementTypePayment,
+} from '@prisma/client';
 
 // Validação avançada de DTO
 export const CreateCashMovementSchema = z.object({
