@@ -1,9 +1,7 @@
 import { InputType, Field, Float } from '@nestjs/graphql';
 import { CashMovementType } from '../enum/cash-movement-type.enum';
 import { CashMovementCategory } from '../enum/cash-movement-category.enum';
-import {
-  MovementTypePayment
-} from '../enum/cash-movement-type-payment.enum';
+import { MovementTypePayment } from '../enum/cash-movement-type-payment.enum';
 
 @InputType()
 export class CreateCashMovementInput {

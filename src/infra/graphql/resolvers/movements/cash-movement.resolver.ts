@@ -10,6 +10,7 @@ import { CashMovementMapper } from '../../../../core/mappers/cash-movement.mappe
 import { CreateCashMovementInput } from '../../dto/create-cash-movement.dto';
 import { CashMovementType } from '../../enum/cash-movement-type.enum';
 import { CashMovementCategory } from '../../enum/cash-movement-category.enum';
+import { MovementTypePayment } from '../../enum/cash-movement-type-payment.enum';
 import { FindAllCashMovementInput } from 'src/core/use-cases/cashMovement/dtos/find-all-cash-movement.input';
 import { DashboardStats } from '../../dto/dashboard-stats.entity';
 import { DashboardMovementUseCase } from 'src/core/use-cases/cashMovement/dashboard-movement.use-case';
@@ -17,7 +18,6 @@ import { DashboardStatsInput } from '../../dto/dashboard-stats.input';
 import { DeleteCashMovementUseCase } from '../../../../core/use-cases/cashMovement/delete-cash-movement.use-case';
 import { UpdateCashMovementInput } from '../../../../core/use-cases/cashMovement/dtos/update-cash-movement.input';
 import { UpdateCashMovementUseCase } from 'src/core/use-cases/cashMovement/update-cash-movement.use-case';
-import { MovementTypePayment } from '../../enum/cash-movement-type-payment.enum';
 
 @Resolver(() => CashMovementGraphQL)
 export class CashMovementResolver {
