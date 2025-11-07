@@ -3,10 +3,7 @@ import {
   CashMovementType,
   CashMovementTypes,
 } from '../enum/cash-movement-type.enum';
-import {
-  CashMovementCategories,
-  CashMovementCategory,
-} from '../enum/cash-movement-category.enum';
+import { CashMovementCategories, CashMovementCategory } from '../enum/cash-movement-category.enum';
 import {
   MovementTypePayments,
   MovementTypePayment,
