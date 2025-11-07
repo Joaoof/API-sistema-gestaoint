@@ -8,9 +8,9 @@ import { CreateCashMovementUseCase } from 'src/core/use-cases/cashMovement/creat
 import { FindAllCashMovementUseCase } from 'src/core/use-cases/cashMovement/find-all-cash-movement.use-case';
 import { CashMovementMapper } from '../../../../core/mappers/cash-movement.mapper';
 import { CreateCashMovementInput } from '../../dto/create-cash-movement.dto';
-import { CashMovementType } from '../../enum/cash-movement-type.enum';
-import { CashMovementCategory } from '../../enum/cash-movement-category.enum';
-import { MovementTypePayment } from '../../enum/cash-movement-type-payment.enum';
+import { CashMovementType } from '../../enum/CashMovementType.enum';
+import { CashMovementCategory } from '../../enum/CashMovementCategory.enum';
+import { MovementTypePayment } from '../../enum/CashMovementTypePayement.enum';
 import { FindAllCashMovementInput } from 'src/core/use-cases/cashMovement/dtos/find-all-cash-movement.input';
 import { DashboardStats } from '../../dto/dashboard-stats.entity';
 import { DashboardMovementUseCase } from 'src/core/use-cases/cashMovement/dashboard-movement.use-case';

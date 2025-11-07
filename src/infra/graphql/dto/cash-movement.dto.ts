@@ -2,12 +2,12 @@ import { ObjectType, Field, Float } from '@nestjs/graphql';
 import {
   CashMovementType,
   CashMovementTypes,
-} from '../enum/cash-movement-type.enum';
-import { CashMovementCategories, CashMovementCategory } from '../enum/cash-movement-category.enum';
+} from '../enum/CashMovementType.enum';
+import { CashMovementCategories, CashMovementCategory } from '../enum/CashMovementCategory.enum';
 import {
   MovementTypePayments,
   MovementTypePayment,
-} from '../enum/cash-movement-type-payment.enum';
+} from '../enum/CashMovementTypePayement.enum';
 
 @ObjectType()
 export class CashMovementGraphQL {
