@@ -8,4 +8,4 @@
 CREATE TYPE "public"."MovementTypePayment" AS ENUM ('CASH', 'PIX', 'CREDIT_CARD', 'DEBIT_CARD', 'OTHER');
 
 -- AlterTable
-ALTER TABLE "public"."CashMovement" ADD COLUMN     "typePayment" "public"."MovementTypePayment" NOT NULL;
+ALTER TABLE "public"."CashMovement" ADD COLUMN "typePayment" "public"."MovementTypePayment";

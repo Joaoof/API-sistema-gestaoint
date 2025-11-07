@@ -38,6 +38,9 @@ export class CashMovement {
   }
 
   static fromPrisma(data: PrismaCashMovement): CashMovement {
+    if (!data.typePayment) {
+      throw new Error('TypePayment is required.');
+    }
     return new CashMovement(
       data.id,
       data.type,

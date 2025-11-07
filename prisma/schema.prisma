@@ -206,7 +206,7 @@ model CashMovement {
   id          String      @id @default(uuid())
   type        MovementType
   category    MovementCategory
-  typePayment MovementTypePayment
+  typePayment MovementTypePayment?
   value       Decimal
   description String
   date        DateTime    @default(now())
@@ -224,7 +224,7 @@ model MvCashMovementsPerUser {
   id          String   @map("id")            @id
   type        MovementType  @map("type")
   category    MovementCategory @map("category")
-  typePayment MovementTypePayment @map("typePayment")
+  typePayment MovementTypePayment? @map("typePayment")
   value       Decimal  @map("value")
   description String   @map("description")
   date        DateTime @map("date")
