@@ -5,14 +5,13 @@ import {
   MovementTypePayment,
 } from '@prisma/client';
 
-// Validação avançada de DTO
 export const CreateCashMovementSchema = z.object({
   type: z.nativeEnum(MovementType, {
     required_error: 'O tipo (entrada ou saída) é obrigatório.',
     invalid_type_error: 'Tipo inválido. Deve ser "income" ou "expense".',
   }),
   category: z.nativeEnum(MovementCategory, {
-    required_error: 'A categoria da movimentação é obrigatória.',
+    required_error: 'A categoria da movimentação é obrigatória.', 
     invalid_type_error: 'Categoria inválida.',
   }),
   typePayment: z.nativeEnum(MovementTypePayment, {

@@ -3,7 +3,7 @@ import { PrismaService } from "prisma/prisma.service";
 import { UserRepository } from "src/core/ports/user.repository";
 import { RedisService } from "src/infra/cache/redis.service";
 import * as argon2 from 'argon2';
-import { ChangePasswordInput } from '../../../../core/use-cases/cashMovement/dtos/change-password.input';
+import { ChangePasswordInput } from '../../../../core/use-cases/cashMovement/dtos/[get]/change-password.input';
 
 
 @Injectable()

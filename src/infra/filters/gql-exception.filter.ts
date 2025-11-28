@@ -11,10 +11,17 @@ import { ZodError } from 'zod';
 
 @Catch()
 export class GraphQLExceptionFilter implements ExceptionFilter {
-  catch(exception: any) {
+  catch(exception: HttpException) {
     if (exception instanceof ZodError) {
-      const message = exception.errors.map((err) => err.message).join(', ');
-      return new ApolloError(message, 'VALIDATION_ERROR', {
+      const issues = exception.errors.map((err) => ({
+        path: err.path.join('.'), // Caminho do campo (ex: 'data.value')
+        message: err.message,     // A mensagem de erro
+      }));
+
+      // 2. Retorna um ApolloError genérico, mas adiciona 'issues' estruturado nas extensões.
+      // O message principal pode ser fixo ou conter uma breve introdução.
+      return new ApolloError('A validação dos dados falhou.', 'VALIDATION_ERROR', {
+        issues: issues,
         statusCode: HttpStatus.BAD_REQUEST,
       });
     }
@@ -32,7 +39,7 @@ export class GraphQLExceptionFilter implements ExceptionFilter {
     if (exception instanceof DomainValidationError) {
       console.log('📢 DomainValidationError capturado:', exception.errors);
       return new ApolloError('Validation failed', 'DOMAIN_VALIDATION_ERROR', {
-        errors: exception.errors, // somente se a classe tiver public readonly errors
+        errors: exception.errors,
         statusCode: HttpStatus.BAD_REQUEST,
       });
     }

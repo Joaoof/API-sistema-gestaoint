@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { ChangePasswordInput } from '../use-cases/cashMovement/dtos/change-password.input';
+import { ChangePasswordInput } from '../use-cases/cashMovement/dtos/[get]/change-password.input';
 
 export interface UserRepository {
   findById(userId: string): Promise<any | null>

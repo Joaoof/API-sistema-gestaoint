@@ -1,8 +1,8 @@
 /* eslint-disable no-unused-vars */
 
-import { FindAllCashMovementInput } from '../use-cases/cashMovement/dtos/find-all-cash-movement.input';
+import { FindAllCashMovementInput } from '../use-cases/cashMovement/dtos/[get]/find-all-cash-movement.input';
 import { CashMovement } from '../entities/movements/cash-movement.entity';
-import { UpdateCashMovementInput } from '../use-cases/cashMovement/dtos/update-cash-movement.input';
+import { UpdateCashMovementInput } from '../use-cases/cashMovement/dtos/[get]/update-cash-movement.input';
 
 export interface CashMovementRepository {
   create(movement: CashMovement): Promise<void>;
