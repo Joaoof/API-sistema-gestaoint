@@ -139,6 +139,8 @@ model Users {
   @@index([company_id, email])
 
   Category Category[]
+  
+  taxExpenses TaxExpense[]
 }
 
 
@@ -233,6 +235,19 @@ model MvCashMovementsPerUser {
   @@index([user_id, date(sort: Desc)])
 }
 
+model TaxExpense {
+  id      String @id @default(cuid())
+  supplier String 
+  value    Decimal
+  description String
+  dueDate DateTime @default(now())
+  status TaxStatus 
+
+  user_id String
+  user Users @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+}
 
 enum MovementType {
   ENTRY
@@ -267,4 +282,10 @@ enum ProductStatus {
   ACTIVE
   INACTIVE
   DISCONTINUED
+}
+
+enum TaxStatus {
+  PENDING
+  PAID
+  OVERDUE
 }

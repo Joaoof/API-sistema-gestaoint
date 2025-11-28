@@ -61,6 +61,14 @@ input CreateCashMovementInput {
   value: Float!
 }
 
+input CreateTaxExpenseInput {
+  description: String!
+  dueDate: DateTime!
+  status: String!
+  supplier: String!
+  value: Float!
+}
+
 type DashboardStats {
   monthlyTotal: Float!
   todayBalance: Float!
@@ -83,6 +91,14 @@ input FindAllCashMovementInput {
   description: String!
   type: String
   typePayment: String!
+  value: Float!
+}
+
+input FindAllTaxExpenseInput {
+  description: String!
+  dueDate: DateTime!
+  status: TaxExpense!
+  supplier: String!
   value: Float!
 }
 
@@ -112,6 +128,7 @@ type Mutation {
   cashMovementUpdate(movementId: String!, movementUpdateCash: UpdateCashMovementInput!): Boolean!
   changePassword(input: ChangePasswordInput!): String!
   createCashMovement(input: CreateCashMovementInput!): CashMovementGraphQL!
+  createTaxExpense(input: CreateTaxExpenseInput!): TaxExpenseGraphQL!
   login(loginUserInput: LoginUserInput!): AuthPayload!
 }
 
@@ -135,6 +152,23 @@ type Query {
   company(id: String!): CompanyDto!
   dashboardStats(input: DashboardStatsInput): DashboardStats!
   me: UserResponseDto!
+  taxExpenses(input: FindAllTaxExpenseInput): [TaxExpenseGraphQL!]!
+}
+
+enum TaxExpense {
+  OVERDUE
+  PAID
+  PENDING
+}
+
+type TaxExpenseGraphQL {
+  description: String!
+  dueDate: DateTime!
+  id: String!
+  status: TaxExpense!
+  supplier: String!
+  user_id: String!
+  value: Float!
 }
 
 input UpdateCashMovementInput {

@@ -10,7 +10,7 @@ import { User } from '../../../../core/entities/user.entity';
 
 // FIX: Importando os DTOs/Enums corretos do GraphQL para o arquivo de teste
 import { CreateCashMovementInput } from '../../dto/create-cash-movement.dto';
-import { FindAllCashMovementInput } from '../../../../core/use-cases/cashMovement/dtos/find-all-cash-movement.input';
+import { FindAllCashMovementInput } from '../../../../core/use-cases/cashMovement/dtos/[get]/find-all-cash-movement.input';
 import { DashboardStatsInput } from '../../dto/dashboard-stats.input';
 import { DashboardMovement } from '../../../../core/entities/dashboard-movement.entity';
 

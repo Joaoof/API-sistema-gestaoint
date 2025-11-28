@@ -5,7 +5,7 @@ import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { GqlAuthGuard } from 'src/auth/guards/auth.guard';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { UserResponseDto } from 'src/core/use-cases/create-user.core-dto';
-import { ChangePasswordInput } from '../../../core/use-cases/cashMovement/dtos/change-password.input';
+import { ChangePasswordInput } from '../../../core/use-cases/cashMovement/dtos/[get]/change-password.input';
 import { ChangePasswordUseCase } from 'src/core/use-cases/users/change-password.use-case';
 
 @Resolver(() => UserResponseDto)

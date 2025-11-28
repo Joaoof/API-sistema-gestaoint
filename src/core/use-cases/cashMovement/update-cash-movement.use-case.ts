@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { CashMovementRepository } from "src/core/ports/cash-movement.repository";
-import { UpdateCashMovementInput } from './dtos/update-cash-movement.input';
+import { UpdateCashMovementInput } from './dtos/[get]/update-cash-movement.input';
 
 @Injectable()
 export class UpdateCashMovementUseCase {
