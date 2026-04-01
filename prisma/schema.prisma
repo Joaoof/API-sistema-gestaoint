@@ -268,3 +268,72 @@ enum ProductStatus {
   INACTIVE
   DISCONTINUED
 }
+
+enum CommissionRuleType {
+  PERCENTAGE
+  FIXED_PER_SALE
+}
+
+model Seller {
+  id              String   @id @default(cuid())
+  name            String
+  email           String   @unique
+  active          Boolean  @default(true)
+  totalCommission Decimal  @default(0)
+  totalPoints     Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  sales Sale[]
+}
+
+model SalesCatalogProduct {
+  id        String   @id @default(cuid())
+  name      String
+  sku       String   @unique
+  unitPrice Decimal
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  saleItems SaleItem[]
+}
+
+model Sale {
+  id               String   @id @default(cuid())
+  sellerId         String
+  totalAmount      Decimal
+  commissionAmount Decimal
+  pointsEarned     Int
+  createdAt        DateTime @default(now())
+
+  seller Seller @relation(fields: [sellerId], references: [id])
+  items  SaleItem[]
+
+  @@index([sellerId, createdAt(sort: Desc)])
+}
+
+model SaleItem {
+  id        String  @id @default(cuid())
+  saleId    String
+  productId String
+  quantity  Int
+  unitPrice Decimal
+  totalPrice Decimal
+
+  sale    Sale                @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product SalesCatalogProduct @relation(fields: [productId], references: [id])
+
+  @@index([saleId])
+  @@index([productId])
+}
+
+model CommissionRuleConfig {
+  id                    String             @id @default(cuid())
+  key                   String             @unique
+  commissionType        CommissionRuleType
+  commissionValue       Decimal
+  pointsPerCurrencyUnit Decimal            @default(1)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+}
