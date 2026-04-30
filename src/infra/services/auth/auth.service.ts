@@ -56,16 +56,54 @@ export class AuthService {
       throw new HttpException('Credenciais inválidas', HttpStatus.UNAUTHORIZED);
     }
 
-    const viewData = await this.prisma.authLoginView.findFirst({
-      where: { user_email: user.email },
+    // Substitui a antiga materialized view auth_login_view por um JOIN direto.
+    // Usuário → Company → CompanyPlan → Plan → PlanModule → Module
+    const userRow = await this.prisma.users.findUnique({
+      where: { email: user.email },
+      include: {
+        company: {
+          include: {
+            companyPlan: {
+              include: {
+                plan: {
+                  include: {
+                    module: {
+                      include: { module: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
-    if (!viewData?.user_id) {
+    if (!userRow?.id) {
       throw new HttpException(
         'Dados de login não encontrados',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+
+    const planRel = userRow.company?.companyPlan?.plan;
+    const viewData = {
+      user_id: userRow.id,
+      user_email: userRow.email,
+      user_role: userRow.role,
+      company_id: userRow.company_id,
+      company_name: userRow.company?.name ?? null,
+      company_logo: userRow.company?.logoUrl ?? null,
+      plan_id: planRel?.id ?? null,
+      plan_name: planRel?.name ?? null,
+      modules:
+        planRel?.module?.map((pm) => ({
+          module_key: pm.module.module_key,
+          name: pm.module.name,
+          isActive: pm.isActive,
+          permission: pm.permission,
+        })) ?? [],
+    };
 
     await this.redisService.setWithPipeline(cacheKey, viewData, 900);
     return this.buildResponseFromView(viewData);

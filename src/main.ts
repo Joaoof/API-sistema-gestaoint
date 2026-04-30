@@ -6,8 +6,6 @@ import {
 } from '@nestjs/platform-fastify';
 import { CategoriesSchemas, ProductSchemas } from './shared/swagger/utils';
 import { GraphQLExceptionFilter } from './infra/filters/gql-exception.filter';
-import { PrismaService } from '../prisma/prisma.service';
-import * as cron from 'node-cron';
 
 async function bootstrap() {
   const adapter = new FastifyAdapter({ trustProxy: true });
@@ -34,15 +32,9 @@ async function bootstrap() {
     },
   );
 
-  const prisma = app.get(PrismaService);
-  cron.schedule('*/5 * * * *', async () => {
-    try {
-      await prisma.$executeRaw`REFRESH MATERIALIZED VIEW auth_login_view;`;
-      await prisma.$executeRaw`REFRESH MATERIALIZED VIEW mv_cash_movements_per_user;`;
-    } catch (err) {
-      console.error('Falha ao atualizar materialized views:', err);
-    }
-  });
+  // Removido o cron que atualizava materialized views (auth_login_view e
+  // mv_cash_movements_per_user). O auth.service e cash-movement.repository agora
+  // fazem queries diretas, com índices compostos garantindo performance.
 
   const fastify = app.getHttpAdapter().getInstance();
   fastify.get('/health', async (request, reply) => {

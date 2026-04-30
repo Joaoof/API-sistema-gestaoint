@@ -58,11 +58,9 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
   }
 
   async findAll(userId: string): Promise<CashMovement[]> {
-    await this.prisma
-      .$executeRaw`REFRESH MATERIALIZED VIEW mv_cash_movements_per_user;`;
-
-    // 1) Consulta ÚNICA à materialized view usando índice composto
-    const rows = await this.prisma.mvCashMovementsPerUser.findMany({
+    // Query direta na tabela CashMovement (sem materialized view).
+    // O índice composto @@index([user_id, date(sort: Desc)]) garante a performance.
+    const rows = await this.prisma.cashMovement.findMany({
       where: { user_id: userId },
       orderBy: { date: 'desc' },
       select: {
@@ -77,7 +75,6 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
       },
     });
 
-    console.debug(`DEBUG rows filtrados por ${userId}:`, rows);
     return rows.map(CashMovement.fromPrisma);
   }
 
