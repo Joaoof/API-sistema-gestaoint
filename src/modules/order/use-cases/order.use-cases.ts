@@ -25,6 +25,8 @@ function toEntity(raw: RawOrder): OrderEntity {
     number: raw.number,
     customerId: raw.customerId,
     customerName: raw.customerName,
+    customerDocument: raw.customerDocument,
+    customerPhone: raw.customerPhone,
     sellerId: raw.sellerId,
     sellerName: raw.sellerName,
     commissionPercent: Number(raw.commissionPercent),
@@ -128,6 +130,18 @@ export class OrderUseCases {
       throw new BadRequestException('Desconto maior que o subtotal.');
     }
 
+    // Resolve cliente (snapshot de nome/documento/telefone)
+    let customerName: string | null = input.customerName ?? null;
+    let customerDocument: string | null = input.customerDocument ?? null;
+    let customerPhone: string | null = input.customerPhone ?? null;
+    if (input.customerId) {
+      const customer = await this.prisma.customer.findUnique({ where: { id: input.customerId } });
+      if (!customer) throw new BadRequestException('Cliente não encontrado.');
+      customerName = customerName ?? customer.name;
+      customerDocument = customerDocument ?? customer.document;
+      customerPhone = customerPhone ?? customer.phone;
+    }
+
     // Resolve vendedor (snapshot de nome + cálculo de comissão)
     let sellerId: string | null = null;
     let sellerName: string | null = null;
@@ -151,7 +165,9 @@ export class OrderUseCases {
       const created = await tx.order.create({
         data: {
           customerId: input.customerId ?? null,
-          customerName: input.customerName ?? null,
+          customerName,
+          customerDocument,
+          customerPhone,
           sellerId,
           sellerName,
           commissionPercent,
@@ -261,8 +277,8 @@ export class OrderUseCases {
       },
       cliente: {
         nome: order.customer?.name ?? order.customerName ?? null,
-        cpf_cnpj: order.customer?.document ?? null,
-        telefone: order.customer?.phone ?? null,
+        cpf_cnpj: order.customer?.document ?? order.customerDocument ?? null,
+        telefone: order.customer?.phone ?? order.customerPhone ?? null,
         bairro: order.customer?.bairro ?? null,
         cep: order.customer?.cep ?? null,
       },

@@ -53,6 +53,18 @@ export class CreateOrderInput {
   @Field({ nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(32)
+  customerDocument?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  customerPhone?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   sellerId?: string;
 
   @Field(() => Float, { nullable: true })

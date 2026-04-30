@@ -22,6 +22,8 @@ export class OrderEntity {
   @Field(() => Int) number!: number;
   @Field(() => String, { nullable: true }) customerId?: string | null;
   @Field(() => String, { nullable: true }) customerName?: string | null;
+  @Field(() => String, { nullable: true }) customerDocument?: string | null;
+  @Field(() => String, { nullable: true }) customerPhone?: string | null;
   @Field(() => String, { nullable: true }) sellerId?: string | null;
   @Field(() => String, { nullable: true }) sellerName?: string | null;
   @Field(() => Float) commissionPercent!: number;

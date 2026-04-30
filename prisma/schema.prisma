@@ -121,6 +121,8 @@ model Order {
   number            Int                @default(autoincrement())
   customerId        String?
   customerName      String?
+  customerDocument  String?
+  customerPhone     String?
   sellerId          String?
   sellerName        String?
   commissionPercent Decimal            @default(0)
