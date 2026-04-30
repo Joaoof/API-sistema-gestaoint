@@ -18,6 +18,9 @@ import { CashMovementModule } from './modules/cashMovement/cash-movement.module'
 import { RedisModule } from './infra/cache/redis.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { ProductModule } from './modules/product/product.module';
+import { CustomerModule } from './modules/customer/customer.module';
+import { AccountReceivableModule } from './modules/accountReceivable/account-receivable.module';
+import { AccountPayableModule } from './modules/accountPayable/account-payable.module';
 
 @Module({
   imports: [
@@ -58,6 +61,9 @@ import { ProductModule } from './modules/product/product.module';
     RedisModule,
     StorageModule,
     ProductModule,
+    CustomerModule,
+    AccountReceivableModule,
+    AccountPayableModule,
   ],
   controllers: [AppController],
   providers: [

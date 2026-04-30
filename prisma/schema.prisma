@@ -21,28 +21,30 @@ model Gift {
 }
 
 model Product {
-  id          String         @id @default(uuid())
-  nameProduct String         @unique
-  quantity    Int            @default(0)
-  costPrice   Decimal        @default(0.0)
-  salePrice   Decimal        @default(0.0)
-  status      ProductStatus  @default(ACTIVE)
+  id          String              @id @default(uuid())
+  nameProduct String              @unique
+  quantity    Int                 @default(0)
+  costPrice   Decimal             @default(0.0)
+  salePrice   Decimal             @default(0.0)
+  status      ProductStatus       @default(ACTIVE)
   categoryId  String?
   supplierId  String?
   createdById String?
   description String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
   deletedAt   DateTime?
   sku         String?
-  minStock    Int            @default(0)
-  unit        String         @default("UN")
-  weight      Decimal?       @db.Decimal
-  category    Category?      @relation(fields: [categoryId], references: [id])
-  supplier    Supplier?      @relation(fields: [supplierId], references: [id])
-  createdBy   Users?         @relation(fields: [createdById], references: [id])
+  minStock    Int                 @default(0)
+  unit        String              @default("UN")
+  weight      Decimal?            @db.Decimal
+  category    Category?           @relation(fields: [categoryId], references: [id])
+  supplier    Supplier?           @relation(fields: [supplierId], references: [id])
+  createdBy   Users?              @relation(fields: [createdById], references: [id])
   images      ProductImage[]
   inventory   Inventory?
+  receivables AccountReceivable[]
+  payables    AccountPayable[]
 
   @@index([nameProduct])
   @@index([sku])
@@ -84,13 +86,74 @@ model Category {
 }
 
 model Supplier {
-  id        String    @id @default(cuid())
-  name      String    @unique
-  email     String?   @unique
+  id        String           @id @default(cuid())
+  name      String           @unique
+  email     String?          @unique
   phone     String?
   address   String?
-  createdAt DateTime  @default(now())
+  createdAt DateTime         @default(now())
   Product   Product[]
+  payables  AccountPayable[]
+}
+
+model Customer {
+  id          String              @id @default(uuid())
+  name        String
+  document    String?
+  email       String?
+  phone       String?
+  address     String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  receivables AccountReceivable[]
+
+  @@index([name])
+  @@index([document])
+}
+
+model AccountReceivable {
+  id           String        @id @default(uuid())
+  customerId   String
+  productId    String?
+  description  String
+  amount       Decimal
+  interestRate Decimal       @default(0.033)
+  dueDate      DateTime
+  paidAt       DateTime?
+  status       AccountStatus @default(PENDING)
+  notes        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  customer     Customer      @relation(fields: [customerId], references: [id])
+  product      Product?      @relation(fields: [productId], references: [id])
+
+  @@index([customerId])
+  @@index([productId])
+  @@index([dueDate])
+  @@index([status])
+}
+
+model AccountPayable {
+  id           String        @id @default(uuid())
+  supplierId   String?
+  productId    String?
+  supplierName String
+  description  String
+  amount       Decimal
+  interestRate Decimal       @default(0.033)
+  dueDate      DateTime
+  paidAt       DateTime?
+  status       AccountStatus @default(PENDING)
+  notes        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  supplier     Supplier?     @relation(fields: [supplierId], references: [id])
+  product      Product?      @relation(fields: [productId], references: [id])
+
+  @@index([supplierId])
+  @@index([productId])
+  @@index([dueDate])
+  @@index([status])
 }
 
 model Inventory {
@@ -291,6 +354,13 @@ enum ProductStatus {
   ACTIVE
   INACTIVE
   DISCONTINUED
+}
+
+enum AccountStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELED
 }
 
 enum CommissionRuleType {
