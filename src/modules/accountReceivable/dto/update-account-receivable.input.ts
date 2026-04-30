@@ -21,7 +21,7 @@ export class UpdateAccountReceivableInput {
   @IsString()
   customerId?: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
   productId?: string | null;
@@ -48,7 +48,7 @@ export class UpdateAccountReceivableInput {
   @IsDateString()
   dueDate?: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   @IsOptional()
   @IsDateString()
   paidAt?: string | null;
@@ -58,7 +58,7 @@ export class UpdateAccountReceivableInput {
   @IsEnum(AccountStatus)
   status?: AccountStatus;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(1000)

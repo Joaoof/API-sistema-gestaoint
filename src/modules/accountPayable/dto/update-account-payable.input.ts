@@ -16,12 +16,12 @@ export class UpdateAccountPayableInput {
   @IsString()
   id!: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
   supplierId?: string | null;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
   productId?: string | null;
@@ -54,7 +54,7 @@ export class UpdateAccountPayableInput {
   @IsDateString()
   dueDate?: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   @IsOptional()
   @IsDateString()
   paidAt?: string | null;
@@ -64,7 +64,7 @@ export class UpdateAccountPayableInput {
   @IsEnum(AccountStatus)
   status?: AccountStatus;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(1000)
