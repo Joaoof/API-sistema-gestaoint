@@ -23,6 +23,7 @@ import { AccountReceivableModule } from './modules/accountReceivable/account-rec
 import { AccountPayableModule } from './modules/accountPayable/account-payable.module';
 import { CategoryModule } from './modules/category/category.module';
 import { OrderModule } from './modules/order/order.module';
+import { DeliveryModule } from './modules/delivery/delivery.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { OrderModule } from './modules/order/order.module';
     AccountPayableModule,
     CategoryModule,
     OrderModule,
+    DeliveryModule,
   ],
   controllers: [AppController],
   providers: [

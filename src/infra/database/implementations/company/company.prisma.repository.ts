@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../../prisma/prisma.service';
-import { CompaniesRepository } from 'src/core/ports/company.repository';
+import {
+  CompaniesRepository,
+  UpdateCompanyData,
+} from 'src/core/ports/company.repository';
 import { Company } from 'src/core/entities/company.entity';
 
 @Injectable()
@@ -14,12 +17,38 @@ export class PrismaCompaniesRepository implements CompaniesRepository {
     const data = await this.prisma.company.findUnique({ where: { id } });
     if (!data) return null;
 
-    const company = Company.fromPrisma({
+    return Company.fromPrisma({
       id: data.id,
       name: data.name,
-      logoUrl: data.logoUrl ?? '',
+      email: data.email ?? undefined,
+      phone: data.phone ?? undefined,
+      address: data.address ?? undefined,
+      cnpj: data.cnpj ?? undefined,
+      logoUrl: data.logoUrl ?? undefined,
+    });
+  }
+
+  async update(id: string, data: UpdateCompanyData): Promise<Company> {
+    const updated = await this.prisma.company.update({
+      where: { id },
+      data: {
+        ...(data.name !== undefined ? { name: data.name } : {}),
+        ...(data.email !== undefined ? { email: data.email } : {}),
+        ...(data.phone !== undefined ? { phone: data.phone } : {}),
+        ...(data.address !== undefined ? { address: data.address } : {}),
+        ...(data.cnpj !== undefined ? { cnpj: data.cnpj } : {}),
+        ...(data.logoUrl !== undefined ? { logoUrl: data.logoUrl } : {}),
+      },
     });
 
-    return company;
+    return Company.fromPrisma({
+      id: updated.id,
+      name: updated.name,
+      email: updated.email ?? undefined,
+      phone: updated.phone ?? undefined,
+      address: updated.address ?? undefined,
+      cnpj: updated.cnpj ?? undefined,
+      logoUrl: updated.logoUrl ?? undefined,
+    });
   }
 }

@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 
-import { Field, ObjectType } from '@nestjs/graphql';
+import { Field, InputType, ObjectType } from '@nestjs/graphql';
+import { IsEmail, IsOptional, IsString, MaxLength } from 'class-validator';
 
 @ObjectType()
 export class CompanyDto {
@@ -20,5 +21,46 @@ export class CompanyDto {
   address?: string;
 
   @Field(() => String, { nullable: true })
-  logoUrl?: string; // ✅ Adicione aqui
+  cnpj?: string;
+
+  @Field(() => String, { nullable: true })
+  logoUrl?: string;
+}
+
+@InputType()
+export class UpdateCompanyInput {
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  name?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  phone?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  address?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  cnpj?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  logoUrl?: string;
 }

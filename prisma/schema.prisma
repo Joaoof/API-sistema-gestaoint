@@ -130,6 +130,7 @@ model Order {
   updatedAt       DateTime           @updatedAt
   customer        Customer?          @relation(fields: [customerId], references: [id])
   items           OrderItem[]
+  delivery        Delivery?
 
   @@index([customerId])
   @@index([createdAt(sort: Desc)])
@@ -150,6 +151,26 @@ model OrderItem {
 
   @@index([orderId])
   @@index([productId])
+}
+
+model Delivery {
+  id            String         @id @default(uuid())
+  orderId       String         @unique
+  driver        String?
+  vehicle       String?
+  destination   String?
+  scheduledDate DateTime?
+  startedAt     DateTime?
+  deliveredAt   DateTime?
+  status        DeliveryStatus @default(PENDING)
+  notes         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  order         Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([status])
+  @@index([scheduledDate])
 }
 
 model AccountReceivable {
@@ -420,6 +441,13 @@ enum OrderPaymentMethod {
   BOLETO
   TRANSFER
   OTHER
+}
+
+enum DeliveryStatus {
+  PENDING
+  IN_TRANSIT
+  DELIVERED
+  CANCELED
 }
 
 enum CommissionRuleType {
