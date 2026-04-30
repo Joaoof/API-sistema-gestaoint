@@ -9,6 +9,7 @@ import { JwtStrategy } from 'src/auth/jwt.strategy';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { RedisModule } from '../../infra/cache/redis.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import type { StringValue } from 'ms';
 import { GetByIdUserService } from '../../infra/services/auth/get-by-id.service';
 
 @Module({
@@ -22,7 +23,8 @@ import { GetByIdUserService } from '../../infra/services/auth/get-by-id.service'
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET'), // ✅ Busca a variável de ambiente
         signOptions: {
-          expiresIn: config.get<string>('JWT_EXPIRES_IN') || '1d',
+          expiresIn: (config.get<string>('JWT_EXPIRES_IN') ||
+            '1d') as StringValue,
         },
       }),
     }),

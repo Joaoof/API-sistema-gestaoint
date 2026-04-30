@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import type { StringValue } from 'ms';
 import { User } from 'src/core/entities/user.entity';
 
 @Injectable()
@@ -28,14 +29,16 @@ export class CreateTokenService {
       );
     }
 
+    const expiresIn = (process.env.JWT_EXPIRES_IN || '3600s') as StringValue;
+
     const accessToken = this.jwtService.sign(payload, {
       secret: process.env.JWT_SECRET,
-      expiresIn: process.env.JWT_EXPIRES_IN || '3600s',
+      expiresIn,
     });
 
     return {
       accessToken,
-      expiresIn: process.env.JWT_EXPIRES_IN || '3600s',
+      expiresIn,
     };
   }
 }
