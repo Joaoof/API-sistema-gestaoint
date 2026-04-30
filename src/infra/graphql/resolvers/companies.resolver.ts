@@ -23,6 +23,11 @@ function toDto(company: Company): CompanyDto {
     address: company.address,
     cnpj: company.cnpj,
     logoUrl: company.logoUrl,
+    nomeFantasia: company.nomeFantasia,
+    razaoSocial: company.razaoSocial,
+    inscricaoEstadual: company.inscricaoEstadual,
+    cidade: company.cidade,
+    estado: company.estado,
   };
 }
 
@@ -74,6 +79,11 @@ export class CompaniesResolver {
       address: input.address ?? null,
       cnpj: input.cnpj ?? null,
       logoUrl: input.logoUrl ?? null,
+      nomeFantasia: input.nomeFantasia ?? null,
+      razaoSocial: input.razaoSocial ?? null,
+      inscricaoEstadual: input.inscricaoEstadual ?? null,
+      cidade: input.cidade ?? null,
+      estado: input.estado ?? null,
     });
     return toDto(updated);
   }

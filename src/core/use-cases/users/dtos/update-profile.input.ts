@@ -2,17 +2,12 @@ import { Field, InputType } from '@nestjs/graphql';
 import { IsEmail, IsOptional, IsString, MaxLength } from 'class-validator';
 
 @InputType()
-export class CreateCustomerInput {
-  @Field()
-  @IsString()
-  @MaxLength(160)
-  name!: string;
-
+export class UpdateProfileInput {
   @Field({ nullable: true })
   @IsOptional()
   @IsString()
-  @MaxLength(32)
-  document?: string;
+  @MaxLength(160)
+  name?: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -28,18 +23,6 @@ export class CreateCustomerInput {
   @Field({ nullable: true })
   @IsOptional()
   @IsString()
-  @MaxLength(255)
-  address?: string;
-
-  @Field({ nullable: true })
-  @IsOptional()
-  @IsString()
-  @MaxLength(120)
-  bairro?: string;
-
-  @Field({ nullable: true })
-  @IsOptional()
-  @IsString()
-  @MaxLength(16)
-  cep?: string;
+  @MaxLength(500)
+  avatarUrl?: string;
 }

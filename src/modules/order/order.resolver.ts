@@ -13,6 +13,7 @@ import { OrderStatus } from '@prisma/client';
 import { GqlAuthGuard } from '../../auth/guards/auth.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { CreateOrderInput } from './dto/create-order.input';
+import { OrderPrintDto } from './dto/order-print.dto';
 import { OrderEntity } from './entities/order.entity';
 import { OrderUseCases } from './use-cases/order.use-cases';
 
@@ -50,6 +51,11 @@ export class OrderResolver {
   @Query(() => OrderSummary)
   async ordersSummary(): Promise<OrderSummary> {
     return this.useCases.summary();
+  }
+
+  @Query(() => OrderPrintDto)
+  async orderForPrint(@Args('id') id: string): Promise<OrderPrintDto> {
+    return this.useCases.findForPrint(id);
   }
 
   @Mutation(() => OrderEntity)

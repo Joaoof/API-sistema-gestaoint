@@ -25,6 +25,11 @@ export class PrismaCompaniesRepository implements CompaniesRepository {
       address: data.address ?? undefined,
       cnpj: data.cnpj ?? undefined,
       logoUrl: data.logoUrl ?? undefined,
+      nomeFantasia: data.nomeFantasia ?? undefined,
+      razaoSocial: data.razaoSocial ?? undefined,
+      inscricaoEstadual: data.inscricaoEstadual ?? undefined,
+      cidade: data.cidade ?? undefined,
+      estado: data.estado ?? undefined,
     });
   }
 
@@ -38,6 +43,13 @@ export class PrismaCompaniesRepository implements CompaniesRepository {
         ...(data.address !== undefined ? { address: data.address } : {}),
         ...(data.cnpj !== undefined ? { cnpj: data.cnpj } : {}),
         ...(data.logoUrl !== undefined ? { logoUrl: data.logoUrl } : {}),
+        ...(data.nomeFantasia !== undefined ? { nomeFantasia: data.nomeFantasia } : {}),
+        ...(data.razaoSocial !== undefined ? { razaoSocial: data.razaoSocial } : {}),
+        ...(data.inscricaoEstadual !== undefined
+          ? { inscricaoEstadual: data.inscricaoEstadual }
+          : {}),
+        ...(data.cidade !== undefined ? { cidade: data.cidade } : {}),
+        ...(data.estado !== undefined ? { estado: data.estado } : {}),
       },
     });
 
@@ -49,6 +61,11 @@ export class PrismaCompaniesRepository implements CompaniesRepository {
       address: updated.address ?? undefined,
       cnpj: updated.cnpj ?? undefined,
       logoUrl: updated.logoUrl ?? undefined,
+      nomeFantasia: updated.nomeFantasia ?? undefined,
+      razaoSocial: updated.razaoSocial ?? undefined,
+      inscricaoEstadual: updated.inscricaoEstadual ?? undefined,
+      cidade: updated.cidade ?? undefined,
+      estado: updated.estado ?? undefined,
     });
   }
 }

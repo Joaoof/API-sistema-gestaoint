@@ -12,6 +12,21 @@ export class CompanyDto {
   name?: string;
 
   @Field(() => String, { nullable: true })
+  nomeFantasia?: string;
+
+  @Field(() => String, { nullable: true })
+  razaoSocial?: string;
+
+  @Field(() => String, { nullable: true })
+  inscricaoEstadual?: string;
+
+  @Field(() => String, { nullable: true })
+  cidade?: string;
+
+  @Field(() => String, { nullable: true })
+  estado?: string;
+
+  @Field(() => String, { nullable: true })
   email?: string;
 
   @Field(() => String, { nullable: true })
@@ -34,6 +49,36 @@ export class UpdateCompanyInput {
   @IsString()
   @MaxLength(160)
   name?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  nomeFantasia?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  razaoSocial?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  inscricaoEstadual?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  cidade?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2)
+  estado?: string;
 
   @Field({ nullable: true })
   @IsOptional()

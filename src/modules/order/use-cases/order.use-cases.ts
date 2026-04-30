@@ -1,8 +1,19 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { OrderStatus, Prisma } from '@prisma/client';
+import { OrderPaymentMethod, OrderStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { CreateOrderInput } from '../dto/create-order.input';
 import { OrderEntity } from '../entities/order.entity';
+import { OrderPrintDto } from '../dto/order-print.dto';
+
+const PAYMENT_METHOD_LABEL: Record<OrderPaymentMethod, string> = {
+  CASH: 'Dinheiro',
+  PIX: 'PIX',
+  CREDIT_CARD: 'Cartão de Crédito',
+  DEBIT_CARD: 'Cartão de Débito',
+  BOLETO: 'Boleto',
+  TRANSFER: 'Transferência',
+  OTHER: 'Outro',
+};
 
 type RawOrder = Prisma.OrderGetPayload<{
   include: { customer: true; items: true };
@@ -181,6 +192,66 @@ export class OrderUseCases {
     });
 
     return toEntity(updated);
+  }
+
+  async findForPrint(id: string): Promise<OrderPrintDto> {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: {
+        customer: true,
+        createdBy: { include: { company: true } },
+        items: { include: { product: true } },
+      },
+    });
+    if (!order) throw new NotFoundException('Pedido não encontrado.');
+
+    const company = order.createdBy?.company ?? null;
+    const createdAt = order.createdAt;
+    const dataEmissao = createdAt.toISOString().slice(0, 10);
+    const horaEmissao = createdAt.toISOString().slice(11, 19);
+
+    return {
+      empresa: {
+        nome_fantasia: company?.nomeFantasia ?? company?.name ?? null,
+        razao_social: company?.razaoSocial ?? null,
+        cnpj: company?.cnpj ?? null,
+        inscricao_estadual: company?.inscricaoEstadual ?? null,
+        endereco: company?.address ?? null,
+        cidade: company?.cidade ?? null,
+        estado: company?.estado ?? null,
+        telefone: company?.phone ?? null,
+      },
+      cliente: {
+        nome: order.customer?.name ?? order.customerName ?? null,
+        cpf_cnpj: order.customer?.document ?? null,
+        telefone: order.customer?.phone ?? null,
+        bairro: order.customer?.bairro ?? null,
+        cep: order.customer?.cep ?? null,
+      },
+      pedido: {
+        numero: String(order.number),
+        data_emissao: dataEmissao,
+        hora_emissao: horaEmissao,
+        forma_pagamento: PAYMENT_METHOD_LABEL[order.paymentMethod],
+        vencimento: order.dueDate ? order.dueDate.toISOString().slice(0, 10) : null,
+        valor_total: Number(order.total),
+        valor_bruto: Number(order.subtotal),
+        desconto: Number(order.discount),
+        itens_qtd: order.items.length,
+      },
+      itens: order.items.map((i) => ({
+        codigo: i.product?.sku ?? null,
+        descricao: i.productName,
+        marca: null,
+        unidade: i.product?.unit ?? 'UN',
+        quantidade: i.quantity,
+        valor_unitario: Number(i.unitPrice),
+        desconto: Number(i.discount),
+        valor_total: Number(i.total),
+      })),
+      vendedor: order.createdBy?.name ?? null,
+      observacoes: order.notes ?? null,
+    };
   }
 
   async summary(): Promise<{

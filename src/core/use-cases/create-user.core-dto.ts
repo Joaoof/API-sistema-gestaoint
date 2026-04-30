@@ -15,6 +15,12 @@ export class UserResponseDto {
   email: string;
 
   @Field(() => String, { nullable: true })
+  phone?: string;
+
+  @Field(() => String, { nullable: true })
+  avatarUrl?: string;
+
+  @Field(() => String, { nullable: true })
   company_id?: string;
 
   @Field(() => String)

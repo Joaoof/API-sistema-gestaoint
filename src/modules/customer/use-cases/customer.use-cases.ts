@@ -15,6 +15,8 @@ export class CustomerUseCases {
         email: input.email ?? null,
         phone: input.phone ?? null,
         address: input.address ?? null,
+        bairro: input.bairro ?? null,
+        cep: input.cep ?? null,
       },
     });
     return customer as unknown as CustomerEntity;

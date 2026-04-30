@@ -105,6 +105,8 @@ model Customer {
   email       String?
   phone       String?
   address     String?
+  bairro      String?
+  cep         String?
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
   receivables AccountReceivable[]
@@ -115,24 +117,27 @@ model Customer {
 }
 
 model Order {
-  id              String             @id @default(uuid())
-  number          Int                @default(autoincrement())
-  customerId      String?
-  customerName    String?
-  status          OrderStatus        @default(CONFIRMED)
-  paymentMethod   OrderPaymentMethod @default(CASH)
-  subtotal        Decimal            @default(0)
-  discount        Decimal            @default(0)
-  total           Decimal            @default(0)
-  notes           String?
-  createdById     String?
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  customer        Customer?          @relation(fields: [customerId], references: [id])
-  items           OrderItem[]
-  delivery        Delivery?
+  id            String             @id @default(uuid())
+  number        Int                @default(autoincrement())
+  customerId    String?
+  customerName  String?
+  status        OrderStatus        @default(CONFIRMED)
+  paymentMethod OrderPaymentMethod @default(CASH)
+  subtotal      Decimal            @default(0)
+  discount      Decimal            @default(0)
+  total         Decimal            @default(0)
+  notes         String?
+  dueDate       DateTime?
+  createdById   String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  customer      Customer?          @relation(fields: [customerId], references: [id])
+  createdBy     Users?             @relation(fields: [createdById], references: [id])
+  items         OrderItem[]
+  delivery      Delivery?
 
   @@index([customerId])
+  @@index([createdById])
   @@index([createdAt(sort: Desc)])
   @@index([status])
 }
@@ -231,17 +236,22 @@ model Inventory {
 }
 
 model Company {
-  id          String       @id @default(cuid())
-  name        String       @unique
-  email       String?      @unique
-  phone       String?
-  address     String?
-  cnpj        String?      @unique
-  logoUrl     String?
-  is_active   Boolean?     @default(true)
-  createdAt   DateTime     @default(now())
-  Users       Users[]
-  companyPlan CompanyPlan?
+  id                String       @id @default(cuid())
+  name              String       @unique
+  nomeFantasia      String?
+  razaoSocial       String?
+  inscricaoEstadual String?
+  cidade            String?
+  estado            String?
+  email             String?      @unique
+  phone             String?
+  address           String?
+  cnpj              String?      @unique
+  logoUrl           String?
+  is_active         Boolean?     @default(true)
+  createdAt         DateTime     @default(now())
+  Users             Users[]
+  companyPlan       CompanyPlan?
 }
 
 model Modules {
@@ -256,6 +266,8 @@ model Users {
   email         String         @unique
   password_hash String
   name          String
+  phone         String?
+  avatarUrl     String?
   company_id    String
   role          String
   is_active     Boolean
@@ -264,6 +276,7 @@ model Users {
   Product       Product[]
   CashMovement  CashMovement[]
   Category      Category[]
+  Order         Order[]
 
   @@index([company_id])
   @@index([company_id, email])

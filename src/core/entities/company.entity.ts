@@ -11,11 +11,15 @@ export class Company {
     public address?: string,
     public cnpj?: string,
     public logoUrl?: string,
+    public nomeFantasia?: string,
+    public razaoSocial?: string,
+    public inscricaoEstadual?: string,
+    public cidade?: string,
+    public estado?: string,
     public createdAt?: Date,
     public updatedAt?: Date,
   ) {}
 
-  // Método estático pra converter do formato do Prisma pro formato da entity
   static fromPrisma(data: CompanyDto): Company {
     return new Company(
       data.id,
@@ -25,6 +29,11 @@ export class Company {
       data.address,
       data.cnpj,
       data.logoUrl,
+      data.nomeFantasia,
+      data.razaoSocial,
+      data.inscricaoEstadual,
+      data.cidade,
+      data.estado,
     );
   }
 }
