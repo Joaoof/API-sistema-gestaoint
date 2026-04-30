@@ -5,6 +5,7 @@ import { ProductResolver } from './product.resolver';
 import { CreateProductUseCase } from './use-cases/create-product.use-case';
 import { DeleteProductUseCase } from './use-cases/delete-product.use-case';
 import { ListProductsUseCase } from './use-cases/list-products.use-case';
+import { UpdateProductUseCase } from './use-cases/update-product.use-case';
 
 @Module({
   imports: [PrismaModule, R2Module],
@@ -13,7 +14,13 @@ import { ListProductsUseCase } from './use-cases/list-products.use-case';
     CreateProductUseCase,
     ListProductsUseCase,
     DeleteProductUseCase,
+    UpdateProductUseCase,
   ],
-  exports: [CreateProductUseCase, ListProductsUseCase, DeleteProductUseCase],
+  exports: [
+    CreateProductUseCase,
+    ListProductsUseCase,
+    DeleteProductUseCase,
+    UpdateProductUseCase,
+  ],
 })
 export class ProductModule {}
