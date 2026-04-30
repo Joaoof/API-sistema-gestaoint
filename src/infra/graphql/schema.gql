@@ -61,6 +61,22 @@ input CreateCashMovementInput {
   value: Float!
 }
 
+input CreateProductInput {
+  active: Boolean! = true
+  categoryId: String
+  costPrice: Float!
+  description: String
+  images: [ProductImageInput!]! = []
+  minStock: Int! = 0
+  nameProduct: String!
+  quantity: Int! = 0
+  salePrice: Float!
+  sku: String
+  supplierId: String
+  unit: String! = "UN"
+  weight: Float
+}
+
 type DashboardStats {
   monthlyTotal: Float!
   todayBalance: Float!
@@ -112,6 +128,8 @@ type Mutation {
   cashMovementUpdate(movementId: String!, movementUpdateCash: UpdateCashMovementInput!): Boolean!
   changePassword(input: ChangePasswordInput!): String!
   createCashMovement(input: CreateCashMovementInput!): CashMovementGraphQL!
+  createProductMutation(input: CreateProductInput!): ProductEntity!
+  deleteProductMutation(id: String!): Boolean!
   login(loginUserInput: LoginUserInput!): AuthPayload!
 }
 
@@ -130,11 +148,53 @@ type PlanDto {
   name: String!
 }
 
+type ProductEntity {
+  categoryId: String
+  costPrice: Float!
+  createdAt: DateTime!
+  description: String
+  id: ID!
+  images: [ProductImageEntity!]!
+  minStock: Int!
+  nameProduct: String!
+  quantity: Int!
+  salePrice: Float!
+  sku: String
+  status: ProductStatus!
+  supplierId: String
+  unit: String!
+  updatedAt: DateTime!
+  weight: Float
+}
+
+type ProductImageEntity {
+  createdAt: DateTime!
+  id: ID!
+  isPrimary: Boolean!
+  key: String!
+  order: Int!
+  url: String!
+}
+
+input ProductImageInput {
+  isPrimary: Boolean! = false
+  key: String!
+  order: Int! = 0
+  url: String!
+}
+
+enum ProductStatus {
+  ACTIVE
+  DISCONTINUED
+  INACTIVE
+}
+
 type Query {
   cashMovements(input: FindAllCashMovementInput): [CashMovementGraphQL!]!
   company(id: String!): CompanyDto!
   dashboardStats(input: DashboardStatsInput): DashboardStats!
   me: UserResponseDto!
+  products(categoryId: String, search: String, skip: Float, status: ProductStatus, take: Float): [ProductEntity!]!
 }
 
 input UpdateCashMovementInput {

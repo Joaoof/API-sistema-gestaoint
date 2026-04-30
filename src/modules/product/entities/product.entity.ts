@@ -7,7 +7,7 @@ registerEnumType(ProductStatus, { name: 'ProductStatus' });
 @ObjectType()
 export class ProductEntity {
   @Field(() => ID) id!: string;
-  @Field({ nullable: true }) sku?: string | null;
+  @Field(() => String, { nullable: true }) sku?: string | null;
   @Field() nameProduct!: string;
   @Field(() => Int) quantity!: number;
   @Field(() => Int) minStock!: number;
@@ -17,9 +17,9 @@ export class ProductEntity {
   @Field(() => Float) salePrice!: number;
   @Field(() => ProductStatus) status!: ProductStatus;
 
-  @Field({ nullable: true }) categoryId?: string | null;
-  @Field({ nullable: true }) supplierId?: string | null;
-  @Field({ nullable: true }) description?: string | null;
+  @Field(() => String, { nullable: true }) categoryId?: string | null;
+  @Field(() => String, { nullable: true }) supplierId?: string | null;
+  @Field(() => String, { nullable: true }) description?: string | null;
 
   @Field(() => [ProductImageEntity]) images!: ProductImageEntity[];
 

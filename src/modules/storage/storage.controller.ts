@@ -42,9 +42,9 @@ export class StorageController {
   /**
    * Remove um asset por key. A `:key` aceita barras (products/uuid-x.jpg).
    */
-  @Delete(':key(*)')
+  @Delete('*')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('key') key: string): Promise<void> {
+  async remove(@Param('*') key: string): Promise<void> {
     await this.r2.delete(decodeURIComponent(key));
   }
 }
