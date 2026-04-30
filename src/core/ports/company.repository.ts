@@ -7,6 +7,7 @@ export interface UpdateCompanyData {
   nomeFantasia?: string | null;
   razaoSocial?: string | null;
   inscricaoEstadual?: string | null;
+  bairro?: string | null;
   cidade?: string | null;
   estado?: string | null;
   email?: string | null;

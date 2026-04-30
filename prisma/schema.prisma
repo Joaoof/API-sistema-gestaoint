@@ -249,6 +249,7 @@ model Company {
   nomeFantasia      String?
   razaoSocial       String?
   inscricaoEstadual String?
+  bairro            String?
   cidade            String?
   estado            String?
   email             String?      @unique

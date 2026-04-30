@@ -21,6 +21,9 @@ export class CompanyDto {
   inscricaoEstadual?: string;
 
   @Field(() => String, { nullable: true })
+  bairro?: string;
+
+  @Field(() => String, { nullable: true })
   cidade?: string;
 
   @Field(() => String, { nullable: true })
@@ -67,6 +70,12 @@ export class UpdateCompanyInput {
   @IsString()
   @MaxLength(32)
   inscricaoEstadual?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  bairro?: string;
 
   @Field({ nullable: true })
   @IsOptional()

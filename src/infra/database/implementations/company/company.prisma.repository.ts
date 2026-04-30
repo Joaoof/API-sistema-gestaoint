@@ -28,6 +28,7 @@ export class PrismaCompaniesRepository implements CompaniesRepository {
       nomeFantasia: data.nomeFantasia ?? undefined,
       razaoSocial: data.razaoSocial ?? undefined,
       inscricaoEstadual: data.inscricaoEstadual ?? undefined,
+      bairro: data.bairro ?? undefined,
       cidade: data.cidade ?? undefined,
       estado: data.estado ?? undefined,
     });
@@ -48,6 +49,7 @@ export class PrismaCompaniesRepository implements CompaniesRepository {
         ...(data.inscricaoEstadual !== undefined
           ? { inscricaoEstadual: data.inscricaoEstadual }
           : {}),
+        ...(data.bairro !== undefined ? { bairro: data.bairro } : {}),
         ...(data.cidade !== undefined ? { cidade: data.cidade } : {}),
         ...(data.estado !== undefined ? { estado: data.estado } : {}),
       },

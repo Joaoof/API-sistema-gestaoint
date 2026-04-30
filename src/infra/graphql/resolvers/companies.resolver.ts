@@ -26,6 +26,7 @@ function toDto(company: Company): CompanyDto {
     nomeFantasia: company.nomeFantasia,
     razaoSocial: company.razaoSocial,
     inscricaoEstadual: company.inscricaoEstadual,
+    bairro: company.bairro,
     cidade: company.cidade,
     estado: company.estado,
   };
@@ -82,6 +83,7 @@ export class CompaniesResolver {
       nomeFantasia: input.nomeFantasia ?? null,
       razaoSocial: input.razaoSocial ?? null,
       inscricaoEstadual: input.inscricaoEstadual ?? null,
+      bairro: input.bairro ?? null,
       cidade: input.cidade ?? null,
       estado: input.estado ?? null,
     });

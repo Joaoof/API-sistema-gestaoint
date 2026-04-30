@@ -14,6 +14,7 @@ export class Company {
     public nomeFantasia?: string,
     public razaoSocial?: string,
     public inscricaoEstadual?: string,
+    public bairro?: string,
     public cidade?: string,
     public estado?: string,
     public createdAt?: Date,
@@ -32,6 +33,7 @@ export class Company {
       data.nomeFantasia,
       data.razaoSocial,
       data.inscricaoEstadual,
+      data.bairro,
       data.cidade,
       data.estado,
     );

@@ -267,7 +267,7 @@ export class OrderUseCases {
     return {
       empresa: {
         nome_fantasia: company?.nomeFantasia ?? company?.name ?? null,
-        razao_social: company?.razaoSocial ?? null,
+        razao_social: company?.razaoSocial ?? company?.name ?? null,
         cnpj: company?.cnpj ?? null,
         inscricao_estadual: company?.inscricaoEstadual ?? null,
         endereco: company?.address ?? null,
