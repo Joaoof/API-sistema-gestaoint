@@ -22,6 +22,7 @@ import { CustomerModule } from './modules/customer/customer.module';
 import { AccountReceivableModule } from './modules/accountReceivable/account-receivable.module';
 import { AccountPayableModule } from './modules/accountPayable/account-payable.module';
 import { CategoryModule } from './modules/category/category.module';
+import { OrderModule } from './modules/order/order.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { CategoryModule } from './modules/category/category.module';
     AccountReceivableModule,
     AccountPayableModule,
     CategoryModule,
+    OrderModule,
   ],
   controllers: [AppController],
   providers: [

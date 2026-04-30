@@ -45,6 +45,7 @@ model Product {
   inventory   Inventory?
   receivables AccountReceivable[]
   payables    AccountPayable[]
+  orderItems  OrderItem[]
 
   @@index([nameProduct])
   @@index([sku])
@@ -107,9 +108,48 @@ model Customer {
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
   receivables AccountReceivable[]
+  orders      Order[]
 
   @@index([name])
   @@index([document])
+}
+
+model Order {
+  id              String             @id @default(uuid())
+  number          Int                @default(autoincrement())
+  customerId      String?
+  customerName    String?
+  status          OrderStatus        @default(CONFIRMED)
+  paymentMethod   OrderPaymentMethod @default(CASH)
+  subtotal        Decimal            @default(0)
+  discount        Decimal            @default(0)
+  total           Decimal            @default(0)
+  notes           String?
+  createdById     String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  customer        Customer?          @relation(fields: [customerId], references: [id])
+  items           OrderItem[]
+
+  @@index([customerId])
+  @@index([createdAt(sort: Desc)])
+  @@index([status])
+}
+
+model OrderItem {
+  id          String  @id @default(uuid())
+  orderId     String
+  productId   String
+  productName String
+  quantity    Int
+  unitPrice   Decimal
+  discount    Decimal @default(0)
+  total       Decimal
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
 }
 
 model AccountReceivable {
@@ -362,6 +402,24 @@ enum AccountStatus {
   PAID
   OVERDUE
   CANCELED
+}
+
+enum OrderStatus {
+  DRAFT
+  CONFIRMED
+  PAID
+  CANCELED
+  REFUNDED
+}
+
+enum OrderPaymentMethod {
+  CASH
+  PIX
+  CREDIT_CARD
+  DEBIT_CARD
+  BOLETO
+  TRANSFER
+  OTHER
 }
 
 enum CommissionRuleType {
