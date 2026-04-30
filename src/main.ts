@@ -18,6 +18,7 @@ async function bootstrap() {
           'https://gestaoint.netlify.app', // ✅ Espaços removidos
           'https://studio.apollographql.com',
           'http://localhost:5173',
+          'https://a252dc75a2305508290f0658d1fb21b2.r2.cloudflarestorage.com/gestao-int'
         ],
         credentials: true,
         allowedHeaders: [
