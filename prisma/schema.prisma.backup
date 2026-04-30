@@ -1,0 +1,296 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // ou "mysql", "sqlite", etc.
+  url      = env("BANCO_URL")
+  directUrl = env("BANCO_URL_DIRECT")
+  relationMode = "prisma"
+}
+
+enum CategoryStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Gift {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Decimal
+  imageUrl    String?
+  status      String   @default("available") // available, reserved
+  reservedBy  String? // Nome de quem reservou
+  createdAt   DateTime @default(now())
+}
+
+model Product {
+  id          String        @id @default(uuid())
+  sku         String?       @unique
+  nameProduct String        @unique
+  quantity    Int           @default(0)
+  minStock    Int           @default(0)
+  unit        String        @default("UN")
+  weight      Decimal?
+  costPrice   Decimal       @default(0.0)
+  salePrice   Decimal       @default(0.0)
+  status      ProductStatus @default(ACTIVE)
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
+
+  createdById String?
+  createdBy   Users?  @relation(fields: [createdById], references: [id])
+
+  description String?
+
+  images ProductImage[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  inventory Inventory?
+
+  @@index([nameProduct])
+  @@index([sku])
+  @@index([status])
+  @@index([categoryId])
+  @@index([supplierId])
+}
+
+/// Imagens de um produto armazenadas no Cloudflare R2.
+/// `key` é a chave no bucket (ex: products/uuid-slug.jpg) — usada para deleção.
+/// `url` é a URL pública servida (custom domain ou r2.cloudflarestorage.com).
+model ProductImage {
+  id        String  @id @default(uuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  url       String
+  key       String  @unique
+  isPrimary Boolean @default(false)
+  order     Int     @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@index([productId, order])
+}
+
+model Category {
+  id          String         @id @default(uuid())
+  name        String
+  description String?
+  status      CategoryStatus
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  Product     Product[]
+
+  userId String?
+  user  Users? @relation(fields: [userId], references: [id])
+
+  @@index([name], map: "idx_category_name")
+  @@index([status], map: "idx_category_status")
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  email     String?  @unique
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+
+  Product Product[]
+}
+
+model Inventory {
+  id        String   @id @default(cuid())
+  productId String   @unique
+  quantity  Int      @default(0)
+  minStock  Int      @default(10)
+  product   Product  @relation(fields: [productId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([quantity])
+}
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  email     String?  @unique
+  phone     String?
+  address   String?
+  cnpj      String?  @unique
+  logoUrl   String?
+  is_active Boolean?  @default(true)
+  createdAt DateTime @default(now())
+
+  Users       Users[]
+  companyPlan CompanyPlan?
+}
+
+model Modules {
+  id          String @id @default(cuid())
+  name        String
+  module_key  String
+  description String
+}
+
+model Users {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password_hash String
+  name          String
+  company_id    String
+  role          String
+  is_active     Boolean
+  createdAt     DateTime @default(now())
+
+  company Company? @relation(fields: [company_id], references: [id])
+
+  Product Product[]
+
+  CashMovement CashMovement[]
+
+  @@index([company_id])
+  @@index([company_id, email])
+
+  Category Category[]
+}
+
+
+model AuthLoginView {
+  user_id      String   @id @map("user_id")
+  user_email   String   @map("user_email")
+  user_role    String   @map("user_role")
+  company_id   String   @map("company_id")
+  company_name String   @map("company_name")
+  company_logo String?  @map("company_logo")
+  plan_id      String   @map("plan_id")
+  plan_name    String   @map("plan_name")
+  modules      Json     @map("modules")
+  
+  @@map("auth_login_view")
+}
+
+model Plan {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  isActive    Boolean  @default(true)
+
+  module       PlanModule[]
+  companyPlans CompanyPlan[]
+}
+
+model Module {
+  id          String  @id @default(cuid())
+  name        String
+  module_key  String  @unique
+  description String?
+
+  planModule PlanModule[]
+}
+
+model PlanModule {
+  id         String   @id @default(cuid())
+  planId     String
+  moduleId   String
+  isActive   Boolean  @default(true)
+  permission String[] // Ex: ["READ", "WRITE"]
+
+  plan   Plan   @relation(fields: [planId], references: [id])
+  module Module @relation(fields: [moduleId], references: [id])
+}
+
+model CompanyPlan {
+  id         String    @id @default(cuid())
+  company_id String    @unique
+  planId     String
+  startDate  DateTime  @default(now())
+  endDate    DateTime?
+
+  company Company @relation(fields: [company_id], references: [id])
+  plan    Plan    @relation(fields: [planId], references: [id])
+
+  isActive Boolean @default(true)
+
+  @@index([id], name: "idx_company_id")
+}
+
+model CashMovement {
+  id          String      @id @default(uuid())
+  type        MovementType
+  category    MovementCategory
+  typePayment MovementTypePayment?
+  value       Decimal
+  description String
+  date        DateTime    @default(now())
+
+  user_id   String
+  user        Users       @relation(fields: [user_id], references: [id])
+
+
+  @@index([user_id, date(sort: Desc)])
+  @@index([date])
+}
+
+model MvCashMovementsPerUser {
+  user_id     String   @map("user_id")
+  id          String   @map("id")            @id
+  type        MovementType  @map("type")
+  category    MovementCategory @map("category")
+  typePayment MovementTypePayment? @map("typePayment")
+  value       Decimal  @map("value")
+  description String   @map("description")
+  date        DateTime @map("date")
+
+  @@map("mv_cash_movements_per_user")
+  @@index([user_id, date(sort: Desc)])
+}
+
+
+enum MovementType {
+  ENTRY
+  EXIT
+}
+
+enum MovementCategory {
+  // Entrada
+  SALE         // Venda
+  CHANGE       // Troco
+  OTHER_IN     // Outros
+  // Saída
+  EXPENSE      // Despesa
+  WITHDRAWAL   // Retirada
+  PAYMENT      // Pagamento
+}
+enum MovementTypePayment {
+  CASH        // Dinheiro
+  CREDIT_CARD // Cartão de Crédito
+  PIX         // Pix
+  DEBIT_CARD  // Cartão de Débito
+  OTHER       // Outros
+}
+
+enum EntryTypeClient {
+  Sale
+  Change
+  Others
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  DISCONTINUED
+}

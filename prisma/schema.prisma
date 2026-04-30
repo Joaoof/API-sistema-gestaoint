@@ -1,19 +1,12 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql" // ou "mysql", "sqlite", etc.
-  url      = env("BANCO_URL")
-  directUrl = env("BANCO_URL_DIRECT")
+  provider     = "postgresql"
+  url          = env("BANCO_URL")
+  directUrl    = env("BANCO_URL_DIRECT")
   relationMode = "prisma"
-}
-
-enum CategoryStatus {
-  ACTIVE
-  INACTIVE
 }
 
 model Gift {
@@ -22,40 +15,57 @@ model Gift {
   description String?
   price       Decimal
   imageUrl    String?
-  status      String   @default("available") // available, reserved
-  reservedBy  String? // Nome de quem reservou
+  status      String   @default("available")
+  reservedBy  String?
   createdAt   DateTime @default(now())
 }
 
 model Product {
-  id          String        @id @default(uuid())
-  nameProduct String        @unique
-  quantity    Int           @default(0)
-  costPrice   Decimal       @default(0.0)
-  salePrice   Decimal       @default(0.0)
-  status      ProductStatus @default(ACTIVE)
-
-  categoryId String?
-  category   Category? @relation(fields: [categoryId], references: [id])
-
-  supplierId String?
-  supplier   Supplier? @relation(fields: [supplierId], references: [id])
-
+  id          String         @id @default(uuid())
+  nameProduct String         @unique
+  quantity    Int            @default(0)
+  costPrice   Decimal        @default(0.0)
+  salePrice   Decimal        @default(0.0)
+  status      ProductStatus  @default(ACTIVE)
+  categoryId  String?
+  supplierId  String?
   createdById String?
-  createdBy   Users?  @relation(fields: [createdById], references: [id])
-
   description String?
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  inventory Inventory?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  deletedAt   DateTime?
+  sku         String?
+  minStock    Int            @default(0)
+  unit        String         @default("UN")
+  weight      Decimal?       @db.Decimal
+  category    Category?      @relation(fields: [categoryId], references: [id])
+  supplier    Supplier?      @relation(fields: [supplierId], references: [id])
+  createdBy   Users?         @relation(fields: [createdById], references: [id])
+  images      ProductImage[]
+  inventory   Inventory?
 
   @@index([nameProduct])
+  @@index([sku])
   @@index([status])
   @@index([categoryId])
   @@index([supplierId])
+}
+
+/// Imagens de um produto armazenadas no Cloudflare R2.
+/// `key` é a chave no bucket (ex: products/uuid-slug.jpg) — usada para deleção.
+/// `url` é a URL pública servida (custom domain ou r2.cloudflarestorage.com).
+model ProductImage {
+  id        String   @id @default(uuid())
+  productId String
+  url       String
+  key       String   @unique
+  isPrimary Boolean  @default(false)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([productId, order])
 }
 
 model Category {
@@ -65,24 +75,22 @@ model Category {
   status      CategoryStatus
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+  userId      String?
   Product     Product[]
-
-  userId String?
-  user  Users? @relation(fields: [userId], references: [id])
+  user        Users?         @relation(fields: [userId], references: [id])
 
   @@index([name], map: "idx_category_name")
   @@index([status], map: "idx_category_status")
 }
 
 model Supplier {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  email     String?  @unique
+  id        String    @id @default(cuid())
+  name      String    @unique
+  email     String?   @unique
   phone     String?
   address   String?
-  createdAt DateTime @default(now())
-
-  Product Product[]
+  createdAt DateTime  @default(now())
+  Product   Product[]
 }
 
 model Inventory {
@@ -90,24 +98,23 @@ model Inventory {
   productId String   @unique
   quantity  Int      @default(0)
   minStock  Int      @default(10)
-  product   Product  @relation(fields: [productId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  product   Product  @relation(fields: [productId], references: [id])
 
   @@index([quantity])
 }
 
 model Company {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  email     String?  @unique
-  phone     String?
-  address   String?
-  cnpj      String?  @unique
-  logoUrl   String?
-  is_active Boolean?  @default(true)
-  createdAt DateTime @default(now())
-
+  id          String       @id @default(cuid())
+  name        String       @unique
+  email       String?      @unique
+  phone       String?
+  address     String?
+  cnpj        String?      @unique
+  logoUrl     String?
+  is_active   Boolean?     @default(true)
+  createdAt   DateTime     @default(now())
   Users       Users[]
   companyPlan CompanyPlan?
 }
@@ -120,60 +127,39 @@ model Modules {
 }
 
 model Users {
-  id            String   @id @default(cuid())
-  email         String   @unique
+  id            String         @id @default(cuid())
+  email         String         @unique
   password_hash String
   name          String
   company_id    String
   role          String
   is_active     Boolean
-  createdAt     DateTime @default(now())
-
-  company Company? @relation(fields: [company_id], references: [id])
-
-  Product Product[]
-
-  CashMovement CashMovement[]
+  createdAt     DateTime       @default(now())
+  company       Company?       @relation(fields: [company_id], references: [id])
+  Product       Product[]
+  CashMovement  CashMovement[]
+  Category      Category[]
 
   @@index([company_id])
   @@index([company_id, email])
-
-  Category Category[]
-}
-
-
-model AuthLoginView {
-  user_id      String   @id @map("user_id")
-  user_email   String   @map("user_email")
-  user_role    String   @map("user_role")
-  company_id   String   @map("company_id")
-  company_name String   @map("company_name")
-  company_logo String?  @map("company_logo")
-  plan_id      String   @map("plan_id")
-  plan_name    String   @map("plan_name")
-  modules      Json     @map("modules")
-  
-  @@map("auth_login_view")
 }
 
 model Plan {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-  isActive    Boolean  @default(true)
-
+  id           String        @id @default(cuid())
+  name         String        @unique
+  description  String?
+  createdAt    DateTime      @default(now())
+  isActive     Boolean       @default(true)
   module       PlanModule[]
   companyPlans CompanyPlan[]
 }
 
 model Module {
-  id          String  @id @default(cuid())
+  id          String       @id @default(cuid())
   name        String
-  module_key  String  @unique
+  module_key  String       @unique
   description String?
-
-  planModule PlanModule[]
+  planModule  PlanModule[]
 }
 
 model PlanModule {
@@ -181,10 +167,9 @@ model PlanModule {
   planId     String
   moduleId   String
   isActive   Boolean  @default(true)
-  permission String[] // Ex: ["READ", "WRITE"]
-
-  plan   Plan   @relation(fields: [planId], references: [id])
-  module Module @relation(fields: [moduleId], references: [id])
+  permission String[]
+  plan       Plan     @relation(fields: [planId], references: [id])
+  module     Module   @relation(fields: [moduleId], references: [id])
 }
 
 model CompanyPlan {
@@ -193,46 +178,86 @@ model CompanyPlan {
   planId     String
   startDate  DateTime  @default(now())
   endDate    DateTime?
+  isActive   Boolean   @default(true)
+  company    Company   @relation(fields: [company_id], references: [id])
+  plan       Plan      @relation(fields: [planId], references: [id])
 
-  company Company @relation(fields: [company_id], references: [id])
-  plan    Plan    @relation(fields: [planId], references: [id])
-
-  isActive Boolean @default(true)
-
-  @@index([id], name: "idx_company_id")
+  @@index([id], map: "idx_company_id")
 }
 
 model CashMovement {
-  id          String      @id @default(uuid())
+  id          String               @id @default(uuid())
   type        MovementType
   category    MovementCategory
-  typePayment MovementTypePayment?
   value       Decimal
   description String
-  date        DateTime    @default(now())
-
-  user_id   String
-  user        Users       @relation(fields: [user_id], references: [id])
-
+  date        DateTime             @default(now())
+  user_id     String
+  typePayment MovementTypePayment?
+  user        Users                @relation(fields: [user_id], references: [id])
 
   @@index([user_id, date(sort: Desc)])
   @@index([date])
 }
 
-model MvCashMovementsPerUser {
-  user_id     String   @map("user_id")
-  id          String   @map("id")            @id
-  type        MovementType  @map("type")
-  category    MovementCategory @map("category")
-  typePayment MovementTypePayment? @map("typePayment")
-  value       Decimal  @map("value")
-  description String   @map("description")
-  date        DateTime @map("date")
-
-  @@map("mv_cash_movements_per_user")
-  @@index([user_id, date(sort: Desc)])
+model CommissionRuleConfig {
+  id                    String             @id
+  key                   String             @unique
+  commissionType        CommissionRuleType
+  commissionValue       Decimal
+  pointsPerCurrencyUnit Decimal            @default(1)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime
 }
 
+model Sale {
+  id               String   @id
+  sellerId         String
+  totalAmount      Decimal
+  commissionAmount Decimal
+  pointsEarned     Int
+  createdAt        DateTime @default(now())
+
+  @@index([sellerId, createdAt(sort: Desc)])
+}
+
+model SaleItem {
+  id         String  @id
+  saleId     String
+  productId  String
+  quantity   Int
+  unitPrice  Decimal
+  totalPrice Decimal
+
+  @@index([productId])
+  @@index([saleId])
+}
+
+model SalesCatalogProduct {
+  id        String   @id
+  name      String
+  sku       String   @unique
+  unitPrice Decimal
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+model Seller {
+  id              String   @id
+  name            String
+  email           String   @unique
+  active          Boolean  @default(true)
+  totalCommission Decimal  @default(0)
+  totalPoints     Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime
+}
+
+enum CategoryStatus {
+  ACTIVE
+  INACTIVE
+}
 
 enum MovementType {
   ENTRY
@@ -240,21 +265,20 @@ enum MovementType {
 }
 
 enum MovementCategory {
-  // Entrada
-  SALE         // Venda
-  CHANGE       // Troco
-  OTHER_IN     // Outros
-  // Saída
-  EXPENSE      // Despesa
-  WITHDRAWAL   // Retirada
-  PAYMENT      // Pagamento
+  SALE
+  CHANGE
+  OTHER_IN
+  EXPENSE
+  WITHDRAWAL
+  PAYMENT
 }
+
 enum MovementTypePayment {
-  CASH        // Dinheiro
-  CREDIT_CARD // Cartão de Crédito
-  PIX         // Pix
-  DEBIT_CARD  // Cartão de Débito
-  OTHER       // Outros
+  CASH
+  PIX
+  CREDIT_CARD
+  DEBIT_CARD
+  OTHER
 }
 
 enum EntryTypeClient {
@@ -267,4 +291,9 @@ enum ProductStatus {
   ACTIVE
   INACTIVE
   DISCONTINUED
+}
+
+enum CommissionRuleType {
+  PERCENTAGE
+  FIXED_PER_SALE
 }

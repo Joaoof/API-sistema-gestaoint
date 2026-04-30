@@ -16,6 +16,8 @@ import { GraphQLExceptionFilter } from './infra/filters/gql-exception.filter';
 import { CompanyModule } from './modules/company/company.module';
 import { CashMovementModule } from './modules/cashMovement/cash-movement.module';
 import { RedisModule } from './infra/cache/redis.module';
+import { StorageModule } from './modules/storage/storage.module';
+import { ProductModule } from './modules/product/product.module';
 
 @Module({
   imports: [
@@ -54,6 +56,8 @@ import { RedisModule } from './infra/cache/redis.module';
     CompanyModule,
     CashMovementModule,
     RedisModule,
+    StorageModule,
+    ProductModule,
   ],
   controllers: [AppController],
   providers: [
