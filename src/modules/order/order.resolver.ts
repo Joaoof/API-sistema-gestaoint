@@ -71,4 +71,9 @@ export class OrderResolver {
   async cancelOrder(@Args('id') id: string): Promise<OrderEntity> {
     return this.useCases.cancel(id);
   }
+
+  @Mutation(() => Boolean)
+  async deleteOrder(@Args('id') id: string): Promise<boolean> {
+    return this.useCases.remove(id);
+  }
 }

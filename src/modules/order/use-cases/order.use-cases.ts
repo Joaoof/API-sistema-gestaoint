@@ -248,6 +248,46 @@ export class OrderUseCases {
     return toEntity(updated);
   }
 
+  async remove(id: string): Promise<boolean> {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: { items: true },
+    });
+    if (!order) throw new NotFoundException('Pedido não encontrado.');
+
+    await this.prisma.$transaction(async (tx) => {
+      // Devolve estoque se o pedido estava ativo (CONFIRMED/PAID)
+      if (
+        order.status === OrderStatus.CONFIRMED ||
+        order.status === OrderStatus.PAID
+      ) {
+        for (const item of order.items) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { quantity: { increment: item.quantity } },
+          });
+        }
+      }
+      // Estorna comissão acumulada do vendedor (se houver)
+      if (
+        order.sellerId &&
+        Number(order.commissionAmount) > 0 &&
+        (order.status === OrderStatus.CONFIRMED || order.status === OrderStatus.PAID)
+      ) {
+        await tx.seller.update({
+          where: { id: order.sellerId },
+          data: { totalCommission: { decrement: Number(order.commissionAmount) } },
+        });
+      }
+      // Remove entrega vinculada (se houver)
+      await tx.delivery.deleteMany({ where: { orderId: id } });
+      // OrderItem é cascade-delete via FK
+      await tx.order.delete({ where: { id } });
+    });
+
+    return true;
+  }
+
   async findForPrint(id: string): Promise<OrderPrintDto> {
     const order = await this.prisma.order.findUnique({
       where: { id },
