@@ -24,6 +24,7 @@ import { AccountPayableModule } from './modules/accountPayable/account-payable.m
 import { CategoryModule } from './modules/category/category.module';
 import { OrderModule } from './modules/order/order.module';
 import { DeliveryModule } from './modules/delivery/delivery.module';
+import { SellerModule } from './modules/seller/seller.module';
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { DeliveryModule } from './modules/delivery/delivery.module';
     CategoryModule,
     OrderModule,
     DeliveryModule,
+    SellerModule,
   ],
   controllers: [AppController],
   providers: [

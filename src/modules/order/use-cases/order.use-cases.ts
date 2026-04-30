@@ -25,6 +25,10 @@ function toEntity(raw: RawOrder): OrderEntity {
     number: raw.number,
     customerId: raw.customerId,
     customerName: raw.customerName,
+    sellerId: raw.sellerId,
+    sellerName: raw.sellerName,
+    commissionPercent: Number(raw.commissionPercent),
+    commissionAmount: Number(raw.commissionAmount),
     status: raw.status,
     paymentMethod: raw.paymentMethod,
     subtotal: Number(raw.subtotal),
@@ -124,12 +128,34 @@ export class OrderUseCases {
       throw new BadRequestException('Desconto maior que o subtotal.');
     }
 
-    // Transação: cria pedido + baixa estoque
+    // Resolve vendedor (snapshot de nome + cálculo de comissão)
+    let sellerId: string | null = null;
+    let sellerName: string | null = null;
+    let commissionPercent = 0;
+    let commissionAmount = 0;
+    if (input.sellerId) {
+      const seller = await this.prisma.seller.findUnique({ where: { id: input.sellerId } });
+      if (!seller) throw new BadRequestException('Vendedor não encontrado.');
+      if (!seller.active) throw new BadRequestException('Vendedor inativo.');
+      sellerId = seller.id;
+      sellerName = seller.name;
+      commissionPercent =
+        input.commissionPercent !== undefined && input.commissionPercent !== null
+          ? input.commissionPercent
+          : Number(seller.commissionPercent);
+      commissionAmount = Number(((total * commissionPercent) / 100).toFixed(2));
+    }
+
+    // Transação: cria pedido + baixa estoque + acumula comissão do vendedor
     const order = await this.prisma.$transaction(async (tx) => {
       const created = await tx.order.create({
         data: {
           customerId: input.customerId ?? null,
           customerName: input.customerName ?? null,
+          sellerId,
+          sellerName,
+          commissionPercent,
+          commissionAmount,
           status: input.status,
           paymentMethod: input.paymentMethod,
           subtotal,
@@ -153,6 +179,18 @@ export class OrderUseCases {
             data: { quantity: { decrement: item.quantity } },
           });
         }
+      }
+
+      // Acumula totalCommission do vendedor quando o pedido conta como faturado
+      if (
+        sellerId &&
+        commissionAmount > 0 &&
+        (input.status === OrderStatus.CONFIRMED || input.status === OrderStatus.PAID)
+      ) {
+        await tx.seller.update({
+          where: { id: sellerId },
+          data: { totalCommission: { increment: commissionAmount } },
+        });
       }
 
       return created;
@@ -249,7 +287,7 @@ export class OrderUseCases {
         desconto: Number(i.discount),
         valor_total: Number(i.total),
       })),
-      vendedor: order.createdBy?.name ?? null,
+      vendedor: order.sellerName ?? order.createdBy?.name ?? null,
       observacoes: order.notes ?? null,
     };
   }

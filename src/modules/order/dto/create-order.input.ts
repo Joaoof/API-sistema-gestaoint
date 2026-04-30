@@ -50,6 +50,17 @@ export class CreateOrderInput {
   @MaxLength(160)
   customerName?: string;
 
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  sellerId?: string;
+
+  @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  commissionPercent?: number;
+
   @Field(() => OrderStatus, { defaultValue: OrderStatus.CONFIRMED })
   @IsEnum(OrderStatus)
   status!: OrderStatus;

@@ -22,6 +22,10 @@ export class OrderEntity {
   @Field(() => Int) number!: number;
   @Field(() => String, { nullable: true }) customerId?: string | null;
   @Field(() => String, { nullable: true }) customerName?: string | null;
+  @Field(() => String, { nullable: true }) sellerId?: string | null;
+  @Field(() => String, { nullable: true }) sellerName?: string | null;
+  @Field(() => Float) commissionPercent!: number;
+  @Field(() => Float) commissionAmount!: number;
   @Field(() => OrderStatus) status!: OrderStatus;
   @Field(() => OrderPaymentMethod) paymentMethod!: OrderPaymentMethod;
   @Field(() => Float) subtotal!: number;

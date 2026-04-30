@@ -117,26 +117,32 @@ model Customer {
 }
 
 model Order {
-  id            String             @id @default(uuid())
-  number        Int                @default(autoincrement())
-  customerId    String?
-  customerName  String?
-  status        OrderStatus        @default(CONFIRMED)
-  paymentMethod OrderPaymentMethod @default(CASH)
-  subtotal      Decimal            @default(0)
-  discount      Decimal            @default(0)
-  total         Decimal            @default(0)
-  notes         String?
-  dueDate       DateTime?
-  createdById   String?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  customer      Customer?          @relation(fields: [customerId], references: [id])
-  createdBy     Users?             @relation(fields: [createdById], references: [id])
-  items         OrderItem[]
-  delivery      Delivery?
+  id                String             @id @default(uuid())
+  number            Int                @default(autoincrement())
+  customerId        String?
+  customerName      String?
+  sellerId          String?
+  sellerName        String?
+  commissionPercent Decimal            @default(0)
+  commissionAmount  Decimal            @default(0)
+  status            OrderStatus        @default(CONFIRMED)
+  paymentMethod     OrderPaymentMethod @default(CASH)
+  subtotal          Decimal            @default(0)
+  discount          Decimal            @default(0)
+  total             Decimal            @default(0)
+  notes             String?
+  dueDate           DateTime?
+  createdById       String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  customer          Customer?          @relation(fields: [customerId], references: [id])
+  seller            Seller?            @relation(fields: [sellerId], references: [id])
+  createdBy         Users?             @relation(fields: [createdById], references: [id])
+  items             OrderItem[]
+  delivery          Delivery?
 
   @@index([customerId])
+  @@index([sellerId])
   @@index([createdById])
   @@index([createdAt(sort: Desc)])
   @@index([status])
@@ -382,14 +388,21 @@ model SalesCatalogProduct {
 }
 
 model Seller {
-  id              String   @id
-  name            String
-  email           String   @unique
-  active          Boolean  @default(true)
-  totalCommission Decimal  @default(0)
-  totalPoints     Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime
+  id                String   @id @default(uuid())
+  name              String
+  email             String?  @unique
+  phone             String?
+  document          String?
+  commissionPercent Decimal  @default(0)
+  active            Boolean  @default(true)
+  totalCommission   Decimal  @default(0)
+  totalPoints       Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  orders            Order[]
+
+  @@index([active])
+  @@index([name])
 }
 
 enum CategoryStatus {
