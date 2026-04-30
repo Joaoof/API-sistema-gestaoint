@@ -17,12 +17,28 @@ import { DeliveryEntity } from './entities/delivery.entity';
 import { DeliveryUseCases } from './use-cases/delivery.use-cases';
 
 @ObjectType()
+export class DeliverableOrderCustomer {
+  @Field(() => ID) id!: string;
+  @Field() name!: string;
+  @Field(() => String, { nullable: true }) phone?: string | null;
+  @Field(() => String, { nullable: true }) document?: string | null;
+  @Field(() => String, { nullable: true }) address?: string | null;
+  @Field(() => String, { nullable: true }) bairro?: string | null;
+  @Field(() => String, { nullable: true }) cidade?: string | null;
+  @Field(() => String, { nullable: true }) estado?: string | null;
+  @Field(() => String, { nullable: true }) cep?: string | null;
+  @Field(() => Float, { nullable: true }) latitude?: number | null;
+  @Field(() => Float, { nullable: true }) longitude?: number | null;
+}
+
+@ObjectType()
 export class DeliverableOrder {
   @Field(() => ID) id!: string;
   @Field(() => Int) number!: number;
   @Field(() => String, { nullable: true }) customerName?: string | null;
   @Field(() => Float) total!: number;
   @Field() createdAt!: Date;
+  @Field(() => DeliverableOrderCustomer, { nullable: true }) customer?: DeliverableOrderCustomer | null;
 }
 
 @ObjectType()

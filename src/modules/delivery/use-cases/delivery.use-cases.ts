@@ -173,7 +173,7 @@ export class DeliveryUseCases {
     return toEntity(updated);
   }
 
-  async deliverableOrders(): Promise<{ id: string; number: number; customerName: string | null; total: number; createdAt: Date }[]> {
+  async deliverableOrders() {
     // Pedidos confirmados/pagos ainda sem entrega
     const orders = await this.prisma.order.findMany({
       where: {
@@ -190,6 +190,21 @@ export class DeliveryUseCases {
       customerName: o.customer?.name ?? o.customerName ?? null,
       total: Number(o.total),
       createdAt: o.createdAt,
+      customer: o.customer
+        ? {
+            id: o.customer.id,
+            name: o.customer.name,
+            phone: o.customer.phone,
+            document: o.customer.document,
+            address: o.customer.address,
+            bairro: o.customer.bairro,
+            cidade: o.customer.cidade,
+            estado: o.customer.estado,
+            cep: o.customer.cep,
+            latitude: o.customer.latitude,
+            longitude: o.customer.longitude,
+          }
+        : null,
     }));
   }
 
