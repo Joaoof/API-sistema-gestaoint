@@ -10,6 +10,9 @@ export interface UpdateCompanyData {
   bairro?: string | null;
   cidade?: string | null;
   estado?: string | null;
+  cep?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   email?: string | null;
   phone?: string | null;
   address?: string | null;

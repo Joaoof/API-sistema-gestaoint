@@ -28,4 +28,12 @@ export class CustomerResolver {
   ): Promise<CustomerEntity> {
     return this.useCases.create(input);
   }
+
+  @Mutation(() => CustomerEntity)
+  async updateCustomer(
+    @Args('id') id: string,
+    @Args('input') input: CreateCustomerInput,
+  ): Promise<CustomerEntity> {
+    return this.useCases.update(id, input);
+  }
 }

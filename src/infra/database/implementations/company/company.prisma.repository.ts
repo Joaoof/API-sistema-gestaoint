@@ -30,6 +30,9 @@ export class PrismaCompaniesRepository implements CompaniesRepository {
       inscricaoEstadual: data.inscricaoEstadual ?? undefined,
       bairro: data.bairro ?? undefined,
       cidade: data.cidade ?? undefined,
+      cep: data.cep ?? undefined,
+      latitude: data.latitude ?? undefined,
+      longitude: data.longitude ?? undefined,
       estado: data.estado ?? undefined,
     });
   }
@@ -52,6 +55,9 @@ export class PrismaCompaniesRepository implements CompaniesRepository {
         ...(data.bairro !== undefined ? { bairro: data.bairro } : {}),
         ...(data.cidade !== undefined ? { cidade: data.cidade } : {}),
         ...(data.estado !== undefined ? { estado: data.estado } : {}),
+        ...(data.cep !== undefined ? { cep: data.cep } : {}),
+        ...(data.latitude !== undefined ? { latitude: data.latitude } : {}),
+        ...(data.longitude !== undefined ? { longitude: data.longitude } : {}),
       },
     });
 
@@ -66,8 +72,12 @@ export class PrismaCompaniesRepository implements CompaniesRepository {
       nomeFantasia: updated.nomeFantasia ?? undefined,
       razaoSocial: updated.razaoSocial ?? undefined,
       inscricaoEstadual: updated.inscricaoEstadual ?? undefined,
+      bairro: updated.bairro ?? undefined,
       cidade: updated.cidade ?? undefined,
       estado: updated.estado ?? undefined,
+      cep: updated.cep ?? undefined,
+      latitude: updated.latitude ?? undefined,
+      longitude: updated.longitude ?? undefined,
     });
   }
 }

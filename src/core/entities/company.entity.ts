@@ -17,6 +17,9 @@ export class Company {
     public bairro?: string,
     public cidade?: string,
     public estado?: string,
+    public cep?: string,
+    public latitude?: number,
+    public longitude?: number,
     public createdAt?: Date,
     public updatedAt?: Date,
   ) {}
@@ -36,6 +39,9 @@ export class Company {
       data.bairro,
       data.cidade,
       data.estado,
+      data.cep,
+      data.latitude,
+      data.longitude,
     );
   }
 }

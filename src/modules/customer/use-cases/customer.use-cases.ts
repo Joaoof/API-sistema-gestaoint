@@ -11,12 +11,43 @@ export class CustomerUseCases {
     const customer = await this.prisma.customer.create({
       data: {
         name: input.name,
+        nomeFantasia: input.nomeFantasia ?? null,
+        razaoSocial: input.razaoSocial ?? null,
         document: input.document ?? null,
         email: input.email ?? null,
         phone: input.phone ?? null,
         address: input.address ?? null,
         bairro: input.bairro ?? null,
+        cidade: input.cidade ?? null,
+        estado: input.estado ?? null,
         cep: input.cep ?? null,
+        latitude: input.latitude ?? null,
+        longitude: input.longitude ?? null,
+      },
+    });
+    return customer as unknown as CustomerEntity;
+  }
+
+  async update(id: string, input: Partial<CreateCustomerInput>): Promise<CustomerEntity> {
+    const existing = await this.prisma.customer.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Cliente não encontrado.');
+
+    const customer = await this.prisma.customer.update({
+      where: { id },
+      data: {
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.nomeFantasia !== undefined ? { nomeFantasia: input.nomeFantasia } : {}),
+        ...(input.razaoSocial !== undefined ? { razaoSocial: input.razaoSocial } : {}),
+        ...(input.document !== undefined ? { document: input.document } : {}),
+        ...(input.email !== undefined ? { email: input.email } : {}),
+        ...(input.phone !== undefined ? { phone: input.phone } : {}),
+        ...(input.address !== undefined ? { address: input.address } : {}),
+        ...(input.bairro !== undefined ? { bairro: input.bairro } : {}),
+        ...(input.cidade !== undefined ? { cidade: input.cidade } : {}),
+        ...(input.estado !== undefined ? { estado: input.estado } : {}),
+        ...(input.cep !== undefined ? { cep: input.cep } : {}),
+        ...(input.latitude !== undefined ? { latitude: input.latitude } : {}),
+        ...(input.longitude !== undefined ? { longitude: input.longitude } : {}),
       },
     });
     return customer as unknown as CustomerEntity;

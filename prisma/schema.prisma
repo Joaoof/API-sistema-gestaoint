@@ -99,18 +99,24 @@ model Supplier {
 }
 
 model Customer {
-  id          String              @id @default(uuid())
-  name        String
-  document    String?
-  email       String?
-  phone       String?
-  address     String?
-  bairro      String?
-  cep         String?
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  receivables AccountReceivable[]
-  orders      Order[]
+  id            String              @id @default(uuid())
+  name          String
+  nomeFantasia  String?
+  razaoSocial   String?
+  document      String?
+  email         String?
+  phone         String?
+  address       String?
+  bairro        String?
+  cidade        String?
+  estado        String?
+  cep           String?
+  latitude      Float?
+  longitude     Float?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  receivables   AccountReceivable[]
+  orders        Order[]
 
   @@index([name])
   @@index([document])
@@ -252,11 +258,14 @@ model Company {
   bairro            String?
   cidade            String?
   estado            String?
+  cep               String?
   email             String?      @unique
   phone             String?
   address           String?
   cnpj              String?      @unique
   logoUrl           String?
+  latitude          Float?
+  longitude         Float?
   is_active         Boolean?     @default(true)
   createdAt         DateTime     @default(now())
   Users             Users[]

@@ -30,6 +30,15 @@ export class CompanyDto {
   estado?: string;
 
   @Field(() => String, { nullable: true })
+  cep?: string;
+
+  @Field(() => Number, { nullable: true })
+  latitude?: number;
+
+  @Field(() => Number, { nullable: true })
+  longitude?: number;
+
+  @Field(() => String, { nullable: true })
   email?: string;
 
   @Field(() => String, { nullable: true })
@@ -88,6 +97,20 @@ export class UpdateCompanyInput {
   @IsString()
   @MaxLength(2)
   estado?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(16)
+  cep?: string;
+
+  @Field(() => Number, { nullable: true })
+  @IsOptional()
+  latitude?: number;
+
+  @Field(() => Number, { nullable: true })
+  @IsOptional()
+  longitude?: number;
 
   @Field({ nullable: true })
   @IsOptional()

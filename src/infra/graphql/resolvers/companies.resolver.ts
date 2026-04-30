@@ -29,6 +29,9 @@ function toDto(company: Company): CompanyDto {
     bairro: company.bairro,
     cidade: company.cidade,
     estado: company.estado,
+    cep: company.cep,
+    latitude: company.latitude,
+    longitude: company.longitude,
   };
 }
 
@@ -86,6 +89,9 @@ export class CompaniesResolver {
       bairro: input.bairro ?? null,
       cidade: input.cidade ?? null,
       estado: input.estado ?? null,
+      cep: input.cep ?? null,
+      latitude: input.latitude ?? null,
+      longitude: input.longitude ?? null,
     });
     return toDto(updated);
   }
