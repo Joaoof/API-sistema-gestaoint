@@ -44,25 +44,25 @@ export class UpdateDeliveryInput {
   @IsString()
   id!: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(160)
   driver?: string | null;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(80)
   vehicle?: string | null;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(255)
   destination?: string | null;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   @IsOptional()
   @IsDateString()
   scheduledDate?: string | null;
@@ -72,7 +72,7 @@ export class UpdateDeliveryInput {
   @IsEnum(DeliveryStatus)
   status?: DeliveryStatus;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(1000)
