@@ -728,6 +728,8 @@ model VersaoOrcamento {
   @@index([companyId])
   @@index([obraId])
   @@index([status])
+  @@index([baseVersaoId])
+  @@index([criadoPorId])
 }
 
 model ItemOrcamento {
@@ -820,6 +822,11 @@ model TransacaoFinanceira {
   @@index([dataCompetencia])
   @@index([dataReal])
   @@index([deletedAt])
+  @@index([etapaId])
+  @@index([subetapaId])
+  @@index([itemWbsId])
+  @@index([criadoPorId])
+  @@index([confirmadoPorId])
 }
 
 model AuditLog {
