@@ -11,6 +11,11 @@ export class CreateDeliveryInput {
   @Field({ nullable: true })
   @IsOptional()
   @IsString()
+  driverId?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   @MaxLength(160)
   driver?: string;
 
@@ -43,6 +48,11 @@ export class UpdateDeliveryInput {
   @Field()
   @IsString()
   id!: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  driverId?: string | null;
 
   @Field(() => String, { nullable: true })
   @IsOptional()

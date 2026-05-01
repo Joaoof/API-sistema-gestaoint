@@ -25,6 +25,7 @@ import { CategoryModule } from './modules/category/category.module';
 import { OrderModule } from './modules/order/order.module';
 import { DeliveryModule } from './modules/delivery/delivery.module';
 import { SellerModule } from './modules/seller/seller.module';
+import { DriverModule } from './modules/driver/driver.module';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { SellerModule } from './modules/seller/seller.module';
     OrderModule,
     DeliveryModule,
     SellerModule,
+    DriverModule,
   ],
   controllers: [AppController],
   providers: [

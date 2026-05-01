@@ -12,7 +12,10 @@ function toEntity(raw: RawDelivery): DeliveryEntity {
   return {
     id: raw.id,
     orderId: raw.orderId,
+    driverId: raw.driverId,
     driver: raw.driver,
+    driverPhotoUrl: raw.driverPhotoUrl,
+    driverPhone: raw.driverPhone,
     vehicle: raw.vehicle,
     destination: raw.destination,
     scheduledDate: raw.scheduledDate,
@@ -99,16 +102,48 @@ export class DeliveryUseCases {
     const existing = await this.prisma.delivery.findUnique({ where: { orderId: input.orderId } });
     if (existing) throw new BadRequestException('Este pedido já tem uma entrega vinculada.');
 
-    const created = await this.prisma.delivery.create({
-      data: {
-        orderId: input.orderId,
-        driver: input.driver ?? null,
-        vehicle: input.vehicle ?? null,
-        destination: input.destination ?? null,
-        scheduledDate: input.scheduledDate ? new Date(input.scheduledDate) : null,
-        notes: input.notes ?? null,
-      },
-      include: { order: { include: { customer: true, items: true } } },
+    // Resolve motorista (snapshot de nome/foto/fone + veículo se nada vier)
+    let driverId: string | null = null;
+    let driver: string | null = input.driver ?? null;
+    let driverPhotoUrl: string | null = null;
+    let driverPhone: string | null = null;
+    let vehicle: string | null = input.vehicle ?? null;
+    if (input.driverId) {
+      const d = await this.prisma.driver.findUnique({ where: { id: input.driverId } });
+      if (!d) throw new BadRequestException('Motorista não encontrado.');
+      if (!d.active) throw new BadRequestException('Motorista inativo.');
+      driverId = d.id;
+      driver = d.name;
+      driverPhotoUrl = d.photoUrl;
+      driverPhone = d.phone;
+      if (!vehicle) {
+        vehicle = [d.vehicle, d.vehiclePlate ? `(${d.vehiclePlate})` : null].filter(Boolean).join(' ') || null;
+      }
+    }
+
+    const created = await this.prisma.$transaction(async (tx) => {
+      const c = await tx.delivery.create({
+        data: {
+          orderId: input.orderId,
+          driverId,
+          driver,
+          driverPhotoUrl,
+          driverPhone,
+          vehicle,
+          destination: input.destination ?? null,
+          scheduledDate: input.scheduledDate ? new Date(input.scheduledDate) : null,
+          notes: input.notes ?? null,
+        },
+        include: { order: { include: { customer: true, items: true } } },
+      });
+      // Incrementa contador do motorista
+      if (driverId) {
+        await tx.driver.update({
+          where: { id: driverId },
+          data: { totalDeliveries: { increment: 1 } },
+        });
+      }
+      return c;
     });
     return toEntity(created);
   }
@@ -118,7 +153,27 @@ export class DeliveryUseCases {
     if (!existing) throw new NotFoundException('Entrega não encontrada.');
 
     const data: Prisma.DeliveryUpdateInput = {};
-    if (input.driver !== undefined) data.driver = input.driver;
+    if (input.driverId !== undefined) {
+      if (input.driverId === null) {
+        data.driverRef = { disconnect: true };
+        data.driver = null;
+        data.driverPhotoUrl = null;
+        data.driverPhone = null;
+      } else {
+        const d = await this.prisma.driver.findUnique({ where: { id: input.driverId } });
+        if (!d) throw new BadRequestException('Motorista não encontrado.');
+        data.driverRef = { connect: { id: d.id } };
+        data.driver = d.name;
+        data.driverPhotoUrl = d.photoUrl;
+        data.driverPhone = d.phone;
+        // Se o vehicle não foi explicitamente atualizado, preenche do motorista
+        if (input.vehicle === undefined && d.vehicle) {
+          data.vehicle = [d.vehicle, d.vehiclePlate ? `(${d.vehiclePlate})` : null].filter(Boolean).join(' ');
+        }
+      }
+    } else if (input.driver !== undefined) {
+      data.driver = input.driver;
+    }
     if (input.vehicle !== undefined) data.vehicle = input.vehicle;
     if (input.destination !== undefined) data.destination = input.destination;
     if (input.scheduledDate !== undefined)

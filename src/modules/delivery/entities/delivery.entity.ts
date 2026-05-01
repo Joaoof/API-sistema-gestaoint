@@ -8,7 +8,10 @@ registerEnumType(DeliveryStatus, { name: 'DeliveryStatus' });
 export class DeliveryEntity {
   @Field(() => ID) id!: string;
   @Field() orderId!: string;
+  @Field(() => String, { nullable: true }) driverId?: string | null;
   @Field(() => String, { nullable: true }) driver?: string | null;
+  @Field(() => String, { nullable: true }) driverPhotoUrl?: string | null;
+  @Field(() => String, { nullable: true }) driverPhone?: string | null;
   @Field(() => String, { nullable: true }) vehicle?: string | null;
   @Field(() => String, { nullable: true }) destination?: string | null;
   @Field(() => Date, { nullable: true }) scheduledDate?: Date | null;

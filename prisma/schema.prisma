@@ -172,10 +172,34 @@ model OrderItem {
   @@index([productId])
 }
 
+model Driver {
+  id              String     @id @default(uuid())
+  name            String
+  photoUrl        String?
+  cnh             String?
+  cnhCategory     String?
+  phone           String?
+  document        String?
+  vehicle         String?
+  vehiclePlate    String?
+  active          Boolean    @default(true)
+  totalDeliveries Int        @default(0)
+  notes           String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  deliveries      Delivery[]
+
+  @@index([active])
+  @@index([name])
+}
+
 model Delivery {
   id            String         @id @default(uuid())
   orderId       String         @unique
+  driverId      String?
   driver        String?
+  driverPhotoUrl String?
+  driverPhone   String?
   vehicle       String?
   destination   String?
   scheduledDate DateTime?
@@ -186,8 +210,10 @@ model Delivery {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   order         Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  driverRef     Driver?        @relation(fields: [driverId], references: [id])
 
   @@index([orderId])
+  @@index([driverId])
   @@index([status])
   @@index([scheduledDate])
 }
