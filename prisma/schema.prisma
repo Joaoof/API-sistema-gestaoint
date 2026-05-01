@@ -88,35 +88,37 @@ model Category {
 }
 
 model Supplier {
-  id        String           @id @default(cuid())
-  name      String           @unique
-  email     String?          @unique
-  phone     String?
-  address   String?
-  createdAt DateTime         @default(now())
-  Product   Product[]
-  payables  AccountPayable[]
+  id         String                @id @default(cuid())
+  name       String                @unique
+  email      String?               @unique
+  phone      String?
+  address    String?
+  createdAt  DateTime              @default(now())
+  Product    Product[]
+  payables   AccountPayable[]
+  transacoes TransacaoFinanceira[]
 }
 
 model Customer {
-  id            String              @id @default(uuid())
-  name          String
-  nomeFantasia  String?
-  razaoSocial   String?
-  document      String?
-  email         String?
-  phone         String?
-  address       String?
-  bairro        String?
-  cidade        String?
-  estado        String?
-  cep           String?
-  latitude      Float?
-  longitude     Float?
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  receivables   AccountReceivable[]
-  orders        Order[]
+  id           String              @id @default(uuid())
+  name         String
+  nomeFantasia String?
+  razaoSocial  String?
+  document     String?
+  email        String?
+  phone        String?
+  address      String?
+  bairro       String?
+  cidade       String?
+  estado       String?
+  cep          String?
+  latitude     Float?
+  longitude    Float?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  receivables  AccountReceivable[]
+  orders       Order[]
+  obras        Obra[]
 
   @@index([name])
   @@index([document])
@@ -194,23 +196,23 @@ model Driver {
 }
 
 model Delivery {
-  id            String         @id @default(uuid())
-  orderId       String         @unique
-  driverId      String?
-  driver        String?
+  id             String         @id @default(uuid())
+  orderId        String         @unique
+  driverId       String?
+  driver         String?
   driverPhotoUrl String?
-  driverPhone   String?
-  vehicle       String?
-  destination   String?
-  scheduledDate DateTime?
-  startedAt     DateTime?
-  deliveredAt   DateTime?
-  status        DeliveryStatus @default(PENDING)
-  notes         String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  order         Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  driverRef     Driver?        @relation(fields: [driverId], references: [id])
+  driverPhone    String?
+  vehicle        String?
+  destination    String?
+  scheduledDate  DateTime?
+  startedAt      DateTime?
+  deliveredAt    DateTime?
+  status         DeliveryStatus @default(PENDING)
+  notes          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  driverRef      Driver?        @relation(fields: [driverId], references: [id])
 
   @@index([orderId])
   @@index([driverId])
@@ -219,46 +221,60 @@ model Delivery {
 }
 
 model AccountReceivable {
-  id           String        @id @default(uuid())
-  customerId   String
-  productId    String?
-  description  String
-  amount       Decimal
-  interestRate Decimal       @default(0.033)
-  dueDate      DateTime
-  paidAt       DateTime?
-  status       AccountStatus @default(PENDING)
-  notes        String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  customer     Customer      @relation(fields: [customerId], references: [id])
-  product      Product?      @relation(fields: [productId], references: [id])
+  id            String                @id @default(uuid())
+  customerId    String
+  productId     String?
+  obraId        String?
+  centroCustoId String?
+  description   String
+  amount        Decimal
+  interestRate  Decimal               @default(0.033)
+  dueDate       DateTime
+  paidAt        DateTime?
+  status        AccountStatus         @default(PENDING)
+  notes         String?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  customer      Customer              @relation(fields: [customerId], references: [id])
+  product       Product?              @relation(fields: [productId], references: [id])
+  obra          Obra?                 @relation(fields: [obraId], references: [id])
+  centroCusto   CentroCusto?          @relation(fields: [centroCustoId], references: [id])
+  transacoes    TransacaoFinanceira[]
 
   @@index([customerId])
   @@index([productId])
+  @@index([obraId])
+  @@index([centroCustoId])
   @@index([dueDate])
   @@index([status])
 }
 
 model AccountPayable {
-  id           String        @id @default(uuid())
-  supplierId   String?
-  productId    String?
-  supplierName String
-  description  String
-  amount       Decimal
-  interestRate Decimal       @default(0.033)
-  dueDate      DateTime
-  paidAt       DateTime?
-  status       AccountStatus @default(PENDING)
-  notes        String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  supplier     Supplier?     @relation(fields: [supplierId], references: [id])
-  product      Product?      @relation(fields: [productId], references: [id])
+  id            String                @id @default(uuid())
+  supplierId    String?
+  productId     String?
+  obraId        String?
+  centroCustoId String?
+  supplierName  String
+  description   String
+  amount        Decimal
+  interestRate  Decimal               @default(0.033)
+  dueDate       DateTime
+  paidAt        DateTime?
+  status        AccountStatus         @default(PENDING)
+  notes         String?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  supplier      Supplier?             @relation(fields: [supplierId], references: [id])
+  product       Product?              @relation(fields: [productId], references: [id])
+  obra          Obra?                 @relation(fields: [obraId], references: [id])
+  centroCusto   CentroCusto?          @relation(fields: [centroCustoId], references: [id])
+  transacoes    TransacaoFinanceira[]
 
   @@index([supplierId])
   @@index([productId])
+  @@index([obraId])
+  @@index([centroCustoId])
   @@index([dueDate])
   @@index([status])
 }
@@ -276,8 +292,8 @@ model Inventory {
 }
 
 model Company {
-  id                String       @id @default(cuid())
-  name              String       @unique
+  id                String                @id @default(cuid())
+  name              String                @unique
   nomeFantasia      String?
   razaoSocial       String?
   inscricaoEstadual String?
@@ -285,17 +301,23 @@ model Company {
   cidade            String?
   estado            String?
   cep               String?
-  email             String?      @unique
+  email             String?               @unique
   phone             String?
   address           String?
-  cnpj              String?      @unique
+  cnpj              String?               @unique
   logoUrl           String?
   latitude          Float?
   longitude         Float?
-  is_active         Boolean?     @default(true)
-  createdAt         DateTime     @default(now())
+  is_active         Boolean?              @default(true)
+  createdAt         DateTime              @default(now())
   Users             Users[]
   companyPlan       CompanyPlan?
+  obras             Obra[]
+  centrosCusto      CentroCusto[]
+  categoriasObra    CategoriaConstrucao[]
+  versoesOrcamento  VersaoOrcamento[]
+  transacoes        TransacaoFinanceira[]
+  auditLogs         AuditLog[]
 }
 
 model Modules {
@@ -306,21 +328,25 @@ model Modules {
 }
 
 model Users {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  password_hash String
-  name          String
-  phone         String?
-  avatarUrl     String?
-  company_id    String
-  role          String
-  is_active     Boolean
-  createdAt     DateTime       @default(now())
-  company       Company?       @relation(fields: [company_id], references: [id])
-  Product       Product[]
-  CashMovement  CashMovement[]
-  Category      Category[]
-  Order         Order[]
+  id                      String                @id @default(cuid())
+  email                   String                @unique
+  password_hash           String
+  name                    String
+  phone                   String?
+  avatarUrl               String?
+  company_id              String
+  role                    String
+  is_active               Boolean
+  createdAt               DateTime              @default(now())
+  company                 Company?              @relation(fields: [company_id], references: [id])
+  Product                 Product[]
+  CashMovement            CashMovement[]
+  Category                Category[]
+  Order                   Order[]
+  versoesOrcamentoCriadas VersaoOrcamento[]     @relation("VersaoOrcamentoCriadaPor")
+  transacoesCriadas       TransacaoFinanceira[] @relation("TransacaoCriadaPor")
+  transacoesConfirmadas   TransacaoFinanceira[] @relation("TransacaoConfirmadaPor")
+  auditLogs               AuditLog[]
 
   @@index([company_id])
   @@index([company_id, email])
@@ -517,4 +543,348 @@ enum DeliveryStatus {
 enum CommissionRuleType {
   PERCENTAGE
   FIXED_PER_SALE
+}
+
+// =====================================================================
+// MÓDULO CONSTRUÇÃO CIVIL
+// Princípios:
+//   - Previsto (orçamento) e Realizado (transação) NUNCA dividem tabela.
+//   - Transação CONFIRMADA é imutável (correções via estorno).
+//   - Versão de orçamento ATIVADA é imutável (mudanças via nova versão).
+//   - Soft-delete em entidades operacionais; audit-log para mutações.
+//   - Multi-tenancy por companyId em raízes (Obra, CentroCusto, Categoria,
+//     VersaoOrcamento, TransacaoFinanceira).
+// =====================================================================
+
+model Obra {
+  id            String                @id @default(uuid())
+  companyId     String
+  customerId    String?
+  codigo        String
+  nome          String
+  descricao     String?
+  endereco      String?
+  cidade        String?
+  estado        String?
+  cep           String?
+  latitude      Float?
+  longitude     Float?
+  status        ObraStatus            @default(PLANEJAMENTO)
+  dataInicio    DateTime?
+  dataFimPrev   DateTime?
+  dataFimReal   DateTime?
+  valorContrato Decimal?              @db.Decimal(18, 2)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  deletedAt     DateTime?
+  company       Company               @relation(fields: [companyId], references: [id])
+  customer      Customer?             @relation(fields: [customerId], references: [id])
+  etapas        ObraEtapa[]
+  versoes       VersaoOrcamento[]
+  transacoes    TransacaoFinanceira[]
+  payables      AccountPayable[]
+  receivables   AccountReceivable[]
+
+  @@unique([companyId, codigo])
+  @@index([companyId])
+  @@index([customerId])
+  @@index([status])
+  @@index([companyId, status])
+  @@index([deletedAt])
+}
+
+model ObraEtapa {
+  id             String                @id @default(uuid())
+  obraId         String
+  codigo         String
+  nome           String
+  ordem          Int                   @default(0)
+  descricao      String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  deletedAt      DateTime?
+  obra           Obra                  @relation(fields: [obraId], references: [id])
+  subetapas      ObraSubetapa[]
+  itens          ObraItemWBS[]
+  itensOrcamento ItemOrcamento[]
+  transacoes     TransacaoFinanceira[]
+
+  @@unique([obraId, codigo])
+  @@index([obraId])
+  @@index([obraId, ordem])
+}
+
+model ObraSubetapa {
+  id             String                @id @default(uuid())
+  etapaId        String
+  codigo         String
+  nome           String
+  ordem          Int                   @default(0)
+  descricao      String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  deletedAt      DateTime?
+  etapa          ObraEtapa             @relation(fields: [etapaId], references: [id])
+  itens          ObraItemWBS[]
+  itensOrcamento ItemOrcamento[]
+  transacoes     TransacaoFinanceira[]
+
+  @@unique([etapaId, codigo])
+  @@index([etapaId])
+  @@index([etapaId, ordem])
+}
+
+model ObraItemWBS {
+  id             String                @id @default(uuid())
+  etapaId        String
+  subetapaId     String?
+  codigo         String
+  nome           String
+  unidade        String                @default("UN")
+  quantidadeRef  Decimal?              @db.Decimal(18, 4)
+  ordem          Int                   @default(0)
+  descricao      String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  deletedAt      DateTime?
+  etapa          ObraEtapa             @relation(fields: [etapaId], references: [id])
+  subetapa       ObraSubetapa?         @relation(fields: [subetapaId], references: [id])
+  itensOrcamento ItemOrcamento[]
+  transacoes     TransacaoFinanceira[]
+
+  @@unique([etapaId, codigo])
+  @@index([etapaId])
+  @@index([subetapaId])
+}
+
+model CentroCusto {
+  id             String                @id @default(uuid())
+  companyId      String
+  codigo         String
+  nome           String
+  descricao      String?
+  ativo          Boolean               @default(true)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  deletedAt      DateTime?
+  company        Company               @relation(fields: [companyId], references: [id])
+  itensOrcamento ItemOrcamento[]
+  transacoes     TransacaoFinanceira[]
+  payables       AccountPayable[]
+  receivables    AccountReceivable[]
+
+  @@unique([companyId, codigo])
+  @@index([companyId])
+  @@index([ativo])
+}
+
+model CategoriaConstrucao {
+  id             String                  @id @default(uuid())
+  companyId      String
+  parentId       String?
+  codigo         String
+  nome           String
+  tipo           CategoriaConstrucaoTipo
+  ativo          Boolean                 @default(true)
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  deletedAt      DateTime?
+  company        Company                 @relation(fields: [companyId], references: [id])
+  parent         CategoriaConstrucao?    @relation("CategoriaConstrucaoTree", fields: [parentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  filhas         CategoriaConstrucao[]   @relation("CategoriaConstrucaoTree")
+  itensOrcamento ItemOrcamento[]
+  transacoes     TransacaoFinanceira[]
+
+  @@unique([companyId, codigo])
+  @@index([companyId])
+  @@index([tipo])
+  @@index([parentId])
+}
+
+model VersaoOrcamento {
+  id           String                @id @default(uuid())
+  companyId    String
+  obraId       String
+  numero       Int
+  nome         String
+  descricao    String?
+  status       VersaoOrcamentoStatus @default(RASCUNHO)
+  baseVersaoId String?
+  total        Decimal               @default(0) @db.Decimal(18, 2)
+  ativadoEm    DateTime?
+  congeladoEm  DateTime?
+  criadoPorId  String?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  deletedAt    DateTime?
+  company      Company               @relation(fields: [companyId], references: [id])
+  obra         Obra                  @relation(fields: [obraId], references: [id])
+  baseVersao   VersaoOrcamento?      @relation("VersaoBase", fields: [baseVersaoId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  derivadas    VersaoOrcamento[]     @relation("VersaoBase")
+  criadoPor    Users?                @relation("VersaoOrcamentoCriadaPor", fields: [criadoPorId], references: [id])
+  itens        ItemOrcamento[]
+
+  @@unique([obraId, numero])
+  @@index([companyId])
+  @@index([obraId])
+  @@index([status])
+}
+
+model ItemOrcamento {
+  id            String               @id @default(uuid())
+  versaoId      String
+  etapaId       String?
+  subetapaId    String?
+  itemWbsId     String?
+  centroCustoId String?
+  categoriaId   String?
+  descricao     String
+  unidade       String               @default("UN")
+  quantidade    Decimal              @db.Decimal(18, 4)
+  valorUnitario Decimal              @db.Decimal(18, 4)
+  valorTotal    Decimal              @db.Decimal(18, 2)
+  ordem         Int                  @default(0)
+  notas         String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  versao        VersaoOrcamento      @relation(fields: [versaoId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  etapa         ObraEtapa?           @relation(fields: [etapaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  subetapa      ObraSubetapa?        @relation(fields: [subetapaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  itemWbs       ObraItemWBS?         @relation(fields: [itemWbsId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  centroCusto   CentroCusto?         @relation(fields: [centroCustoId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  categoria     CategoriaConstrucao? @relation(fields: [categoriaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([versaoId])
+  @@index([etapaId])
+  @@index([subetapaId])
+  @@index([itemWbsId])
+  @@index([centroCustoId])
+  @@index([categoriaId])
+}
+
+model TransacaoFinanceira {
+  id                  String               @id @default(uuid())
+  companyId           String
+  obraId              String
+  etapaId             String?
+  subetapaId          String?
+  itemWbsId           String?
+  centroCustoId       String
+  categoriaId         String
+  supplierId          String?
+  customerId          String?
+  accountPayableId    String?
+  accountReceivableId String?
+  estornoDeId         String?              @unique
+  tipo                TipoTransacao
+  status              StatusTransacao      @default(PENDENTE)
+  valor               Decimal              @db.Decimal(18, 2)
+  descricao           String
+  documento           String?
+  dataReal            DateTime?
+  dataCompetencia     DateTime
+  dataPrevistaPgto    DateTime?
+  observacoes         String?
+  criadoPorId         String?
+  confirmadoPorId     String?
+  confirmadoEm        DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  deletedAt           DateTime?
+  company             Company              @relation(fields: [companyId], references: [id])
+  obra                Obra                 @relation(fields: [obraId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  etapa               ObraEtapa?           @relation(fields: [etapaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  subetapa            ObraSubetapa?        @relation(fields: [subetapaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  itemWbs             ObraItemWBS?         @relation(fields: [itemWbsId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  centroCusto         CentroCusto          @relation(fields: [centroCustoId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  categoria           CategoriaConstrucao  @relation(fields: [categoriaId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  supplier            Supplier?            @relation(fields: [supplierId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  accountPayable      AccountPayable?      @relation(fields: [accountPayableId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  accountReceivable   AccountReceivable?   @relation(fields: [accountReceivableId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  estornoDe           TransacaoFinanceira? @relation("TransacaoEstorno", fields: [estornoDeId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  estornoPor          TransacaoFinanceira? @relation("TransacaoEstorno")
+  criadoPor           Users?               @relation("TransacaoCriadaPor", fields: [criadoPorId], references: [id])
+  confirmadoPor       Users?               @relation("TransacaoConfirmadaPor", fields: [confirmadoPorId], references: [id])
+
+  @@index([companyId])
+  @@index([obraId])
+  @@index([obraId, status])
+  @@index([obraId, dataCompetencia])
+  @@index([obraId, dataReal])
+  @@index([centroCustoId])
+  @@index([categoriaId])
+  @@index([supplierId])
+  @@index([accountPayableId])
+  @@index([accountReceivableId])
+  @@index([tipo, status])
+  @@index([dataCompetencia])
+  @@index([dataReal])
+  @@index([deletedAt])
+}
+
+model AuditLog {
+  id         String      @id @default(uuid())
+  companyId  String
+  userId     String?
+  entity     String
+  entityId   String
+  action     AuditAction
+  beforeJson Json?
+  afterJson  Json?
+  reason     String?
+  createdAt  DateTime    @default(now())
+  company    Company     @relation(fields: [companyId], references: [id])
+  user       Users?      @relation(fields: [userId], references: [id])
+
+  @@index([companyId])
+  @@index([entity, entityId])
+  @@index([companyId, createdAt(sort: Desc)])
+  @@index([userId])
+}
+
+enum ObraStatus {
+  PLANEJAMENTO
+  EM_EXECUCAO
+  PAUSADA
+  CONCLUIDA
+  CANCELADA
+}
+
+enum CategoriaConstrucaoTipo {
+  MATERIAL
+  MAO_DE_OBRA
+  EQUIPAMENTO
+  SERVICO_TERCEIRO
+  ADMINISTRATIVO
+  IMPOSTO
+  OUTRO
+}
+
+enum VersaoOrcamentoStatus {
+  RASCUNHO
+  ATIVO
+  SUBSTITUIDO
+  ARQUIVADO
+}
+
+enum TipoTransacao {
+  RECEITA
+  DESPESA
+}
+
+enum StatusTransacao {
+  PENDENTE
+  CONFIRMADO
+  ESTORNADO
+  CANCELADO
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  SOFT_DELETE
+  CONFIRM
+  REVERT
+  ACTIVATE
+  FREEZE
 }

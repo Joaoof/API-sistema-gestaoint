@@ -26,6 +26,7 @@ import { OrderModule } from './modules/order/order.module';
 import { DeliveryModule } from './modules/delivery/delivery.module';
 import { SellerModule } from './modules/seller/seller.module';
 import { DriverModule } from './modules/driver/driver.module';
+import { ConstructionModule } from './modules/construction/construction.module';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { DriverModule } from './modules/driver/driver.module';
     DeliveryModule,
     SellerModule,
     DriverModule,
+    ConstructionModule,
   ],
   controllers: [AppController],
   providers: [
