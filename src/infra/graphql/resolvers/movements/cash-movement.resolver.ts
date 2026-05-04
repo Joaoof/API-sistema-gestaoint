@@ -151,6 +151,7 @@ export class CashMovementResolver {
       counterpartyDocument: json.counterpartyDocument,
       notes: json.notes,
       attachmentUrl: json.attachmentUrl,
+      bankId: json.bankId,
       createdAt: json.createdAt,
       updatedAt: json.updatedAt,
       user_id: json.user_id ?? '',

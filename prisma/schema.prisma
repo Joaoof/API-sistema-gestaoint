@@ -353,6 +353,7 @@ model Users {
   CashMovement            CashMovement[]
   Category                Category[]
   Order                   Order[]
+  Bank                    Bank[]
   versoesOrcamentoCriadas VersaoOrcamento[]     @relation("VersaoOrcamentoCriadaPor")
   transacoesCriadas       TransacaoFinanceira[] @relation("TransacaoCriadaPor")
   transacoesConfirmadas   TransacaoFinanceira[] @relation("TransacaoConfirmadaPor")
@@ -411,6 +412,7 @@ model CashMovement {
   description          String
   date                 DateTime              @default(now())
   user_id              String
+  bankId               String?
   typePayment          MovementTypePayment?
   status               MovementStatus        @default(COMPLETED)
   referenceCode        String?
@@ -423,6 +425,7 @@ model CashMovement {
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   user                 Users                 @relation(fields: [user_id], references: [id])
+  bank                 Bank?                 @relation(fields: [bankId], references: [id])
 
   @@index([user_id, date(sort: Desc)])
   @@index([user_id, status])
@@ -430,6 +433,32 @@ model CashMovement {
   @@index([user_id, type])
   @@index([date])
   @@index([referenceCode])
+  @@index([bankId])
+}
+
+model Bank {
+  id            String          @id @default(uuid())
+  user_id       String
+  name          String
+  tipo          BankAccountType @default(CHECKING)
+  agencia       String?
+  conta         String?
+  digito        String?
+  titular       String?
+  documento     String?
+  pixKey        String?
+  saldoInicial  Decimal         @default(0)
+  corHex        String          @default("#3B82F6")
+  ativo         Boolean         @default(true)
+  observacoes   String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  user          Users           @relation(fields: [user_id], references: [id])
+  cashMovements CashMovement[]
+
+  @@index([user_id])
+  @@index([user_id, ativo])
+  @@index([name])
 }
 
 model CommissionRuleConfig {
@@ -552,6 +581,14 @@ enum ProductKind {
 enum OrderType {
   STANDARD
   CUSTOM_ORDER
+}
+
+enum BankAccountType {
+  CHECKING
+  SAVINGS
+  WALLET
+  INVESTMENT
+  OTHER
 }
 
 enum AccountStatus {

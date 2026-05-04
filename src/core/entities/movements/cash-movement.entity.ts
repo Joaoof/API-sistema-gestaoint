@@ -15,6 +15,7 @@ export interface CashMovementProps {
   description: string;
   date: Date;
   user_id?: string;
+  bankId?: string | null;
   status?: MovementStatus;
   referenceCode?: string | null;
   counterpartyName?: string | null;
@@ -36,6 +37,7 @@ export class CashMovement {
   public description: string;
   public readonly date: Date;
   public readonly user_id?: string;
+  public bankId: string | null;
   public status: MovementStatus;
   public referenceCode: string | null;
   public counterpartyName: string | null;
@@ -56,6 +58,7 @@ export class CashMovement {
     this.description = props.description;
     this.date = props.date;
     this.user_id = props.user_id;
+    this.bankId = props.bankId ?? null;
     this.status = props.status ?? MovementStatus.COMPLETED;
     this.referenceCode = props.referenceCode ?? null;
     this.counterpartyName = props.counterpartyName ?? null;
@@ -103,6 +106,7 @@ export class CashMovement {
       description: data.description,
       date: data.date,
       user_id: data.user_id,
+      bankId: data.bankId,
       status: data.status,
       referenceCode: data.referenceCode,
       counterpartyName: data.counterpartyName,
@@ -126,6 +130,7 @@ export class CashMovement {
       description: this.description,
       date: this.date.toISOString(),
       user_id: this.user_id,
+      bankId: this.bankId,
       status: this.status,
       referenceCode: this.referenceCode,
       counterpartyName: this.counterpartyName,

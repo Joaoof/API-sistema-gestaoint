@@ -65,6 +65,7 @@ export const CreateCashMovementSchema = z
     // qualquer string não vazia. A autenticidade do user_id é garantida pelo
     // JWT/CurrentUser, então não precisamos validar formato aqui.
     user_id: z.string().min(1, 'user_id é obrigatório.').optional(),
+    bankId: z.string().min(1, 'bankId inválido.').optional().nullable(),
   })
   .refine((d) => !d.date || d.date <= new Date(), {
     message: 'Data não pode ser no futuro.',

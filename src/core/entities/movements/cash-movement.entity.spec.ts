@@ -73,6 +73,7 @@ describe('CashMovement Entity (Unit)', () => {
       attachmentUrl: null,
       dueDate: null,
       paidAt: null,
+      bankId: null,
       createdAt: MOCK_DATE,
       updatedAt: MOCK_DATE,
     };

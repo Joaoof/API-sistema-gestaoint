@@ -30,6 +30,16 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
       throw new BadRequestException('userId é obrigatório');
     }
 
+    if (movement.bankId) {
+      const bank = await this.prisma.bank.findUnique({
+        where: { id: movement.bankId },
+        select: { id: true, user_id: true },
+      });
+      if (!bank || bank.user_id !== movement.user_id) {
+        throw new BadRequestException('Banco inválido.');
+      }
+    }
+
     await this.prisma.cashMovement.create({
       data: {
         id: movement.id,
@@ -48,6 +58,7 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
         notes: movement.notes ?? undefined,
         attachmentUrl: movement.attachmentUrl ?? undefined,
         user_id: movement.user_id,
+        bankId: movement.bankId ?? undefined,
       },
     });
 
@@ -236,6 +247,20 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
     if (movement.notes !== undefined) data.notes = movement.notes;
     if (movement.attachmentUrl !== undefined)
       data.attachmentUrl = movement.attachmentUrl;
+    if (movement.bankId !== undefined) {
+      if (movement.bankId) {
+        const bank = await this.prisma.bank.findUnique({
+          where: { id: movement.bankId },
+          select: { id: true, user_id: true },
+        });
+        if (!bank || bank.user_id !== found.user_id) {
+          throw new BadRequestException('Banco inválido.');
+        }
+        data.bank = { connect: { id: movement.bankId } };
+      } else {
+        data.bank = { disconnect: true };
+      }
+    }
 
     await this.prisma.cashMovement.update({
       where: { id: movementId },
@@ -266,6 +291,10 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
 
     if (filters.statuses?.length) {
       where.status = { in: filters.statuses };
+    }
+
+    if (filters.bankId) {
+      where.bankId = filters.bankId;
     }
 
     if (filters.startDate || filters.endDate) {

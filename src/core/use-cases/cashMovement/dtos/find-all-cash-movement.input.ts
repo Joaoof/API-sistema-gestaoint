@@ -73,6 +73,9 @@ export class FindAllCashMovementInput {
   @Field(() => String, { nullable: true })
   counterparty?: string;
 
+  @Field(() => String, { nullable: true })
+  bankId?: string;
+
   @Field(() => CashMovementSortFields, { nullable: true })
   sortBy?: CashMovementSortField;
 

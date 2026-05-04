@@ -59,4 +59,7 @@ export class UpdateCashMovementInput {
 
   @Field(() => String, { nullable: true })
   attachmentUrl?: string | null;
+
+  @Field(() => String, { nullable: true })
+  bankId?: string | null;
 }
