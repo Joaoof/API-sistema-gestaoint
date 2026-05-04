@@ -28,6 +28,8 @@ import { SellerModule } from './modules/seller/seller.module';
 import { DriverModule } from './modules/driver/driver.module';
 import { ConstructionModule } from './modules/construction/construction.module';
 import { BankModule } from './modules/bank/bank.module';
+import { InvoiceModule } from './modules/invoice/invoice.module';
+import { CompanyFiscalConfigModule } from './modules/companyFiscalConfig/company-fiscal-config.module';
 
 @Module({
   imports: [
@@ -78,6 +80,8 @@ import { BankModule } from './modules/bank/bank.module';
     DriverModule,
     ConstructionModule,
     BankModule,
+    InvoiceModule,
+    CompanyFiscalConfigModule,
   ],
   controllers: [AppController],
   providers: [

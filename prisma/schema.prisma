@@ -127,34 +127,35 @@ model Customer {
 }
 
 model Order {
-  id                    String             @id @default(uuid())
-  number                Int                @default(autoincrement())
-  customerId            String?
-  customerName          String?
-  customerDocument      String?
-  customerPhone         String?
-  sellerId              String?
-  sellerName            String?
-  commissionPercent     Decimal            @default(0)
-  commissionAmount      Decimal            @default(0)
-  status                OrderStatus        @default(CONFIRMED)
-  paymentMethod         OrderPaymentMethod @default(CASH)
-  orderType             OrderType          @default(STANDARD)
-  expectedDeliveryDate  DateTime?
-  depositAmount         Decimal            @default(0)
-  subtotal              Decimal            @default(0)
-  discount              Decimal            @default(0)
-  total                 Decimal            @default(0)
-  notes                 String?
-  dueDate               DateTime?
-  createdById           String?
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
-  customer          Customer?          @relation(fields: [customerId], references: [id])
-  seller            Seller?            @relation(fields: [sellerId], references: [id])
-  createdBy         Users?             @relation(fields: [createdById], references: [id])
-  items             OrderItem[]
-  delivery          Delivery?
+  id                   String             @id @default(uuid())
+  number               Int                @default(autoincrement())
+  customerId           String?
+  customerName         String?
+  customerDocument     String?
+  customerPhone        String?
+  sellerId             String?
+  sellerName           String?
+  commissionPercent    Decimal            @default(0)
+  commissionAmount     Decimal            @default(0)
+  status               OrderStatus        @default(CONFIRMED)
+  paymentMethod        OrderPaymentMethod @default(CASH)
+  orderType            OrderType          @default(STANDARD)
+  expectedDeliveryDate DateTime?
+  depositAmount        Decimal            @default(0)
+  subtotal             Decimal            @default(0)
+  discount             Decimal            @default(0)
+  total                Decimal            @default(0)
+  notes                String?
+  dueDate              DateTime?
+  createdById          String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  customer             Customer?          @relation(fields: [customerId], references: [id])
+  seller               Seller?            @relation(fields: [sellerId], references: [id])
+  createdBy            Users?             @relation(fields: [createdById], references: [id])
+  items                OrderItem[]
+  delivery             Delivery?
+  invoices             Invoice[]
 
   @@index([customerId])
   @@index([sellerId])
@@ -165,19 +166,19 @@ model Order {
 }
 
 model OrderItem {
-  id           String      @id @default(uuid())
-  orderId      String
-  productId    String
-  productName  String
-  itemKind     ProductKind @default(PRODUCT)
-  itemUnit     String      @default("UN")
-  quantity     Int
-  unitPrice    Decimal
-  discount     Decimal     @default(0)
-  total        Decimal
-  description  String?
-  order        Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product      Product     @relation(fields: [productId], references: [id])
+  id          String      @id @default(uuid())
+  orderId     String
+  productId   String
+  productName String
+  itemKind    ProductKind @default(PRODUCT)
+  itemUnit    String      @default("UN")
+  quantity    Int
+  unitPrice   Decimal
+  discount    Decimal     @default(0)
+  total       Decimal
+  description String?
+  order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product     @relation(fields: [productId], references: [id])
 
   @@index([orderId])
   @@index([productId])
@@ -328,6 +329,8 @@ model Company {
   versoesOrcamento  VersaoOrcamento[]
   transacoes        TransacaoFinanceira[]
   auditLogs         AuditLog[]
+  fiscalConfig      CompanyFiscalConfig?
+  invoices          Invoice[]
 }
 
 model Modules {
@@ -358,6 +361,7 @@ model Users {
   transacoesCriadas       TransacaoFinanceira[] @relation("TransacaoCriadaPor")
   transacoesConfirmadas   TransacaoFinanceira[] @relation("TransacaoConfirmadaPor")
   auditLogs               AuditLog[]
+  invoicesCreated         Invoice[]             @relation("InvoiceCreatedBy")
 
   @@index([company_id])
   @@index([company_id, email])
@@ -405,16 +409,16 @@ model CompanyPlan {
 }
 
 model CashMovement {
-  id                   String                @id @default(uuid())
+  id                   String               @id @default(uuid())
   type                 MovementType
   category             MovementCategory
   value                Decimal
   description          String
-  date                 DateTime              @default(now())
+  date                 DateTime             @default(now())
   user_id              String
   bankId               String?
   typePayment          MovementTypePayment?
-  status               MovementStatus        @default(COMPLETED)
+  status               MovementStatus       @default(COMPLETED)
   referenceCode        String?
   counterpartyName     String?
   counterpartyDocument String?
@@ -422,10 +426,10 @@ model CashMovement {
   attachmentUrl        String?
   dueDate              DateTime?
   paidAt               DateTime?
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  user                 Users                 @relation(fields: [user_id], references: [id])
-  bank                 Bank?                 @relation(fields: [bankId], references: [id])
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  user                 Users                @relation(fields: [user_id], references: [id])
+  bank                 Bank?                @relation(fields: [bankId], references: [id])
 
   @@index([user_id, date(sort: Desc)])
   @@index([user_id, status])
@@ -977,4 +981,162 @@ enum AuditAction {
   REVERT
   ACTIVATE
   FREEZE
+}
+
+// =====================================================================
+// MÓDULO FISCAL (NFe / NFCe / NFSe)
+// Princípios:
+//   - Provider-agnostic: lógica de domínio não conhece SEFAZ nem provedor
+//     específico (Focus NFe, PlugNotas, etc.) — adapter implementa.
+//   - Invoice é imutável depois de AUTHORIZED. Cancelamento gera registro.
+//   - Numeração sequencial por (companyId, type, serie) controlada pelo
+//     CompanyFiscalConfig.
+// =====================================================================
+
+model CompanyFiscalConfig {
+  id                      String            @id @default(uuid())
+  companyId               String            @unique
+  ambiente                FiscalEnvironment @default(HOMOLOG)
+  regimeTributario        TaxRegime         @default(SIMPLES_NACIONAL)
+  cnpj                    String
+  inscricaoEstadual       String?
+  inscricaoMunicipal      String?
+  razaoSocial             String?
+  nomeFantasia            String?
+  endereco                String?
+  numero                  String?
+  complemento             String?
+  bairro                  String?
+  cidade                  String?
+  codigoMunicipioIbge     String?
+  uf                      String?
+  cep                     String?
+  serieNfe                Int               @default(1)
+  proximoNumeroNfe        Int               @default(1)
+  serieNfce               Int               @default(1)
+  proximoNumeroNfce       Int               @default(1)
+  serieNfse               Int               @default(1)
+  proximoNumeroNfse       Int               @default(1)
+  cscNfce                 String?
+  cscIdNfce               String?
+  certificadoB64          String?
+  certificadoSenhaCifrada String?
+  certificadoValidoAte    DateTime?
+  providerName            String?
+  providerApiToken        String?
+  providerCnpjReference   String?
+  providerWebhookSecret   String?
+  ativo                   Boolean           @default(true)
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+  company                 Company           @relation(fields: [companyId], references: [id])
+
+  @@index([cnpj])
+}
+
+model Invoice {
+  id                    String            @id @default(uuid())
+  companyId             String
+  userId                String?
+  orderId               String?
+  type                  InvoiceType
+  status                InvoiceStatus     @default(PENDING)
+  ambiente              FiscalEnvironment @default(HOMOLOG)
+  numero                Int?
+  serie                 Int?
+  chaveAcesso           String?           @unique
+  protocoloAutorizacao  String?
+  protocoloCancelamento String?
+  motivoCancelamento    String?
+  dataEmissao           DateTime?
+  dataAutorizacao       DateTime?
+  dataCancelamento      DateTime?
+  recipientName         String
+  recipientDocument     String?
+  recipientEmail        String?
+  recipientAddress      String?
+  recipientCity         String?
+  recipientUf           String?
+  recipientZip          String?
+  naturezaOperacao      String            @default("Venda")
+  paymentMethod         String?
+  valorProdutos         Decimal           @default(0) @db.Decimal(18, 2)
+  valorDesconto         Decimal           @default(0) @db.Decimal(18, 2)
+  valorFrete            Decimal           @default(0) @db.Decimal(18, 2)
+  valorTotal            Decimal           @default(0) @db.Decimal(18, 2)
+  observacoes           String?
+  providerName          String?
+  providerRef           String?
+  providerRawJson       Json?
+  xmlUrl                String?
+  danfeUrl              String?
+  errorMessage          String?
+  errorCode             String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  company               Company           @relation(fields: [companyId], references: [id])
+  order                 Order?            @relation(fields: [orderId], references: [id])
+  user                  Users?            @relation("InvoiceCreatedBy", fields: [userId], references: [id])
+  items                 InvoiceItem[]
+
+  @@unique([companyId, type, serie, numero])
+  @@index([companyId])
+  @@index([companyId, type])
+  @@index([companyId, status])
+  @@index([orderId])
+  @@index([userId])
+  @@index([providerRef])
+  @@index([createdAt(sort: Desc)])
+}
+
+model InvoiceItem {
+  id               String   @id @default(uuid())
+  invoiceId        String
+  productId        String?
+  ordem            Int      @default(0)
+  codigo           String
+  descricao        String
+  ncm              String?
+  cfop             String?
+  cest             String?
+  unidade          String   @default("UN")
+  quantidade       Decimal  @db.Decimal(18, 4)
+  valorUnitario    Decimal  @db.Decimal(18, 4)
+  valorDesconto    Decimal  @default(0) @db.Decimal(18, 2)
+  valorTotal       Decimal  @db.Decimal(18, 2)
+  origemMercadoria String?
+  csosn            String?
+  cstIcms          String?
+  aliquotaIcms     Decimal? @db.Decimal(5, 2)
+  invoice          Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([productId])
+}
+
+enum InvoiceType {
+  NFE
+  NFCE
+  NFSE
+}
+
+enum InvoiceStatus {
+  PENDING
+  PROCESSING
+  AUTHORIZED
+  REJECTED
+  CANCELED
+  ERROR
+}
+
+enum FiscalEnvironment {
+  HOMOLOG
+  PRODUCTION
+}
+
+enum TaxRegime {
+  SIMPLES_NACIONAL
+  SIMPLES_NACIONAL_EXCESSO
+  REGIME_NORMAL
+  MEI
 }
