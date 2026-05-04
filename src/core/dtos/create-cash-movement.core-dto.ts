@@ -79,4 +79,6 @@ export const CreateCashMovementSchema = z
   );
 
 export type CreateCashMovementDto = z.input<typeof CreateCashMovementSchema>;
-export type CreateCashMovementParsed = z.output<typeof CreateCashMovementSchema>;
+export type CreateCashMovementParsed = z.output<
+  typeof CreateCashMovementSchema
+>;
