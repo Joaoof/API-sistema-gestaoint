@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, Logger } from '@nestjs/common';
-import { ProductStatus } from '@prisma/client';
+import { ProductKind, ProductStatus } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { R2Service } from '../../../infra/services/r2/r2.service';
 import { CreateProductInput } from '../dto/create-product.input';
@@ -25,16 +25,28 @@ export class CreateProductUseCase {
       order: idx,
     }));
 
+    // Itens não-físicos (SERVICE/LABOR) não usam controle de estoque.
+    const isStockless = input.kind !== ProductKind.PRODUCT;
+    const unit =
+      input.unit && input.unit.trim().length > 0
+        ? input.unit
+        : input.kind === ProductKind.LABOR
+          ? 'HORA'
+          : input.kind === ProductKind.SERVICE
+            ? 'SERV'
+            : 'UN';
+
     try {
       const product = await this.prisma.product.create({
         data: {
+          kind: input.kind,
           sku: input.sku ?? null,
           nameProduct: input.nameProduct,
-          unit: input.unit,
+          unit,
           costPrice: input.costPrice,
           salePrice: input.salePrice,
-          quantity: input.quantity,
-          minStock: input.minStock,
+          quantity: isStockless ? 0 : input.quantity,
+          minStock: isStockless ? 0 : input.minStock,
           weight: input.weight ?? null,
           categoryId: input.categoryId ?? null,
           supplierId: input.supplierId ?? null,

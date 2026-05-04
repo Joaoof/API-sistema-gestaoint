@@ -23,6 +23,7 @@ model Gift {
 model Product {
   id          String              @id @default(uuid())
   nameProduct String              @unique
+  kind        ProductKind         @default(PRODUCT)
   quantity    Int                 @default(0)
   costPrice   Decimal             @default(0.0)
   salePrice   Decimal             @default(0.0)
@@ -52,6 +53,7 @@ model Product {
   @@index([status])
   @@index([categoryId])
   @@index([supplierId])
+  @@index([kind])
 }
 
 /// Imagens de um produto armazenadas no Cloudflare R2.
@@ -125,26 +127,29 @@ model Customer {
 }
 
 model Order {
-  id                String             @id @default(uuid())
-  number            Int                @default(autoincrement())
-  customerId        String?
-  customerName      String?
-  customerDocument  String?
-  customerPhone     String?
-  sellerId          String?
-  sellerName        String?
-  commissionPercent Decimal            @default(0)
-  commissionAmount  Decimal            @default(0)
-  status            OrderStatus        @default(CONFIRMED)
-  paymentMethod     OrderPaymentMethod @default(CASH)
-  subtotal          Decimal            @default(0)
-  discount          Decimal            @default(0)
-  total             Decimal            @default(0)
-  notes             String?
-  dueDate           DateTime?
-  createdById       String?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  id                    String             @id @default(uuid())
+  number                Int                @default(autoincrement())
+  customerId            String?
+  customerName          String?
+  customerDocument      String?
+  customerPhone         String?
+  sellerId              String?
+  sellerName            String?
+  commissionPercent     Decimal            @default(0)
+  commissionAmount      Decimal            @default(0)
+  status                OrderStatus        @default(CONFIRMED)
+  paymentMethod         OrderPaymentMethod @default(CASH)
+  orderType             OrderType          @default(STANDARD)
+  expectedDeliveryDate  DateTime?
+  depositAmount         Decimal            @default(0)
+  subtotal              Decimal            @default(0)
+  discount              Decimal            @default(0)
+  total                 Decimal            @default(0)
+  notes                 String?
+  dueDate               DateTime?
+  createdById           String?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
   customer          Customer?          @relation(fields: [customerId], references: [id])
   seller            Seller?            @relation(fields: [sellerId], references: [id])
   createdBy         Users?             @relation(fields: [createdById], references: [id])
@@ -156,22 +161,27 @@ model Order {
   @@index([createdById])
   @@index([createdAt(sort: Desc)])
   @@index([status])
+  @@index([orderType])
 }
 
 model OrderItem {
-  id          String  @id @default(uuid())
-  orderId     String
-  productId   String
-  productName String
-  quantity    Int
-  unitPrice   Decimal
-  discount    Decimal @default(0)
-  total       Decimal
-  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product     Product @relation(fields: [productId], references: [id])
+  id           String      @id @default(uuid())
+  orderId      String
+  productId    String
+  productName  String
+  itemKind     ProductKind @default(PRODUCT)
+  itemUnit     String      @default("UN")
+  quantity     Int
+  unitPrice    Decimal
+  discount     Decimal     @default(0)
+  total        Decimal
+  description  String?
+  order        Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product      Product     @relation(fields: [productId], references: [id])
 
   @@index([orderId])
   @@index([productId])
+  @@index([itemKind])
 }
 
 model Driver {
@@ -531,6 +541,17 @@ enum ProductStatus {
   ACTIVE
   INACTIVE
   DISCONTINUED
+}
+
+enum ProductKind {
+  PRODUCT
+  SERVICE
+  LABOR
+}
+
+enum OrderType {
+  STANDARD
+  CUSTOM_ORDER
 }
 
 enum AccountStatus {

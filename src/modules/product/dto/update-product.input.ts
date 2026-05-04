@@ -1,8 +1,10 @@
 import { Field, Float, InputType, Int } from '@nestjs/graphql';
+import { ProductKind } from '@prisma/client';
 import {
   ArrayMaxSize,
   IsArray,
   IsBoolean,
+  IsEnum,
   IsInt,
   IsNumber,
   IsOptional,
@@ -20,6 +22,11 @@ export class UpdateProductInput {
   @Field()
   @IsString()
   id!: string;
+
+  @Field(() => ProductKind, { nullable: true })
+  @IsOptional()
+  @IsEnum(ProductKind)
+  kind?: ProductKind;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -41,7 +48,7 @@ export class UpdateProductInput {
   @Field(() => Float, { nullable: true })
   @IsOptional()
   @IsNumber()
-  @IsPositive()
+  @Min(0)
   costPrice?: number;
 
   @Field(() => Float, { nullable: true })

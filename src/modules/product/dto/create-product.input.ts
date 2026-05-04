@@ -1,8 +1,10 @@
-import { Field, Float, InputType, Int } from '@nestjs/graphql';
+import { Field, Float, InputType, Int, registerEnumType } from '@nestjs/graphql';
+import { ProductKind } from '@prisma/client';
 import {
   ArrayMaxSize,
   IsArray,
   IsBoolean,
+  IsEnum,
   IsInt,
   IsNumber,
   IsOptional,
@@ -13,6 +15,8 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+
+registerEnumType(ProductKind, { name: 'ProductKind' });
 
 @InputType()
 export class ProductImageInput {
@@ -36,6 +40,10 @@ export class ProductImageInput {
 
 @InputType()
 export class CreateProductInput {
+  @Field(() => ProductKind, { defaultValue: ProductKind.PRODUCT })
+  @IsEnum(ProductKind)
+  kind!: ProductKind;
+
   @Field({ nullable: true })
   @IsOptional()
   @IsString()
@@ -47,13 +55,19 @@ export class CreateProductInput {
   @MaxLength(160)
   nameProduct!: string;
 
+  /**
+   * Unidade do item. Para SERVICE/LABOR, costuma ser "SERV" / "HORA".
+   */
   @Field({ defaultValue: 'UN' })
   @IsString()
   unit!: string;
 
+  /**
+   * Custo. Mão de obra pode ter custo zero (sem insumo) — por isso aceita 0.
+   */
   @Field(() => Float)
   @IsNumber()
-  @IsPositive()
+  @Min(0)
   costPrice!: number;
 
   @Field(() => Float)
@@ -61,6 +75,9 @@ export class CreateProductInput {
   @IsPositive()
   salePrice!: number;
 
+  /**
+   * Estoque inicial. Ignorado para SERVICE/LABOR (forçado a 0 no use-case).
+   */
   @Field(() => Int, { defaultValue: 0 })
   @IsInt()
   @Min(0)

@@ -1,5 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { OrderPaymentMethod, OrderStatus, Prisma } from '@prisma/client';
+import {
+  OrderPaymentMethod,
+  OrderStatus,
+  OrderType,
+  Prisma,
+  ProductKind,
+} from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { CreateOrderInput } from '../dto/create-order.input';
 import { OrderEntity } from '../entities/order.entity';
@@ -13,6 +19,17 @@ const PAYMENT_METHOD_LABEL: Record<OrderPaymentMethod, string> = {
   BOLETO: 'Boleto',
   TRANSFER: 'Transferência',
   OTHER: 'Outro',
+};
+
+const ORDER_TYPE_LABEL: Record<OrderType, string> = {
+  STANDARD: 'Pronta-entrega',
+  CUSTOM_ORDER: 'Encomenda',
+};
+
+const ITEM_KIND_LABEL: Record<ProductKind, string> = {
+  PRODUCT: 'Produto',
+  SERVICE: 'Serviço',
+  LABOR: 'Mão de obra',
 };
 
 type RawOrder = Prisma.OrderGetPayload<{
@@ -33,21 +50,27 @@ function toEntity(raw: RawOrder): OrderEntity {
     commissionAmount: Number(raw.commissionAmount),
     status: raw.status,
     paymentMethod: raw.paymentMethod,
+    orderType: raw.orderType,
+    expectedDeliveryDate: raw.expectedDeliveryDate,
+    depositAmount: Number(raw.depositAmount),
     subtotal: Number(raw.subtotal),
     discount: Number(raw.discount),
     total: Number(raw.total),
     notes: raw.notes,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
-    customer: raw.customer as any,
+    customer: raw.customer as never,
     items: raw.items.map((i) => ({
       id: i.id,
       productId: i.productId,
       productName: i.productName,
+      itemKind: i.itemKind,
+      itemUnit: i.itemUnit,
       quantity: i.quantity,
       unitPrice: Number(i.unitPrice),
       discount: Number(i.discount),
       total: Number(i.total),
+      description: i.description,
     })),
   };
 }
@@ -90,15 +113,24 @@ export class OrderUseCases {
       throw new BadRequestException('Pelo menos um item é obrigatório.');
     }
 
-    // Carrega produtos com nome e estoque atual
+    const isCustomOrder = input.orderType === OrderType.CUSTOM_ORDER;
+
+    if (isCustomOrder && !input.expectedDeliveryDate) {
+      throw new BadRequestException(
+        'Encomendas exigem uma data de entrega prevista.',
+      );
+    }
+
+    // Carrega produtos com kind/unit/estoque atual.
     const productIds = input.items.map((i) => i.productId);
     const products = await this.prisma.product.findMany({
       where: { id: { in: productIds }, deletedAt: null },
     });
     const productMap = new Map(products.map((p) => [p.id, p]));
 
-    // Valida estoque e calcula totais
+    // Valida estoque (apenas para PRODUCT em pedidos STANDARD) e calcula totais.
     const itemsToCreate: Prisma.OrderItemCreateWithoutOrderInput[] = [];
+    const stockMovements: Array<{ productId: string; quantity: number }> = [];
     let subtotal = 0;
 
     for (const item of input.items) {
@@ -106,23 +138,45 @@ export class OrderUseCases {
       if (!product) {
         throw new BadRequestException(`Produto ${item.productId} não encontrado.`);
       }
-      if (product.quantity < item.quantity) {
+
+      const isStockless = product.kind !== ProductKind.PRODUCT;
+
+      // Mão de obra / serviço: quantidade sempre 1.
+      const quantity = isStockless ? 1 : item.quantity;
+
+      // Valida estoque apenas para itens físicos em pedido STANDARD.
+      if (!isStockless && !isCustomOrder && product.quantity < quantity) {
         throw new BadRequestException(
-          `Estoque insuficiente para "${product.nameProduct}". Disponível: ${product.quantity}, solicitado: ${item.quantity}.`,
+          `Estoque insuficiente para "${product.nameProduct}". Disponível: ${product.quantity}, solicitado: ${quantity}.`,
         );
       }
+
       const lineTotal = Number(
-        (item.unitPrice * item.quantity - item.discount).toFixed(2),
+        (item.unitPrice * quantity - item.discount).toFixed(2),
       );
+      if (lineTotal < 0) {
+        throw new BadRequestException(
+          `Desconto do item "${product.nameProduct}" maior que o subtotal.`,
+        );
+      }
       subtotal += lineTotal;
+
       itemsToCreate.push({
         productName: product.nameProduct,
-        quantity: item.quantity,
+        itemKind: product.kind,
+        itemUnit: product.unit,
+        quantity,
         unitPrice: item.unitPrice,
         discount: item.discount,
         total: lineTotal,
+        description: item.description ?? null,
         product: { connect: { id: product.id } },
       });
+
+      // Estoque só é decrementado para PRODUCT em pedidos STANDARD.
+      if (!isStockless && !isCustomOrder) {
+        stockMovements.push({ productId: product.id, quantity });
+      }
     }
 
     const total = Number((subtotal - input.discount).toFixed(2));
@@ -130,25 +184,41 @@ export class OrderUseCases {
       throw new BadRequestException('Desconto maior que o subtotal.');
     }
 
-    // Resolve cliente (snapshot de nome/documento/telefone)
+    if (input.depositAmount > total) {
+      throw new BadRequestException(
+        'Sinal/entrada não pode ser maior que o total do pedido.',
+      );
+    }
+
+    // Resolve cliente (snapshot de nome/documento/telefone).
     let customerName: string | null = input.customerName ?? null;
     let customerDocument: string | null = input.customerDocument ?? null;
     let customerPhone: string | null = input.customerPhone ?? null;
     if (input.customerId) {
-      const customer = await this.prisma.customer.findUnique({ where: { id: input.customerId } });
+      const customer = await this.prisma.customer.findUnique({
+        where: { id: input.customerId },
+      });
       if (!customer) throw new BadRequestException('Cliente não encontrado.');
       customerName = customerName ?? customer.name;
       customerDocument = customerDocument ?? customer.document;
       customerPhone = customerPhone ?? customer.phone;
     }
 
-    // Resolve vendedor (snapshot de nome + cálculo de comissão)
+    if (isCustomOrder && !customerName) {
+      throw new BadRequestException(
+        'Encomendas exigem identificação do cliente (nome ou cliente cadastrado).',
+      );
+    }
+
+    // Resolve vendedor (snapshot de nome + cálculo de comissão).
     let sellerId: string | null = null;
     let sellerName: string | null = null;
     let commissionPercent = 0;
     let commissionAmount = 0;
     if (input.sellerId) {
-      const seller = await this.prisma.seller.findUnique({ where: { id: input.sellerId } });
+      const seller = await this.prisma.seller.findUnique({
+        where: { id: input.sellerId },
+      });
       if (!seller) throw new BadRequestException('Vendedor não encontrado.');
       if (!seller.active) throw new BadRequestException('Vendedor inativo.');
       sellerId = seller.id;
@@ -160,7 +230,12 @@ export class OrderUseCases {
       commissionAmount = Number(((total * commissionPercent) / 100).toFixed(2));
     }
 
-    // Transação: cria pedido + baixa estoque + acumula comissão do vendedor
+    // Encomendas iniciam DRAFT; o caller pode forçar outro status, mas
+    // mantemos a regra: quando vira CUSTOM_ORDER e foi enviado CONFIRMED/PAID,
+    // respeitamos o pedido — apenas não baixamos estoque.
+    const finalStatus = input.status;
+
+    // Transação: cria pedido + (eventual) baixa estoque + acumula comissão.
     const order = await this.prisma.$transaction(async (tx) => {
       const created = await tx.order.create({
         data: {
@@ -172,8 +247,11 @@ export class OrderUseCases {
           sellerName,
           commissionPercent,
           commissionAmount,
-          status: input.status,
+          status: finalStatus,
           paymentMethod: input.paymentMethod,
+          orderType: input.orderType,
+          expectedDeliveryDate: input.expectedDeliveryDate ?? null,
+          depositAmount: input.depositAmount,
           subtotal,
           discount: input.discount,
           total,
@@ -184,24 +262,24 @@ export class OrderUseCases {
         include: { customer: true, items: true },
       });
 
-      // Baixa de estoque (somente se pedido for confirmado/pago)
+      // Baixa de estoque (somente PRODUCT em STANDARD CONFIRMED/PAID).
       if (
-        input.status === OrderStatus.CONFIRMED ||
-        input.status === OrderStatus.PAID
+        finalStatus === OrderStatus.CONFIRMED ||
+        finalStatus === OrderStatus.PAID
       ) {
-        for (const item of input.items) {
+        for (const move of stockMovements) {
           await tx.product.update({
-            where: { id: item.productId },
-            data: { quantity: { decrement: item.quantity } },
+            where: { id: move.productId },
+            data: { quantity: { decrement: move.quantity } },
           });
         }
       }
 
-      // Acumula totalCommission do vendedor quando o pedido conta como faturado
+      // Acumula comissão do vendedor para pedidos faturados.
       if (
         sellerId &&
         commissionAmount > 0 &&
-        (input.status === OrderStatus.CONFIRMED || input.status === OrderStatus.PAID)
+        (finalStatus === OrderStatus.CONFIRMED || finalStatus === OrderStatus.PAID)
       ) {
         await tx.seller.update({
           where: { id: sellerId },
@@ -226,12 +304,13 @@ export class OrderUseCases {
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {
-      // Devolve estoque se o pedido estava ativo
+      // Devolve estoque apenas se pedido ativo, não for encomenda e item for físico.
       if (
-        order.status === OrderStatus.CONFIRMED ||
-        order.status === OrderStatus.PAID
+        order.orderType === OrderType.STANDARD &&
+        (order.status === OrderStatus.CONFIRMED || order.status === OrderStatus.PAID)
       ) {
         for (const item of order.items) {
+          if (item.itemKind !== ProductKind.PRODUCT) continue;
           await tx.product.update({
             where: { id: item.productId },
             data: { quantity: { increment: item.quantity } },
@@ -256,19 +335,20 @@ export class OrderUseCases {
     if (!order) throw new NotFoundException('Pedido não encontrado.');
 
     await this.prisma.$transaction(async (tx) => {
-      // Devolve estoque se o pedido estava ativo (CONFIRMED/PAID)
+      // Devolve estoque (mesmas condições do cancel).
       if (
-        order.status === OrderStatus.CONFIRMED ||
-        order.status === OrderStatus.PAID
+        order.orderType === OrderType.STANDARD &&
+        (order.status === OrderStatus.CONFIRMED || order.status === OrderStatus.PAID)
       ) {
         for (const item of order.items) {
+          if (item.itemKind !== ProductKind.PRODUCT) continue;
           await tx.product.update({
             where: { id: item.productId },
             data: { quantity: { increment: item.quantity } },
           });
         }
       }
-      // Estorna comissão acumulada do vendedor (se houver)
+      // Estorna comissão acumulada do vendedor (se houver).
       if (
         order.sellerId &&
         Number(order.commissionAmount) > 0 &&
@@ -279,9 +359,7 @@ export class OrderUseCases {
           data: { totalCommission: { decrement: Number(order.commissionAmount) } },
         });
       }
-      // Remove entrega vinculada (se houver)
       await tx.delivery.deleteMany({ where: { orderId: id } });
-      // OrderItem é cascade-delete via FK
       await tx.order.delete({ where: { id } });
     });
 
@@ -303,6 +381,10 @@ export class OrderUseCases {
     const createdAt = order.createdAt;
     const dataEmissao = createdAt.toISOString().slice(0, 10);
     const horaEmissao = createdAt.toISOString().slice(11, 19);
+
+    const totalLiquido = Number(order.total);
+    const entrada = Number(order.depositAmount ?? 0);
+    const saldoARecolher = Number((totalLiquido - entrada).toFixed(2));
 
     return {
       empresa: {
@@ -327,17 +409,30 @@ export class OrderUseCases {
         data_emissao: dataEmissao,
         hora_emissao: horaEmissao,
         forma_pagamento: PAYMENT_METHOD_LABEL[order.paymentMethod],
+        tipo: order.orderType,
+        tipo_label: ORDER_TYPE_LABEL[order.orderType],
+        entrega_prevista: order.expectedDeliveryDate
+          ? order.expectedDeliveryDate.toISOString().slice(0, 10)
+          : null,
+        entrada,
+        saldo_a_pagar: saldoARecolher,
         vencimento: order.dueDate ? order.dueDate.toISOString().slice(0, 10) : null,
-        valor_total: Number(order.total),
+        valor_total: totalLiquido,
         valor_bruto: Number(order.subtotal),
         desconto: Number(order.discount),
         itens_qtd: order.items.length,
       },
       itens: order.items.map((i) => ({
         codigo: i.product?.sku ?? null,
-        descricao: i.productName,
+        descricao: i.description
+          ? `${i.productName} — ${i.description}`
+          : i.productName,
         marca: null,
-        unidade: i.product?.unit ?? 'UN',
+        unidade: i.itemUnit || i.product?.unit || 'UN',
+        tipo: i.itemKind,
+        tipo_label: ITEM_KIND_LABEL[i.itemKind],
+        // Mão de obra / serviço não exibem quantidade na nota.
+        mostra_quantidade: i.itemKind === ProductKind.PRODUCT,
         quantidade: i.quantity,
         valor_unitario: Number(i.unitPrice),
         desconto: Number(i.discount),

@@ -1,12 +1,14 @@
 import { Field, Float, ID, Int, ObjectType, registerEnumType } from '@nestjs/graphql';
-import { ProductStatus } from '@prisma/client';
+import { ProductKind, ProductStatus } from '@prisma/client';
 import { ProductImageEntity } from './product-image.entity';
 
 registerEnumType(ProductStatus, { name: 'ProductStatus' });
+registerEnumType(ProductKind, { name: 'ProductKind' });
 
 @ObjectType()
 export class ProductEntity {
   @Field(() => ID) id!: string;
+  @Field(() => ProductKind) kind!: ProductKind;
   @Field(() => String, { nullable: true }) sku?: string | null;
   @Field() nameProduct!: string;
   @Field(() => Int) quantity!: number;

@@ -4,7 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, ProductStatus } from '@prisma/client';
+import { Prisma, ProductKind, ProductStatus } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { R2Service } from '../../../infra/services/r2/r2.service';
 import { UpdateProductInput } from '../dto/update-product.input';
@@ -28,14 +28,28 @@ export class UpdateProductUseCase {
       throw new NotFoundException('Produto não encontrado.');
     }
 
+    // Determina natureza efetiva (após o update) para zerar estoque de SERVICE/LABOR.
+    const effectiveKind = input.kind ?? existing.kind;
+    const isStockless = effectiveKind !== ProductKind.PRODUCT;
+
     const data: Prisma.ProductUpdateInput = {};
+    if (input.kind !== undefined) data.kind = input.kind;
     if (input.sku !== undefined) data.sku = input.sku;
     if (input.nameProduct !== undefined) data.nameProduct = input.nameProduct;
     if (input.unit !== undefined) data.unit = input.unit;
     if (input.costPrice !== undefined) data.costPrice = input.costPrice;
     if (input.salePrice !== undefined) data.salePrice = input.salePrice;
-    if (input.quantity !== undefined) data.quantity = input.quantity;
-    if (input.minStock !== undefined) data.minStock = input.minStock;
+    if (input.quantity !== undefined) {
+      data.quantity = isStockless ? 0 : input.quantity;
+    } else if (input.kind && isStockless) {
+      // Mudou para SERVICE/LABOR sem mexer em quantity → zera estoque.
+      data.quantity = 0;
+    }
+    if (input.minStock !== undefined) {
+      data.minStock = isStockless ? 0 : input.minStock;
+    } else if (input.kind && isStockless) {
+      data.minStock = 0;
+    }
     if (input.weight !== undefined) data.weight = input.weight;
     if (input.description !== undefined) data.description = input.description;
     if (input.active !== undefined) {
