@@ -61,7 +61,10 @@ export const CreateCashMovementSchema = z
       .max(500)
       .optional()
       .nullable(),
-    user_id: z.string().uuid('user_id precisa ser um UUID válido.').optional(),
+    // O backend usa cuid() para Users.id (não UUID), por isso aceitamos
+    // qualquer string não vazia. A autenticidade do user_id é garantida pelo
+    // JWT/CurrentUser, então não precisamos validar formato aqui.
+    user_id: z.string().min(1, 'user_id é obrigatório.').optional(),
   })
   .refine((d) => !d.date || d.date <= new Date(), {
     message: 'Data não pode ser no futuro.',
