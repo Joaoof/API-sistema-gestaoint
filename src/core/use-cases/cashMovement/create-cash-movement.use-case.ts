@@ -24,7 +24,7 @@ export class CreateCashMovementUseCase {
 
     const validatedDto = CreateCashMovementSchema.parse({
       ...dto,
-      userId: userId,
+      user_id: userId,
     });
 
     const movement = CashMovementMapper.toDomain(validatedDto, userId);

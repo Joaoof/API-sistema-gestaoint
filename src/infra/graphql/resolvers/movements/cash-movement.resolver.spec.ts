@@ -4,7 +4,11 @@ import { CreateCashMovementUseCase } from '../../../../core/use-cases/cashMoveme
 import { FindAllCashMovementUseCase } from '../../../../core/use-cases/cashMovement/find-all-cash-movement.use-case';
 import { DashboardMovementUseCase } from '../../../../core/use-cases/cashMovement/dashboard-movement.use-case';
 import { CashMovement } from '../../../../core/entities/movements/cash-movement.entity'; // Corrigido para o alias core/entities
-import { MovementCategory, MovementType, MovementTypePayment } from '@prisma/client';
+import {
+  MovementCategory,
+  MovementType,
+  MovementTypePayment,
+} from '@prisma/client';
 
 import { User } from '../../../../core/entities/user.entity';
 
@@ -22,6 +26,9 @@ const MOCK_DATE = new Date('2025-09-29T10:00:00.000Z');
 const mockCreateCashMovementUseCase = { execute: jest.fn() };
 const mockFindAllCashMovementUseCase = { execute: jest.fn() };
 const mockDashboardMovementUseCase = { execute: jest.fn() };
+const mockDeleteCashMovementUseCase = { execute: jest.fn() };
+const mockUpdateCashMovementUseCase = { execute: jest.fn() };
+const mockFindPaginatedCashMovementUseCase = { execute: jest.fn() };
 
 const mockUser: User = {
   id: MOCK_USER_ID,
@@ -29,16 +36,16 @@ const mockUser: User = {
   role: 'USER',
 };
 
-const mockCreatedMovement = new CashMovement(
-  MOCK_MOVEMENT_ID,
-  MovementType.ENTRY, // Enum Prisma usado no mock de retorno do Use Case
-  MovementCategory.SALE, // Enum Prisma usado no mock de retorno do Use Case
-  MovementTypePayment.CASH,
-  100.5,
-  'Venda de produto A',
-  MOCK_DATE,
-  MOCK_USER_ID,
-);
+const mockCreatedMovement = new CashMovement({
+  id: MOCK_MOVEMENT_ID,
+  type: MovementType.ENTRY,
+  category: MovementCategory.SALE,
+  typePayment: MovementTypePayment.CASH,
+  value: 100.5,
+  description: 'Venda de produto A',
+  date: MOCK_DATE,
+  user_id: MOCK_USER_ID,
+});
 
 const mockDashboardResult = new DashboardMovement(200, 50, 150, 5000);
 
@@ -60,6 +67,24 @@ describe('CashMovementResolver (Integration/GraphQL)', () => {
         {
           provide: DashboardMovementUseCase,
           useValue: mockDashboardMovementUseCase,
+        },
+        {
+          provide:
+            require('../../../../core/use-cases/cashMovement/delete-cash-movement.use-case')
+              .DeleteCashMovementUseCase,
+          useValue: mockDeleteCashMovementUseCase,
+        },
+        {
+          provide:
+            require('../../../../core/use-cases/cashMovement/update-cash-movement.use-case')
+              .UpdateCashMovementUseCase,
+          useValue: mockUpdateCashMovementUseCase,
+        },
+        {
+          provide:
+            require('../../../../core/use-cases/cashMovement/find-paginated-cash-movement.use-case')
+              .FindPaginatedCashMovementUseCase,
+          useValue: mockFindPaginatedCashMovementUseCase,
         },
       ],
     }).compile();

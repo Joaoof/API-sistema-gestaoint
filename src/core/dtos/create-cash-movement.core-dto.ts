@@ -1,38 +1,79 @@
 import { z } from 'zod';
 import {
-  MovementType,
   MovementCategory,
+  MovementStatus,
+  MovementType,
   MovementTypePayment,
 } from '@prisma/client';
 
-// Validação avançada de DTO
-export const CreateCashMovementSchema = z.object({
-  type: z.nativeEnum(MovementType, {
-    required_error: 'O tipo (entrada ou saída) é obrigatório.',
-    invalid_type_error: 'Tipo inválido. Deve ser "income" ou "expense".',
-  }),
-  category: z.nativeEnum(MovementCategory, {
-    required_error: 'A categoria da movimentação é obrigatória.',
-    invalid_type_error: 'Categoria inválida.',
-  }),
-  typePayment: z.nativeEnum(MovementTypePayment, {
-    required_error: 'O tipo de pagamento é obrigatório',
-    invalid_type_error: 'Tipo de pagamento inválido',
-  }),
-  value: z
-    .number()
-    .positive('O valor precisa ser um número positivo.')
-    .max(1_000_000, 'O valor não pode ultrapassar 1 milhão.'), // limite máximo
-  description: z
+const optionalTrimmedString = (max: number, label: string) =>
+  z
     .string()
-    .min(1, 'Descrição é obrigatória.')
-    .max(255, 'Descrição muito longa. Máximo de 255 caracteres.'),
-  date: z.coerce
-    .date()
-    .refine((d) => d <= new Date(), 'Data não pode ser no futuro.') // regra de negócio
+    .max(max, `${label} muito longo. Máximo de ${max} caracteres.`)
     .optional()
-    .default(() => new Date()),
-  user_id: z.string().uuid('user_id precisa ser um UUID válido.').optional(),
-});
+    .nullable()
+    .transform((v) => (v == null ? null : v.trim() || null));
 
-export type CreateCashMovementDto = z.infer<typeof CreateCashMovementSchema>;
+export const CreateCashMovementSchema = z
+  .object({
+    type: z.nativeEnum(MovementType, {
+      required_error: 'O tipo (entrada ou saída) é obrigatório.',
+      invalid_type_error: 'Tipo inválido. Deve ser ENTRY ou EXIT.',
+    }),
+    category: z.nativeEnum(MovementCategory, {
+      required_error: 'A categoria da movimentação é obrigatória.',
+      invalid_type_error: 'Categoria inválida.',
+    }),
+    typePayment: z
+      .nativeEnum(MovementTypePayment, {
+        invalid_type_error: 'Forma de pagamento inválida.',
+      })
+      .optional()
+      .nullable(),
+    status: z
+      .nativeEnum(MovementStatus, { invalid_type_error: 'Status inválido.' })
+      .optional()
+      .default(MovementStatus.COMPLETED),
+    value: z
+      .number({
+        required_error: 'O valor é obrigatório.',
+        invalid_type_error: 'O valor deve ser numérico.',
+      })
+      .positive('O valor precisa ser um número positivo.')
+      .max(1_000_000, 'O valor não pode ultrapassar 1 milhão.'),
+    description: z
+      .string({ required_error: 'Descrição é obrigatória.' })
+      .min(1, 'Descrição é obrigatória.')
+      .max(255, 'Descrição muito longa. Máximo de 255 caracteres.'),
+    date: z.coerce
+      .date()
+      .optional()
+      .default(() => new Date()),
+    dueDate: z.coerce.date().optional().nullable(),
+    paidAt: z.coerce.date().optional().nullable(),
+    referenceCode: optionalTrimmedString(60, 'Código de referência'),
+    counterpartyName: optionalTrimmedString(120, 'Nome do contato'),
+    counterpartyDocument: optionalTrimmedString(20, 'Documento'),
+    notes: optionalTrimmedString(2000, 'Observações'),
+    attachmentUrl: z
+      .string()
+      .url('URL do anexo inválida.')
+      .max(500)
+      .optional()
+      .nullable(),
+    user_id: z.string().uuid('user_id precisa ser um UUID válido.').optional(),
+  })
+  .refine((d) => !d.date || d.date <= new Date(), {
+    message: 'Data não pode ser no futuro.',
+    path: ['date'],
+  })
+  .refine(
+    (d) =>
+      !d.dueDate ||
+      !d.date ||
+      d.dueDate.getTime() >= new Date(d.date).setHours(0, 0, 0, 0),
+    { message: 'Vencimento não pode ser anterior à data.', path: ['dueDate'] },
+  );
+
+export type CreateCashMovementDto = z.input<typeof CreateCashMovementSchema>;
+export type CreateCashMovementParsed = z.output<typeof CreateCashMovementSchema>;

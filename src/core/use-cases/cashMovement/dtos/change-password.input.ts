@@ -2,12 +2,12 @@ import { Field, InputType } from '@nestjs/graphql';
 
 @InputType()
 export class ChangePasswordInput {
-    @Field()
-    currentPassword: string;
+  @Field()
+  currentPassword: string;
 
-    @Field()
-    newPassword: string;
+  @Field()
+  newPassword: string;
 
-    @Field()
-    confirmPassword: string;
+  @Field()
+  confirmPassword: string;
 }

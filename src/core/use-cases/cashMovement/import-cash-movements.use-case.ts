@@ -87,7 +87,13 @@ function parseCsv(input: string): { rows: ImportRow[]; errors: ImportError[] } {
     description: header.indexOf('descricao'),
   };
 
-  if (idx.date < 0 || idx.type < 0 || idx.category < 0 || idx.value < 0 || idx.description < 0) {
+  if (
+    idx.date < 0 ||
+    idx.type < 0 ||
+    idx.category < 0 ||
+    idx.value < 0 ||
+    idx.description < 0
+  ) {
     errors.push({
       line: 1,
       message:
@@ -111,17 +117,25 @@ function parseCsv(input: string): { rows: ImportRow[]; errors: ImportError[] } {
       }
 
       const category = cols[idx.category].trim().toUpperCase();
-      if (!Object.values(MovementCategory).includes(category as MovementCategory)) {
+      if (
+        !Object.values(MovementCategory).includes(category as MovementCategory)
+      ) {
         throw new Error(`categoria inválida: ${category}`);
       }
 
-      const rawPay = idx.typePayment >= 0 ? cols[idx.typePayment].trim().toUpperCase() : '';
-      const typePayment = rawPay && Object.values(MovementTypePayment).includes(rawPay as MovementTypePayment)
-        ? (rawPay as MovementTypePayment)
-        : undefined;
+      const rawPay =
+        idx.typePayment >= 0 ? cols[idx.typePayment].trim().toUpperCase() : '';
+      const typePayment =
+        rawPay &&
+        Object.values(MovementTypePayment).includes(
+          rawPay as MovementTypePayment,
+        )
+          ? (rawPay as MovementTypePayment)
+          : undefined;
 
       const value = Number(cols[idx.value].replace(',', '.'));
-      if (!Number.isFinite(value) || value <= 0) throw new Error('valor inválido');
+      if (!Number.isFinite(value) || value <= 0)
+        throw new Error('valor inválido');
 
       const description = cols[idx.description].trim();
       if (!description) throw new Error('descrição vazia');
@@ -195,6 +209,9 @@ function splitCsv(input: string): string[][] {
 }
 
 function detectSeparator(input: string): ',' | ';' {
-  const head = input.slice(0, input.indexOf('\n') >= 0 ? input.indexOf('\n') : input.length);
+  const head = input.slice(
+    0,
+    input.indexOf('\n') >= 0 ? input.indexOf('\n') : input.length,
+  );
   return head.split(';').length > head.split(',').length ? ';' : ',';
 }

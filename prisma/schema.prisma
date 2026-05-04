@@ -394,18 +394,32 @@ model CompanyPlan {
 }
 
 model CashMovement {
-  id          String               @id @default(uuid())
-  type        MovementType
-  category    MovementCategory
-  value       Decimal
-  description String
-  date        DateTime             @default(now())
-  user_id     String
-  typePayment MovementTypePayment?
-  user        Users                @relation(fields: [user_id], references: [id])
+  id                   String                @id @default(uuid())
+  type                 MovementType
+  category             MovementCategory
+  value                Decimal
+  description          String
+  date                 DateTime              @default(now())
+  user_id              String
+  typePayment          MovementTypePayment?
+  status               MovementStatus        @default(COMPLETED)
+  referenceCode        String?
+  counterpartyName     String?
+  counterpartyDocument String?
+  notes                String?
+  attachmentUrl        String?
+  dueDate              DateTime?
+  paidAt               DateTime?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  user                 Users                 @relation(fields: [user_id], references: [id])
 
   @@index([user_id, date(sort: Desc)])
+  @@index([user_id, status])
+  @@index([user_id, category])
+  @@index([user_id, type])
   @@index([date])
+  @@index([referenceCode])
 }
 
 model CommissionRuleConfig {
@@ -493,7 +507,18 @@ enum MovementTypePayment {
   PIX
   CREDIT_CARD
   DEBIT_CARD
+  BANK_TRANSFER
+  BANK_SLIP
+  CHECK
   OTHER
+}
+
+enum MovementStatus {
+  PENDING
+  COMPLETED
+  SCHEDULED
+  CANCELED
+  OVERDUE
 }
 
 enum EntryTypeClient {

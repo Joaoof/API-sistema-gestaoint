@@ -88,10 +88,7 @@ export class CashMovementController {
     const filename = `movimentacoes-${stamp}.csv`;
 
     res.header('Content-Type', 'text/csv; charset=utf-8');
-    res.header(
-      'Content-Disposition',
-      `attachment; filename="${filename}"`,
-    );
+    res.header('Content-Disposition', `attachment; filename="${filename}"`);
     res.send('﻿' + csv);
   }
 }
@@ -101,9 +98,17 @@ const HEADERS = [
   'data',
   'tipo',
   'categoria',
+  'status',
   'forma_pagamento',
   'valor',
   'descricao',
+  'codigo_referencia',
+  'contato',
+  'documento_contato',
+  'vencimento',
+  'pago_em',
+  'observacoes',
+  'anexo_url',
 ] as const;
 
 function toCsv(rows: CashMovement[]): string {
@@ -115,9 +120,17 @@ function toCsv(rows: CashMovement[]): string {
         r.date.toISOString(),
         r.type,
         r.category,
+        r.status,
         r.typePayment ?? '',
         r.value.toFixed(2),
         r.description,
+        r.referenceCode ?? '',
+        r.counterpartyName ?? '',
+        r.counterpartyDocument ?? '',
+        r.dueDate ? r.dueDate.toISOString() : '',
+        r.paidAt ? r.paidAt.toISOString() : '',
+        r.notes ?? '',
+        r.attachmentUrl ?? '',
       ]
         .map(escapeCsv)
         .join(';'),

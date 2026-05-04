@@ -3,14 +3,18 @@ import { UseGuards } from '@nestjs/common';
 import { GqlAuthGuard } from 'src/auth/guards/auth.guard';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { User } from 'src/core/entities/user.entity';
-import { CashMovementGraphQL } from '../../dto/cash-movement.dto';
+import {
+  CashMovementGraphQL,
+  CashMovementPage,
+} from '../../dto/cash-movement.dto';
 import { CreateCashMovementUseCase } from 'src/core/use-cases/cashMovement/create-cash-movement.use-case';
 import { FindAllCashMovementUseCase } from 'src/core/use-cases/cashMovement/find-all-cash-movement.use-case';
 import { CashMovementMapper } from '../../../../core/mappers/cash-movement.mapper';
 import { CreateCashMovementInput } from '../../dto/create-cash-movement.dto';
-import { CashMovementType, CashMovementTypes } from '../../enum/CashMovementType.enum';
-import { CashMovementCategory, CashMovementCategories } from '../../enum/CashMovementCategory.enum';
-import { MovementTypePayment, MovementTypePayments } from '../../enum/CashMovementTypePayement.enum';
+import { CashMovementType } from '../../enum/CashMovementType.enum';
+import { CashMovementCategory } from '../../enum/CashMovementCategory.enum';
+import { MovementTypePayment } from '../../enum/CashMovementTypePayement.enum';
+import { CashMovementStatus } from '../../enum/CashMovementStatus.enum';
 import { FindAllCashMovementInput } from 'src/core/use-cases/cashMovement/dtos/find-all-cash-movement.input';
 import { DashboardStats } from '../../dto/dashboard-stats.entity';
 import { DashboardMovementUseCase } from 'src/core/use-cases/cashMovement/dashboard-movement.use-case';
@@ -18,27 +22,27 @@ import { DashboardStatsInput } from '../../dto/dashboard-stats.input';
 import { DeleteCashMovementUseCase } from '../../../../core/use-cases/cashMovement/delete-cash-movement.use-case';
 import { UpdateCashMovementInput } from '../../../../core/use-cases/cashMovement/dtos/update-cash-movement.input';
 import { UpdateCashMovementUseCase } from 'src/core/use-cases/cashMovement/update-cash-movement.use-case';
+import { FindPaginatedCashMovementUseCase } from 'src/core/use-cases/cashMovement/find-paginated-cash-movement.use-case';
+
+const CATEGORY_SUCCESS_MESSAGES: Record<string, string> = {
+  SALE: 'Venda registrada com sucesso!',
+  CHANGE: 'Troco registrado com sucesso!',
+  OTHER_IN: 'Entrada registrada com sucesso!',
+  EXPENSE: 'Despesa registrada com sucesso!',
+  WITHDRAWAL: 'Saque registrado com sucesso!',
+  PAYMENT: 'Pagamento registrado com sucesso!',
+};
 
 @Resolver(() => CashMovementGraphQL)
 export class CashMovementResolver {
-  private readonly createCashMovementUseCase: CreateCashMovementUseCase;
-  private readonly findAllCashMovementUseCase: FindAllCashMovementUseCase;
-  private readonly dashboardMovementUseCase: DashboardMovementUseCase;
-  private readonly deleteCashMovementUseCase: DeleteCashMovementUseCase;
-  private readonly updateCashMovementUseCase: UpdateCashMovementUseCase
   constructor(
-    createCashMovementUseCase: CreateCashMovementUseCase,
-    findAllCashMovementUseCase: FindAllCashMovementUseCase,
-    dashboardMovementUseCase: DashboardMovementUseCase,
-    deleteCashMovementUseCase: DeleteCashMovementUseCase,
-    updateCashMovementUseCase: UpdateCashMovementUseCase
-  ) {
-    this.createCashMovementUseCase = createCashMovementUseCase;
-    this.findAllCashMovementUseCase = findAllCashMovementUseCase;
-    this.dashboardMovementUseCase = dashboardMovementUseCase;
-    this.deleteCashMovementUseCase = deleteCashMovementUseCase;
-    this.updateCashMovementUseCase = updateCashMovementUseCase;
-  }
+    private readonly createCashMovementUseCase: CreateCashMovementUseCase,
+    private readonly findAllCashMovementUseCase: FindAllCashMovementUseCase,
+    private readonly dashboardMovementUseCase: DashboardMovementUseCase,
+    private readonly deleteCashMovementUseCase: DeleteCashMovementUseCase,
+    private readonly updateCashMovementUseCase: UpdateCashMovementUseCase,
+    private readonly findPaginatedCashMovementUseCase: FindPaginatedCashMovementUseCase,
+  ) {}
 
   @Mutation(() => CashMovementGraphQL)
   @UseGuards(GqlAuthGuard)
@@ -46,39 +50,16 @@ export class CashMovementResolver {
     @Args('input') input: CreateCashMovementInput,
     @CurrentUser() user: User,
   ): Promise<CashMovementGraphQL> {
-    const dto = {
-      ...input,
-      userId: user.id,
-    };
-    const cashMovementResolver = await this.createCashMovementUseCase.execute(
-      dto,
+    const movement = await this.createCashMovementUseCase.execute(
+      { ...input, user_id: user.id },
       user.id,
     );
 
-    const messages = {
-      SALE: 'Venda registrada com sucesso!',
-      CHANGE: 'Troco registrado com sucesso!',
-      OTHER_IN: 'Entrada registrada com sucesso!',
-      EXPENSE: 'Despesa registrada com sucesso!',
-      WITHDRAWAL: 'Saque registrado com sucesso!',
-      PAYMENT: 'Pagamento registrado com sucesso!',
-    };
-
     const message =
-      messages[cashMovementResolver.category] ||
+      CATEGORY_SUCCESS_MESSAGES[movement.category] ||
       'Movimentação registrada com sucesso!';
 
-    return {
-      id: cashMovementResolver.id,
-      type: cashMovementResolver.type as CashMovementType,
-      category: cashMovementResolver.category as CashMovementCategory,
-      typePayment: cashMovementResolver.typePayment as MovementTypePayment,
-      value: cashMovementResolver.value,
-      description: cashMovementResolver.description,
-      date: cashMovementResolver.date,
-      user_id: cashMovementResolver.user_id ?? '',
-      message,
-    };
+    return this.toGraphQL(movement, message);
   }
 
   @Query(() => [CashMovementGraphQL], { name: 'cashMovements' })
@@ -91,8 +72,28 @@ export class CashMovementResolver {
       user.id,
       input,
     );
+    return movements.map((m) => this.toGraphQL(m));
+  }
 
-    return movements.map(CashMovementMapper.toJSON);
+  @Query(() => CashMovementPage, { name: 'cashMovementsHistory' })
+  @UseGuards(GqlAuthGuard)
+  async cashMovementsHistory(
+    @Args('input', { nullable: true }) input: FindAllCashMovementInput,
+    @CurrentUser() user: User,
+  ): Promise<CashMovementPage> {
+    const result = await this.findPaginatedCashMovementUseCase.execute(
+      user.id,
+      input,
+    );
+
+    return {
+      items: result.items.map((m) => this.toGraphQL(m)),
+      total: result.total,
+      page: result.page,
+      pageSize: result.pageSize,
+      totalPages: result.totalPages,
+      summary: result.summary,
+    };
   }
 
   @UseGuards(GqlAuthGuard)
@@ -101,7 +102,7 @@ export class CashMovementResolver {
     @Args('input', { nullable: true }) input: DashboardStatsInput,
     @CurrentUser() user: User,
   ) {
-    const date = input?.date || undefined; // Pode ser undefined
+    const date = input?.date || undefined;
     const dashboard = await this.dashboardMovementUseCase.execute(
       user.id,
       date ?? '',
@@ -115,12 +116,7 @@ export class CashMovementResolver {
     @Args('movementId') movementId: string,
     @CurrentUser() user: User,
   ): Promise<boolean> {
-    try {
-      await this.deleteCashMovementUseCase.execute(user.id, movementId);
-      return true;
-    } catch (error) {
-      throw new Error(error.message);
-    }
+    return this.deleteCashMovementUseCase.execute(user.id, movementId);
   }
 
   @Mutation(() => Boolean)
@@ -128,7 +124,37 @@ export class CashMovementResolver {
   async cashMovementUpdate(
     @Args('movementId', { type: () => String }) movementId: string,
     @Args('movementUpdateCash') movementUpdateCash: UpdateCashMovementInput,
+    @CurrentUser() user: User,
   ): Promise<boolean> {
-    return this.updateCashMovementUseCase.execute(movementId, movementUpdateCash);
+    return this.updateCashMovementUseCase.execute(
+      movementId,
+      movementUpdateCash,
+      user.id,
+    );
+  }
+
+  private toGraphQL(movement: any, message?: string): CashMovementGraphQL {
+    const json = CashMovementMapper.toJSON(movement);
+    return {
+      id: json.id,
+      type: json.type as CashMovementType,
+      category: json.category as CashMovementCategory,
+      typePayment: json.typePayment as MovementTypePayment | null,
+      status: json.status as CashMovementStatus,
+      value: json.value,
+      description: json.description,
+      date: json.date,
+      dueDate: json.dueDate ?? null,
+      paidAt: json.paidAt ?? null,
+      referenceCode: json.referenceCode,
+      counterpartyName: json.counterpartyName,
+      counterpartyDocument: json.counterpartyDocument,
+      notes: json.notes,
+      attachmentUrl: json.attachmentUrl,
+      createdAt: json.createdAt,
+      updatedAt: json.updatedAt,
+      user_id: json.user_id ?? '',
+      message,
+    };
   }
 }
