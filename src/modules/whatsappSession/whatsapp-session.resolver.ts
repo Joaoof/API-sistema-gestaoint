@@ -2,6 +2,8 @@ import { UseGuards } from '@nestjs/common';
 import {
   Args,
   Field,
+  Float,
+  InputType,
   Int,
   Mutation,
   ObjectType,
@@ -25,6 +27,35 @@ class WebhookConfigResult {
   @Field() ok!: boolean;
   @Field(() => String, { nullable: true }) format?: string | null;
   @Field(() => String, { nullable: true }) webhookUrl?: string | null;
+}
+
+@InputType()
+class WhatsappMediaInput {
+  @Field(() => String, { nullable: true, description: 'URL pública pra WAHA baixar' })
+  url?: string;
+  @Field(() => String, { nullable: true, description: 'Conteúdo em base64 (sem prefixo data:)' })
+  data?: string;
+  @Field(() => String, { nullable: true }) mimetype?: string;
+  @Field(() => String, { nullable: true }) filename?: string;
+}
+
+@ObjectType()
+class WhatsappPresenceResult {
+  @Field(() => String, { nullable: true }) presence?: string | null;
+  @Field({ nullable: true }) lastSeen?: Date | null;
+}
+
+@ObjectType()
+class WhatsappCheckExistsResult {
+  @Field() exists!: boolean;
+  @Field(() => String, { nullable: true }) chatId?: string | null;
+}
+
+@ObjectType()
+class WhatsappGroupParticipant {
+  @Field() jid!: string;
+  @Field() phone!: string;
+  @Field() isAdmin!: boolean;
 }
 
 @Resolver(() => WhatsappInstanceEntity)
@@ -92,9 +123,15 @@ export class WhatsappSessionResolver {
     @Args('to') to: string,
     @Args('body') body: string,
     @Args('customerId', { nullable: true }) customerId?: string,
+    @Args('replyTo', { nullable: true }) replyTo?: string,
+    @Args('mentions', { nullable: true, type: () => [String] })
+    mentions?: string[],
   ): Promise<WhatsappMessageEntity> {
     const companyId = await this.tenancy.resolveCompanyId(user);
-    return this.service.sendText(companyId, to, body, customerId);
+    return this.service.sendText(companyId, to, body, customerId, {
+      replyTo,
+      mentions,
+    });
   }
 
   @Mutation(() => Int)
@@ -176,5 +213,155 @@ export class WhatsappSessionResolver {
       companyId,
       peerNumber,
     );
+  }
+
+  // ============ Phase 2: send media / reply / mention / reaction ============
+
+  @Mutation(() => WhatsappMessageEntity)
+  async sendWhatsappImage(
+    @CurrentUser() user: AuthUser,
+    @Args('to') to: string,
+    @Args('file') file: WhatsappMediaInput,
+    @Args('caption', { nullable: true }) caption?: string,
+    @Args('replyTo', { nullable: true }) replyTo?: string,
+    @Args('customerId', { nullable: true }) customerId?: string,
+  ): Promise<WhatsappMessageEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.sendMedia(companyId, to, 'image', file, {
+      caption,
+      replyTo,
+      customerId,
+    });
+  }
+
+  @Mutation(() => WhatsappMessageEntity)
+  async sendWhatsappVideo(
+    @CurrentUser() user: AuthUser,
+    @Args('to') to: string,
+    @Args('file') file: WhatsappMediaInput,
+    @Args('caption', { nullable: true }) caption?: string,
+    @Args('replyTo', { nullable: true }) replyTo?: string,
+    @Args('customerId', { nullable: true }) customerId?: string,
+  ): Promise<WhatsappMessageEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.sendMedia(companyId, to, 'video', file, {
+      caption,
+      replyTo,
+      customerId,
+    });
+  }
+
+  @Mutation(() => WhatsappMessageEntity)
+  async sendWhatsappVoice(
+    @CurrentUser() user: AuthUser,
+    @Args('to') to: string,
+    @Args('file') file: WhatsappMediaInput,
+    @Args('replyTo', { nullable: true }) replyTo?: string,
+    @Args('customerId', { nullable: true }) customerId?: string,
+  ): Promise<WhatsappMessageEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.sendMedia(companyId, to, 'voice', file, {
+      replyTo,
+      customerId,
+    });
+  }
+
+  @Mutation(() => WhatsappMessageEntity)
+  async sendWhatsappFile(
+    @CurrentUser() user: AuthUser,
+    @Args('to') to: string,
+    @Args('file') file: WhatsappMediaInput,
+    @Args('caption', { nullable: true }) caption?: string,
+    @Args('replyTo', { nullable: true }) replyTo?: string,
+    @Args('customerId', { nullable: true }) customerId?: string,
+  ): Promise<WhatsappMessageEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.sendMedia(companyId, to, 'file', file, {
+      caption,
+      replyTo,
+      customerId,
+    });
+  }
+
+  @Mutation(() => WhatsappMessageEntity)
+  async sendWhatsappLocation(
+    @CurrentUser() user: AuthUser,
+    @Args('to') to: string,
+    @Args('latitude', { type: () => Float }) latitude: number,
+    @Args('longitude', { type: () => Float }) longitude: number,
+    @Args('title', { nullable: true }) title?: string,
+  ): Promise<WhatsappMessageEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.sendLocation(companyId, to, latitude, longitude, title);
+  }
+
+  @Mutation(() => Boolean)
+  async reactToWhatsappMessage(
+    @CurrentUser() user: AuthUser,
+    @Args('messageId') messageId: string,
+    @Args('reaction') reaction: string,
+  ): Promise<boolean> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.reactToMessage(companyId, messageId, reaction);
+  }
+
+  // ============ Phase 3: typing / presence ============
+
+  @Mutation(() => Boolean)
+  async setWhatsappTyping(
+    @CurrentUser() user: AuthUser,
+    @Args('peerNumber') peerNumber: string,
+    @Args('typing') typing: boolean,
+  ): Promise<boolean> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.setTyping(companyId, peerNumber, typing);
+  }
+
+  @Query(() => WhatsappPresenceResult, { nullable: true })
+  async whatsappPeerPresence(
+    @CurrentUser() user: AuthUser,
+    @Args('peerNumber') peerNumber: string,
+  ): Promise<WhatsappPresenceResult | null> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.getPeerPresence(companyId, peerNumber);
+  }
+
+  // ============ Phase 4: CRM panel ============
+
+  @Query(() => String, { nullable: true })
+  async whatsappContactAbout(
+    @CurrentUser() user: AuthUser,
+    @Args('peerNumber') peerNumber: string,
+  ): Promise<string | null> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.getContactAbout(companyId, peerNumber);
+  }
+
+  @Query(() => WhatsappCheckExistsResult)
+  async checkWhatsappNumber(
+    @CurrentUser() user: AuthUser,
+    @Args('phone') phone: string,
+  ): Promise<WhatsappCheckExistsResult> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.checkPhoneOnWhatsapp(companyId, phone);
+  }
+
+  @Mutation(() => Boolean)
+  async blockWhatsappContact(
+    @CurrentUser() user: AuthUser,
+    @Args('peerNumber') peerNumber: string,
+    @Args('block') block: boolean,
+  ): Promise<boolean> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.blockContact(companyId, peerNumber, block);
+  }
+
+  @Query(() => [WhatsappGroupParticipant])
+  async whatsappGroupParticipants(
+    @CurrentUser() user: AuthUser,
+    @Args('peerNumber') peerNumber: string,
+  ): Promise<WhatsappGroupParticipant[]> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.getGroupParticipants(companyId, peerNumber);
   }
 }

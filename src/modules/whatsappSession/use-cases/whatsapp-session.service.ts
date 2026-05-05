@@ -108,10 +108,9 @@ function mapMessage(raw: RawMessage): WhatsappMessageEntity {
     body: raw.body,
     status: raw.status,
     externalId: raw.externalId,
-    participantNumber:
-      (meta.participant as string | undefined)
-        ? phoneFromJid(meta.participant as string)
-        : null,
+    participantNumber: (meta.participant as string | undefined)
+      ? phoneFromJid(meta.participant as string)
+      : null,
     participantName:
       (meta.participantName as string | undefined) ??
       (meta.pushName as string | undefined) ??
@@ -275,8 +274,23 @@ export class WhatsappSessionService {
       const isGroup = !!c.isGroup || jid.endsWith('@g.us');
       await this.prisma.whatsappContact.upsert({
         where: { companyId_jid: { companyId, jid } },
-        create: { companyId, jid, number, name, pushName, isMyContact, isGroup },
-        update: { number, name, pushName, isMyContact, isGroup, syncedAt: new Date() },
+        create: {
+          companyId,
+          jid,
+          number,
+          name,
+          pushName,
+          isMyContact,
+          isGroup,
+        },
+        update: {
+          number,
+          name,
+          pushName,
+          isMyContact,
+          isGroup,
+          syncedAt: new Date(),
+        },
       });
       upserted++;
     }
@@ -392,9 +406,11 @@ export class WhatsappSessionService {
     return { jid, phone: null, name: null };
   }
 
-  async reconfigureWebhook(
-    companyId: string,
-  ): Promise<{ ok: boolean; format: string | null; webhookUrl: string | null }> {
+  async reconfigureWebhook(companyId: string): Promise<{
+    ok: boolean;
+    format: string | null;
+    webhookUrl: string | null;
+  }> {
     const inst = await this.getOrCreateInstance(companyId);
     const sessionName = this.wahaSessionFor(inst);
     const url = this.waha.buildWebhookUrl(sessionName);
@@ -466,7 +482,7 @@ export class WhatsappSessionService {
           companyId,
           channel: NotificationChannel.WHATSAPP,
           direction: fromMe ? 'OUTBOUND' : 'INBOUND',
-          toAddress: fromMe ? phone : (isGroup ? phone : ''),
+          toAddress: fromMe ? phone : isGroup ? phone : '',
           fromAddress: fromMe ? null : phone,
           body: text,
           status: fromMe ? MessageStatus.SENT : MessageStatus.DELIVERED,
@@ -556,7 +572,9 @@ export class WhatsappSessionService {
       count++;
     }
     if (skippedOther > 0) {
-      this.logger.log(`syncFromEvolution: ${skippedOther} broadcast/newsletter pulados`);
+      this.logger.log(
+        `syncFromEvolution: ${skippedOther} broadcast/newsletter pulados`,
+      );
     }
     return count;
   }
@@ -584,6 +602,7 @@ export class WhatsappSessionService {
     to: string,
     body: string,
     customerId?: string | null,
+    options?: { replyTo?: string; mentions?: string[] },
   ): Promise<WhatsappMessageEntity> {
     if (!body.trim()) {
       throw new BadRequestException('Mensagem vazia.');
@@ -639,14 +658,24 @@ export class WhatsappSessionService {
         body,
         status: MessageStatus.PENDING,
         customerId: customerId ?? null,
-        metadataJson: { kind: 'waha-direct' },
+        metadataJson: {
+          kind: 'waha-direct',
+          ...(options?.replyTo ? { replyTo: options.replyTo } : {}),
+          ...(options?.mentions ? { mentions: options.mentions } : {}),
+        },
       },
     });
 
     try {
       // WAHA espera chatId no formato JID completo
       const chatId = isJid ? phone : `${phone}@s.whatsapp.net`;
-      const result = await this.waha.sendText(sessionName, chatId, body);
+      const result =
+        options?.replyTo || options?.mentions?.length
+          ? await this.waha.sendTextWithOptions(sessionName, chatId, body, {
+              replyTo: options.replyTo,
+              mentions: options.mentions,
+            })
+          : await this.waha.sendText(sessionName, chatId, body);
       const externalId = result.id ?? null;
       const updated = await this.prisma.messageLog.update({
         where: { id: log.id },
@@ -704,7 +733,13 @@ export class WhatsappSessionService {
     //    vêm prontos. É exatamente o que o dashboard renderiza.
     if (inst.status === WhatsappInstanceStatus.CONNECTED) {
       try {
-        const liveChats = await this.waha.getChats(this.wahaSessionFor(inst));
+        // /chats/overview → mesmo dado da UI do painel WAHA (nome + picture +
+        // unread + última msg). Cai pra /chats se overview não existir.
+        const liveChats = await this.waha.getChatsOverview(
+          this.wahaSessionFor(inst),
+          200,
+          0,
+        );
         for (const chat of liveChats) {
           const remoteJid = chat.id;
           if (!remoteJid) continue;
@@ -721,7 +756,7 @@ export class WhatsappSessionService {
           groups.set(peer, {
             peerNumber: peer,
             peerName: chat.name ?? null,
-            profilePicUrl: null,
+            profilePicUrl: chat.picture ?? null,
             customerId: null,
             lastMessage: chat.lastMessageBody ?? null,
             lastMessageAt,
@@ -731,10 +766,33 @@ export class WhatsappSessionService {
             isHiddenNumber,
           });
           fromWaha.add(peer);
+
+          // Persiste foto vinda do overview no cache de WhatsappContact pra
+          // que `getContact` e refreshes futuros não precisem chamar de novo.
+          if (chat.picture) {
+            await this.prisma.whatsappContact
+              .upsert({
+                where: { companyId_jid: { companyId, jid: remoteJid } },
+                create: {
+                  companyId,
+                  jid: remoteJid,
+                  name: chat.name ?? null,
+                  isGroup,
+                  profilePicUrl: chat.picture,
+                  picFetchedAt: new Date(),
+                },
+                update: {
+                  profilePicUrl: chat.picture,
+                  picFetchedAt: new Date(),
+                  ...(chat.name ? { name: chat.name } : {}),
+                },
+              })
+              .catch(() => undefined);
+          }
         }
       } catch (err) {
         this.logger.warn(
-          `listConversations: getChats falhou, usando histórico local — ${
+          `listConversations: getChatsOverview falhou, usando histórico local — ${
             err instanceof Error ? err.message : err
           }`,
         );
@@ -833,11 +891,13 @@ export class WhatsappSessionService {
       // Background: contatos sem foto cacheada (e não-grupos) → tenta buscar
       // pra próxima leitura. Não bloqueia a resposta atual.
       if (inst.status === WhatsappInstanceStatus.CONNECTED) {
-        this.refreshMissingProfilePics(companyId, this.wahaSessionFor(inst)).catch(
-          (err) =>
-            this.logger.debug(
-              `refreshMissingProfilePics (listConversations): ${err instanceof Error ? err.message : err}`,
-            ),
+        this.refreshMissingProfilePics(
+          companyId,
+          this.wahaSessionFor(inst),
+        ).catch((err) =>
+          this.logger.debug(
+            `refreshMissingProfilePics (listConversations): ${err instanceof Error ? err.message : err}`,
+          ),
         );
       }
     }
@@ -949,9 +1009,7 @@ export class WhatsappSessionService {
     const profileCache =
       (baseMeta.profileCache as Record<string, unknown> | undefined) ?? {};
     const cachedAt =
-      typeof profileCache.fetchedAt === 'number'
-        ? profileCache.fetchedAt
-        : 0;
+      typeof profileCache.fetchedAt === 'number' ? profileCache.fetchedAt : 0;
     const STALE_MS = 24 * 60 * 60 * 1000; // 24h
     const isStale = Date.now() - cachedAt > STALE_MS;
 
@@ -990,7 +1048,10 @@ export class WhatsappSessionService {
           contactId,
         );
         const avatarUrl =
-          avatarRes.profilePictureURL ?? avatarRes.url ?? avatarRes.value ?? null;
+          avatarRes.profilePictureURL ??
+          avatarRes.url ??
+          avatarRes.value ??
+          null;
         if (avatarUrl) profilePicUrl = avatarUrl;
 
         // Persiste o cache no MessageLog mais recente
@@ -1033,10 +1094,10 @@ export class WhatsappSessionService {
       (isGroup ? 'Grupo do WhatsApp' : peerNumber);
 
     const customerId = last?.customerId ?? first?.customerId ?? null;
-    const customerName =
-      last?.customer?.name ?? first?.customer?.name ?? null;
+    const customerName = last?.customer?.name ?? first?.customer?.name ?? null;
     const realPhoneDigits =
-      resolved.phone ?? (isGroup || isLidJid(peerNumber) ? null : normalizePhone(peerNumber));
+      resolved.phone ??
+      (isGroup || isLidJid(peerNumber) ? null : normalizePhone(peerNumber));
     const phoneFormatted = isGroup ? null : realPhoneDigits;
     const waLink =
       isGroup || !realPhoneDigits ? '' : `https://wa.me/${realPhoneDigits}`;
@@ -1114,6 +1175,22 @@ export class WhatsappSessionService {
       },
       data: { status: MessageStatus.READ, readAt: new Date() },
     });
+
+    // Envia ✓✓ azul ao contato (se sessão ativa). Falha silenciosa pra não
+    // quebrar a UI quando WAHA estiver offline.
+    const inst = await this.prisma.whatsappInstance.findUnique({
+      where: { companyId },
+    });
+    if (inst?.status === WhatsappInstanceStatus.CONNECTED) {
+      const chatId = jidFromPeerKey(peerNumber);
+      this.waha
+        .markChatRead(this.wahaSessionFor(inst), chatId)
+        .catch((err) =>
+          this.logger.debug(
+            `markChatRead falhou: ${err instanceof Error ? err.message : err}`,
+          ),
+        );
+    }
     return result.count;
   }
 
@@ -1150,7 +1227,10 @@ export class WhatsappSessionService {
     }
 
     // WAHA envelopa os dados em "payload"; Evolution usava "data"
-    const data = (payload.payload ?? payload.data ?? payload) as Record<string, unknown>;
+    const data = (payload.payload ?? payload.data ?? payload) as Record<
+      string,
+      unknown
+    >;
     const normalizedEvent = event.toLowerCase().replace(/_/g, '.');
 
     // session.status / connection.update
@@ -1168,7 +1248,9 @@ export class WhatsappSessionService {
       const status = this.mapState(stateRaw);
       const phone =
         (data.wuid as string | undefined) ??
-        (data.me as Record<string, unknown> | undefined)?.id as string | undefined;
+        ((data.me as Record<string, unknown> | undefined)?.id as
+          | string
+          | undefined);
       await this.prisma.whatsappInstance.update({
         where: { id: inst.id },
         data: {
@@ -1195,7 +1277,10 @@ export class WhatsappSessionService {
     }
 
     // message (WAHA) / messages.upsert (Evolution compat)
-    if (normalizedEvent === 'message' || normalizedEvent === 'messages.upsert') {
+    if (
+      normalizedEvent === 'message' ||
+      normalizedEvent === 'messages.upsert'
+    ) {
       const items: Record<string, unknown>[] = Array.isArray(data.messages)
         ? (data.messages as Record<string, unknown>[])
         : Array.isArray(payload.messages)
@@ -1213,20 +1298,34 @@ export class WhatsappSessionService {
         const remoteJid =
           (item.from as string | undefined) ??
           (item.to as string | undefined) ??
-          ((item.key as Record<string, unknown> | undefined)?.remoteJid as string | undefined) ??
+          ((item.key as Record<string, unknown> | undefined)?.remoteJid as
+            | string
+            | undefined) ??
           '';
 
-        if (!remoteJid || isBroadcastJid(remoteJid) || isNewsletterJid(remoteJid)) {
+        if (
+          !remoteJid ||
+          isBroadcastJid(remoteJid) ||
+          isNewsletterJid(remoteJid)
+        ) {
           continue;
         }
 
         const participant =
-          ((item._data as Record<string, unknown> | undefined)?.participant as string | undefined) ??
-          ((item.key as Record<string, unknown> | undefined)?.participant as string | undefined) ??
+          ((item._data as Record<string, unknown> | undefined)?.participant as
+            | string
+            | undefined) ??
+          ((item.key as Record<string, unknown> | undefined)?.participant as
+            | string
+            | undefined) ??
           null;
 
         const externalId =
-          ((item._data as Record<string, unknown> | undefined)?.id as Record<string, unknown> | undefined)?.id as string | undefined ??
+          ((
+            (item._data as Record<string, unknown> | undefined)?.id as
+              | Record<string, unknown>
+              | undefined
+          )?.id as string | undefined) ??
           (item.id as string | undefined) ??
           null;
 
@@ -1234,10 +1333,17 @@ export class WhatsappSessionService {
         const rawText =
           (item.body as string | undefined) ??
           (messageObj.conversation as string | undefined) ??
-          ((messageObj.extendedTextMessage as Record<string, unknown> | undefined)?.text as string | undefined) ??
-          ((messageObj.imageMessage as Record<string, unknown> | undefined)?.caption as string | undefined) ??
-          ((messageObj.videoMessage as Record<string, unknown> | undefined)?.caption as string | undefined) ??
-          ((messageObj.documentMessage as Record<string, unknown> | undefined)?.caption as string | undefined) ??
+          ((
+            messageObj.extendedTextMessage as
+              | Record<string, unknown>
+              | undefined
+          )?.text as string | undefined) ??
+          ((messageObj.imageMessage as Record<string, unknown> | undefined)
+            ?.caption as string | undefined) ??
+          ((messageObj.videoMessage as Record<string, unknown> | undefined)
+            ?.caption as string | undefined) ??
+          ((messageObj.documentMessage as Record<string, unknown> | undefined)
+            ?.caption as string | undefined) ??
           '';
 
         const media = this.detectMedia(item, messageObj);
@@ -1255,7 +1361,9 @@ export class WhatsappSessionService {
         const isGroup = isGroupJid(remoteJid);
         const peer = peerKeyFromJid(remoteJid);
         const pushName =
-          ((item._data as Record<string, unknown> | undefined)?.pushName as string | undefined) ??
+          ((item._data as Record<string, unknown> | undefined)?.pushName as
+            | string
+            | undefined) ??
           (item.pushName as string | undefined) ??
           null;
         const ts = item.timestamp ?? item.messageTimestamp;
@@ -1271,7 +1379,7 @@ export class WhatsappSessionService {
             companyId: inst.companyId,
             channel: NotificationChannel.WHATSAPP,
             direction: fromMe ? 'OUTBOUND' : 'INBOUND',
-            toAddress: fromMe ? peer : (isGroup ? peer : ''),
+            toAddress: fromMe ? peer : isGroup ? peer : '',
             fromAddress: fromMe ? null : peer,
             body: text,
             status: fromMe ? MessageStatus.SENT : MessageStatus.DELIVERED,
@@ -1299,8 +1407,96 @@ export class WhatsappSessionService {
       return;
     }
 
+    // presence.update — bate o cache pra UI ler em getPeerPresence
+    if (normalizedEvent === 'presence.update') {
+      const chatId =
+        (data.id as string | undefined) ?? (data.chatId as string | undefined);
+      const presence = (data.presence as string | undefined) ?? null;
+      const lastSeenRaw = data.lastSeen as number | undefined;
+      if (chatId) {
+        const meta = {
+          presence,
+          lastSeen: lastSeenRaw ?? null,
+          fetchedAt: Date.now(),
+        };
+        await this.prisma.whatsappContact
+          .upsert({
+            where: {
+              companyId_jid: { companyId: inst.companyId, jid: chatId },
+            },
+            create: {
+              companyId: inst.companyId,
+              jid: chatId,
+              isGroup: isGroupJid(chatId),
+              syncedAt: new Date(),
+            },
+            update: { syncedAt: new Date() },
+          })
+          .catch(() => undefined);
+        // armazena last presence num metadata local (último log do peer)
+        const recent = await this.prisma.messageLog.findFirst({
+          where: {
+            companyId: inst.companyId,
+            channel: NotificationChannel.WHATSAPP,
+            ...this.buildPeerWhere(chatId),
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+        if (recent) {
+          const baseMeta = (recent.metadataJson ?? {}) as Record<
+            string,
+            unknown
+          >;
+          await this.prisma.messageLog.update({
+            where: { id: recent.id },
+            data: {
+              metadataJson: {
+                ...baseMeta,
+                presenceCache: meta,
+              } as Prisma.InputJsonValue,
+            },
+          });
+        }
+      }
+      return;
+    }
+
+    // message.reaction — anexa reação ao messageLog correspondente
+    if (normalizedEvent === 'message.reaction') {
+      const targetId =
+        (((data.message as Record<string, unknown> | undefined) ?? {}).id as
+          | string
+          | undefined) ?? (data.messageId as string | undefined);
+      const reaction = (data.reaction as string | undefined) ?? '';
+      const fromMe = !!data.fromMe;
+      if (targetId) {
+        const target = await this.prisma.messageLog.findFirst({
+          where: { externalId: targetId, companyId: inst.companyId },
+        });
+        if (target) {
+          const baseMeta = (target.metadataJson ?? {}) as Record<
+            string,
+            unknown
+          >;
+          const reactions =
+            (baseMeta.reactions as Record<string, string>[] | undefined) ?? [];
+          reactions.push({ reaction, fromMe: String(fromMe) });
+          await this.prisma.messageLog.update({
+            where: { id: target.id },
+            data: {
+              metadataJson: { ...baseMeta, reactions } as Prisma.InputJsonValue,
+            },
+          });
+        }
+      }
+      return;
+    }
+
     // message.ack (WAHA) / messages.update (Evolution compat)
-    if (normalizedEvent === 'message.ack' || normalizedEvent === 'messages.update') {
+    if (
+      normalizedEvent === 'message.ack' ||
+      normalizedEvent === 'messages.update'
+    ) {
       const items: Record<string, unknown>[] = Array.isArray(data.messages)
         ? (data.messages as Record<string, unknown>[])
         : [data];
@@ -1314,16 +1510,16 @@ export class WhatsappSessionService {
             ? (idObj.id as string | undefined)
             : typeof idObj === 'string'
               ? idObj
-              : ((item.key as Record<string, unknown> | undefined)?.id as string | undefined);
+              : ((item.key as Record<string, unknown> | undefined)?.id as
+                  | string
+                  | undefined);
 
         if (!externalId) continue;
 
         // WAHA ack: -1=error, 0=pending, 1=sent, 2=delivered, 3=read, 4=played
         const ackNum = typeof item.ack === 'number' ? item.ack : null;
-        const statusStr = (
-          (item.update as Record<string, unknown> | undefined)?.status ??
-          item.status
-        ) as string | undefined;
+        const statusStr = ((item.update as Record<string, unknown> | undefined)
+          ?.status ?? item.status) as string | undefined;
 
         let mapped: MessageStatus | null = null;
         if (ackNum !== null) {
@@ -1340,7 +1536,9 @@ export class WhatsappSessionService {
           where: { externalId, companyId: inst.companyId },
           data: {
             status: mapped,
-            ...(mapped === MessageStatus.DELIVERED ? { deliveredAt: new Date() } : {}),
+            ...(mapped === MessageStatus.DELIVERED
+              ? { deliveredAt: new Date() }
+              : {}),
             ...(mapped === MessageStatus.READ ? { readAt: new Date() } : {}),
           },
         });
@@ -1427,7 +1625,9 @@ export class WhatsappSessionService {
     const audio =
       (messageObj.audioMessage as AnyRec | undefined) ??
       (messageObj.pttMessage as AnyRec | undefined) ??
-      (wahaType === 'audio' || wahaType === 'ptt' ? (wahaMedia ?? {}) : undefined);
+      (wahaType === 'audio' || wahaType === 'ptt'
+        ? (wahaMedia ?? {})
+        : undefined);
     if (audio) {
       const isPtt =
         (audio.ptt as boolean | undefined) === true || wahaType === 'ptt';
@@ -1454,13 +1654,23 @@ export class WhatsappSessionService {
 
     const location = messageObj.locationMessage as AnyRec | undefined;
     if (location) {
-      return { type: 'location', placeholder: '📍 Localização', url: null, mimetype: null };
+      return {
+        type: 'location',
+        placeholder: '📍 Localização',
+        url: null,
+        mimetype: null,
+      };
     }
 
     const contact = messageObj.contactMessage as AnyRec | undefined;
     if (contact) {
       const name = (contact.displayName as string | undefined) ?? 'Contato';
-      return { type: 'contact', placeholder: `👤 ${name}`, url: null, mimetype: null };
+      return {
+        type: 'contact',
+        placeholder: `👤 ${name}`,
+        url: null,
+        mimetype: null,
+      };
     }
 
     if (item.hasMedia === true || wahaMedia) {
@@ -1484,10 +1694,14 @@ export class WhatsappSessionService {
     if (s === 'STOPPED') return WhatsappInstanceStatus.DISCONNECTED;
     if (s === 'FAILED') return WhatsappInstanceStatus.ERROR;
     // Evolution compat (legacy)
-    if (s === 'OPEN' || s === 'CONNECTED') return WhatsappInstanceStatus.CONNECTED;
-    if (s === 'CONNECTING' || s === 'SYNCING') return WhatsappInstanceStatus.CONNECTING;
-    if (s === 'QR' || s === 'QRCODE' || s === 'QRCODE_UPDATED') return WhatsappInstanceStatus.QR_PENDING;
-    if (s === 'CLOSE' || s === 'CLOSED' || s === 'DISCONNECTED') return WhatsappInstanceStatus.DISCONNECTED;
+    if (s === 'OPEN' || s === 'CONNECTED')
+      return WhatsappInstanceStatus.CONNECTED;
+    if (s === 'CONNECTING' || s === 'SYNCING')
+      return WhatsappInstanceStatus.CONNECTING;
+    if (s === 'QR' || s === 'QRCODE' || s === 'QRCODE_UPDATED')
+      return WhatsappInstanceStatus.QR_PENDING;
+    if (s === 'CLOSE' || s === 'CLOSED' || s === 'DISCONNECTED')
+      return WhatsappInstanceStatus.DISCONNECTED;
     if (!raw) return WhatsappInstanceStatus.DISCONNECTED;
     return WhatsappInstanceStatus.ERROR;
   }
@@ -1510,6 +1724,334 @@ export class WhatsappSessionService {
       default:
         return null;
     }
+  }
+
+  // ===========================================================
+  // Phase 2 — Send media / reply / mention / reaction
+  // ===========================================================
+
+  /**
+   * Envio genérico de mídia. `kind` decide qual endpoint WAHA chamar; o body
+   * espera `file.url` (URL pública pra WAHA baixar) OU `file.data` (base64).
+   * `caption` é opcional, exceto pra audio/voice. `replyTo` recebe o externalId
+   * da mensagem que está sendo respondida.
+   */
+  async sendMedia(
+    companyId: string,
+    to: string,
+    kind: 'image' | 'video' | 'voice' | 'file',
+    file: { url?: string; data?: string; mimetype?: string; filename?: string },
+    options?: {
+      caption?: string;
+      replyTo?: string;
+      customerId?: string | null;
+    },
+  ): Promise<WhatsappMessageEntity> {
+    const inst = await this.requireConnected(companyId);
+    const chatId = jidFromPeerKey(to);
+    const session = this.wahaSessionFor(inst);
+    const placeholderByKind: Record<typeof kind, string> = {
+      image: '📷 Imagem',
+      video: '🎥 Vídeo',
+      voice: '🎙️ Mensagem de voz',
+      file: '📎 Arquivo',
+    };
+    const log = await this.prisma.messageLog.create({
+      data: {
+        companyId,
+        channel: NotificationChannel.WHATSAPP,
+        direction: 'OUTBOUND',
+        toAddress: chatId,
+        body: options?.caption?.trim() || placeholderByKind[kind],
+        status: MessageStatus.PENDING,
+        customerId: options?.customerId ?? null,
+        metadataJson: {
+          kind: 'waha-media',
+          mediaType: kind,
+          mediaUrl: file.url ?? null,
+          mediaMimetype: file.mimetype ?? null,
+          ...(options?.replyTo ? { replyTo: options.replyTo } : {}),
+        },
+      },
+    });
+    try {
+      let result: { id?: string; timestamp?: number };
+      if (kind === 'image') {
+        result = await this.waha.sendImage(
+          session,
+          chatId,
+          file,
+          options?.caption,
+          options?.replyTo,
+        );
+      } else if (kind === 'video') {
+        result = await this.waha.sendVideo(
+          session,
+          chatId,
+          file,
+          options?.caption,
+          options?.replyTo,
+        );
+      } else if (kind === 'voice') {
+        result = await this.waha.sendVoice(
+          session,
+          chatId,
+          file,
+          options?.replyTo,
+        );
+      } else {
+        result = await this.waha.sendFile(
+          session,
+          chatId,
+          file,
+          options?.caption,
+          options?.replyTo,
+        );
+      }
+      const updated = await this.prisma.messageLog.update({
+        where: { id: log.id },
+        data: {
+          status: MessageStatus.SENT,
+          externalId: result.id ?? null,
+          sentAt: new Date(),
+        },
+      });
+      return mapMessage(updated);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      await this.prisma.messageLog.update({
+        where: { id: log.id },
+        data: {
+          status: MessageStatus.FAILED,
+          errorMessage: message.slice(0, 500),
+        },
+      });
+      throw new BadRequestException(`Falha ao enviar ${kind}: ${message}`);
+    }
+  }
+
+  async sendLocation(
+    companyId: string,
+    to: string,
+    latitude: number,
+    longitude: number,
+    title?: string,
+  ): Promise<WhatsappMessageEntity> {
+    const inst = await this.requireConnected(companyId);
+    const chatId = jidFromPeerKey(to);
+    const log = await this.prisma.messageLog.create({
+      data: {
+        companyId,
+        channel: NotificationChannel.WHATSAPP,
+        direction: 'OUTBOUND',
+        toAddress: chatId,
+        body: title ? `📍 ${title}` : '📍 Localização',
+        status: MessageStatus.PENDING,
+        metadataJson: {
+          kind: 'waha-location',
+          mediaType: 'location',
+          latitude,
+          longitude,
+          title,
+        },
+      },
+    });
+    try {
+      const res = await this.waha.sendLocation(
+        this.wahaSessionFor(inst),
+        chatId,
+        latitude,
+        longitude,
+        title,
+      );
+      const updated = await this.prisma.messageLog.update({
+        where: { id: log.id },
+        data: {
+          status: MessageStatus.SENT,
+          externalId: res.id ?? null,
+          sentAt: new Date(),
+        },
+      });
+      return mapMessage(updated);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      await this.prisma.messageLog.update({
+        where: { id: log.id },
+        data: {
+          status: MessageStatus.FAILED,
+          errorMessage: message.slice(0, 500),
+        },
+      });
+      throw new BadRequestException(`Falha ao enviar localização: ${message}`);
+    }
+  }
+
+  /**
+   * Reage a uma mensagem com emoji. Passe string vazia pra remover. WAHA não
+   * gera um messageLog separado — armazenamos a reação em metadata da msg
+   * original pra o front renderizar embaixo do balão.
+   */
+  async reactToMessage(
+    companyId: string,
+    messageId: string,
+    reaction: string,
+  ): Promise<boolean> {
+    const log = await this.prisma.messageLog.findUnique({
+      where: { id: messageId },
+    });
+    if (!log || log.companyId !== companyId) {
+      throw new NotFoundException('Mensagem não encontrada.');
+    }
+    if (!log.externalId) {
+      throw new BadRequestException(
+        'Mensagem ainda não foi enviada ao WhatsApp (sem externalId).',
+      );
+    }
+    const inst = await this.requireConnected(companyId);
+    const meta = (log.metadataJson ?? {}) as Record<string, unknown>;
+    const remoteJid = (meta.remoteJid as string | undefined) ?? log.toAddress;
+    await this.waha.sendReaction(
+      this.wahaSessionFor(inst),
+      jidFromPeerKey(remoteJid),
+      log.externalId,
+      reaction,
+    );
+    await this.prisma.messageLog.update({
+      where: { id: messageId },
+      data: {
+        metadataJson: {
+          ...meta,
+          myReaction: reaction || null,
+        } as Prisma.InputJsonValue,
+      },
+    });
+    return true;
+  }
+
+  // ===========================================================
+  // Phase 3 — Typing / presence
+  // ===========================================================
+
+  async setTyping(
+    companyId: string,
+    peerNumber: string,
+    typing: boolean,
+  ): Promise<boolean> {
+    const inst = await this.requireConnected(companyId);
+    const chatId = jidFromPeerKey(peerNumber);
+    if (typing) {
+      await this.waha.startTyping(this.wahaSessionFor(inst), chatId);
+    } else {
+      await this.waha.stopTyping(this.wahaSessionFor(inst), chatId);
+    }
+    return true;
+  }
+
+  async getPeerPresence(
+    companyId: string,
+    peerNumber: string,
+  ): Promise<{ presence: string | null; lastSeen: Date | null } | null> {
+    const inst = await this.prisma.whatsappInstance.findUnique({
+      where: { companyId },
+    });
+    if (inst?.status !== WhatsappInstanceStatus.CONNECTED) return null;
+    const chatId = jidFromPeerKey(peerNumber);
+    const session = this.wahaSessionFor(inst);
+    // subscribe garante que próximas atualizações chegam por webhook
+    await this.waha.subscribePresence(session, chatId);
+    const res = await this.waha.getPresence(session, chatId);
+    if (!res) return { presence: null, lastSeen: null };
+    return {
+      presence: res.presence ?? null,
+      lastSeen:
+        typeof res.lastSeen === 'number' ? new Date(res.lastSeen * 1000) : null,
+    };
+  }
+
+  // ===========================================================
+  // Phase 4 — CRM lateral (about / checkExists / block / LID)
+  // ===========================================================
+
+  async getContactAbout(
+    companyId: string,
+    peerNumber: string,
+  ): Promise<string | null> {
+    const inst = await this.prisma.whatsappInstance.findUnique({
+      where: { companyId },
+    });
+    if (inst?.status !== WhatsappInstanceStatus.CONNECTED) return null;
+    return this.waha.getContactAbout(
+      this.wahaSessionFor(inst),
+      jidFromPeerKey(peerNumber),
+    );
+  }
+
+  async checkPhoneOnWhatsapp(
+    companyId: string,
+    phone: string,
+  ): Promise<{ exists: boolean; chatId: string | null }> {
+    const inst = await this.requireConnected(companyId);
+    const digits = normalizePhone(phone);
+    const res = await this.waha.checkContactExists(
+      this.wahaSessionFor(inst),
+      digits,
+    );
+    return {
+      exists: !!res?.numberExists,
+      chatId: res?.chatId ?? null,
+    };
+  }
+
+  async blockContact(
+    companyId: string,
+    peerNumber: string,
+    block: boolean,
+  ): Promise<boolean> {
+    const inst = await this.requireConnected(companyId);
+    const chatId = jidFromPeerKey(peerNumber);
+    if (block) {
+      await this.waha.blockContact(this.wahaSessionFor(inst), chatId);
+    } else {
+      await this.waha.unblockContact(this.wahaSessionFor(inst), chatId);
+    }
+    return true;
+  }
+
+  async getGroupParticipants(
+    companyId: string,
+    peerNumber: string,
+  ): Promise<{ jid: string; phone: string; isAdmin: boolean }[]> {
+    if (!isGroupJid(peerNumber)) return [];
+    const inst = await this.requireConnected(companyId);
+    const list = await this.waha.getGroupParticipants(
+      this.wahaSessionFor(inst),
+      peerNumber,
+    );
+    return list.flatMap((p) => {
+      if (typeof p.id !== 'string' || p.id.length === 0) return [];
+      const jid: string = p.id;
+      return [
+        {
+          jid,
+          phone: phoneFromJid(jid),
+          isAdmin: !!p.isAdmin || !!p.isSuperAdmin,
+        },
+      ];
+    });
+  }
+
+  // ===========================================================
+  // Helpers
+  // ===========================================================
+
+  private async requireConnected(companyId: string): Promise<RawInstance> {
+    const inst = await this.prisma.whatsappInstance.findUnique({
+      where: { companyId },
+    });
+    if (!inst || inst.status !== WhatsappInstanceStatus.CONNECTED) {
+      throw new BadRequestException('WhatsApp não está conectado.');
+    }
+    return inst;
   }
 
   async requireInstance(companyId: string): Promise<RawInstance> {
