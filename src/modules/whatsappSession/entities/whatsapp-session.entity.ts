@@ -88,6 +88,9 @@ export class WhatsappMessageEntity {
   mediaType?: string | null;
   @Field(() => String, { nullable: true }) mediaUrl?: string | null;
   @Field(() => String, { nullable: true }) mediaMimetype?: string | null;
+  @Field(() => String, { nullable: true }) quotedMessageId?: string | null;
+  @Field(() => String, { nullable: true }) quotedBody?: string | null;
+  @Field(() => String, { nullable: true }) quotedParticipant?: string | null;
   @Field(() => GraphQLISODateTime) createdAt!: Date;
   @Field(() => GraphQLISODateTime, { nullable: true }) sentAt?: Date | null;
   @Field(() => GraphQLISODateTime, { nullable: true })

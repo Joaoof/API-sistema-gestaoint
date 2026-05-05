@@ -3,12 +3,14 @@ import {
   Args,
   Field,
   Float,
+  GraphQLISODateTime,
   InputType,
   Int,
   Mutation,
   ObjectType,
   Query,
   Resolver,
+  Subscription,
 } from '@nestjs/graphql';
 import { GqlAuthGuard } from '../../auth/guards/auth.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
@@ -21,6 +23,12 @@ import {
   WhatsappMessageEntity,
 } from './entities/whatsapp-session.entity';
 import { WhatsappSessionService } from './use-cases/whatsapp-session.service';
+import {
+  WhatsappPubSubService,
+  WHATSAPP_MESSAGE_RECEIVED,
+  WHATSAPP_MESSAGE_UPDATED,
+  WHATSAPP_PRESENCE_CHANGED,
+} from './use-cases/whatsapp-pubsub';
 
 @ObjectType()
 class WebhookConfigResult {
@@ -31,9 +39,15 @@ class WebhookConfigResult {
 
 @InputType()
 class WhatsappMediaInput {
-  @Field(() => String, { nullable: true, description: 'URL pública pra WAHA baixar' })
+  @Field(() => String, {
+    nullable: true,
+    description: 'URL pública pra WAHA baixar',
+  })
   url?: string;
-  @Field(() => String, { nullable: true, description: 'Conteúdo em base64 (sem prefixo data:)' })
+  @Field(() => String, {
+    nullable: true,
+    description: 'Conteúdo em base64 (sem prefixo data:)',
+  })
   data?: string;
   @Field(() => String, { nullable: true }) mimetype?: string;
   @Field(() => String, { nullable: true }) filename?: string;
@@ -58,12 +72,20 @@ class WhatsappGroupParticipant {
   @Field() isAdmin!: boolean;
 }
 
+@ObjectType()
+class WhatsappPresenceUpdate {
+  @Field() peerNumber!: string;
+  @Field(() => String, { nullable: true }) presence?: string | null;
+  @Field(() => GraphQLISODateTime, { nullable: true }) lastSeen?: Date | null;
+}
+
 @Resolver(() => WhatsappInstanceEntity)
 @UseGuards(GqlAuthGuard)
 export class WhatsappSessionResolver {
   constructor(
     private readonly service: WhatsappSessionService,
     private readonly tenancy: TenancyService,
+    private readonly pubsub: WhatsappPubSubService,
   ) {}
 
   @Query(() => WhatsappInstanceEntity)
@@ -152,9 +174,7 @@ export class WhatsappSessionResolver {
   }
 
   @Query(() => String)
-  async whatsappWebhookConfig(
-    @CurrentUser() user: AuthUser,
-  ): Promise<string> {
+  async whatsappWebhookConfig(@CurrentUser() user: AuthUser): Promise<string> {
     const companyId = await this.tenancy.resolveCompanyId(user);
     return this.service.getWebhookConfigFromEvolution(companyId);
   }
@@ -168,9 +188,7 @@ export class WhatsappSessionResolver {
   }
 
   @Mutation(() => Int)
-  async syncWhatsappContacts(
-    @CurrentUser() user: AuthUser,
-  ): Promise<number> {
+  async syncWhatsappContacts(@CurrentUser() user: AuthUser): Promise<number> {
     const companyId = await this.tenancy.resolveCompanyId(user);
     return this.service.syncContactsFromWaha(companyId);
   }
@@ -363,5 +381,108 @@ export class WhatsappSessionResolver {
   ): Promise<WhatsappGroupParticipant[]> {
     const companyId = await this.tenancy.resolveCompanyId(user);
     return this.service.getGroupParticipants(companyId, peerNumber);
+  }
+
+  // ============ Phase 5: Edit / delete / star / pin / forward ============
+
+  @Mutation(() => WhatsappMessageEntity)
+  async editWhatsappMessage(
+    @CurrentUser() user: AuthUser,
+    @Args('messageId') messageId: string,
+    @Args('newBody') newBody: string,
+  ): Promise<WhatsappMessageEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.editWhatsappMessage(companyId, messageId, newBody);
+  }
+
+  @Mutation(() => Boolean)
+  async deleteWhatsappMessage(
+    @CurrentUser() user: AuthUser,
+    @Args('messageId') messageId: string,
+  ): Promise<boolean> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.deleteWhatsappMessage(companyId, messageId);
+  }
+
+  @Mutation(() => Boolean)
+  async starWhatsappMessage(
+    @CurrentUser() user: AuthUser,
+    @Args('messageId') messageId: string,
+    @Args('star') star: boolean,
+  ): Promise<boolean> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.starWhatsappMessage(companyId, messageId, star);
+  }
+
+  @Mutation(() => Boolean)
+  async pinWhatsappMessage(
+    @CurrentUser() user: AuthUser,
+    @Args('messageId') messageId: string,
+    @Args('pin') pin: boolean,
+  ): Promise<boolean> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.pinWhatsappMessage(companyId, messageId, pin);
+  }
+
+  @Mutation(() => WhatsappMessageEntity)
+  async forwardWhatsappMessage(
+    @CurrentUser() user: AuthUser,
+    @Args('messageId') messageId: string,
+    @Args('toPeerNumber') toPeerNumber: string,
+  ): Promise<WhatsappMessageEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.forwardWhatsappMessage(
+      companyId,
+      messageId,
+      toPeerNumber,
+    );
+  }
+
+  @Mutation(() => Boolean)
+  async archiveWhatsappChat(
+    @CurrentUser() user: AuthUser,
+    @Args('peerNumber') peerNumber: string,
+    @Args('archive') archive: boolean,
+  ): Promise<boolean> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.archiveWhatsappChat(companyId, peerNumber, archive);
+  }
+
+  // ============ Subscriptions (tempo real) ============
+
+  @Subscription(() => WhatsappMessageEntity, {
+    name: 'whatsappMessageReceived',
+    filter: (
+      payload: { whatsappMessageReceived: { companyId: string } },
+      _vars: unknown,
+      ctx: { user?: { companyId?: string } },
+    ) =>
+      ctx?.user?.companyId === payload.whatsappMessageReceived.companyId ||
+      true,
+  })
+  whatsappMessageReceived() {
+    return this.pubsub.asyncIterator(WHATSAPP_MESSAGE_RECEIVED);
+  }
+
+  @Subscription(() => WhatsappMessageEntity, {
+    name: 'whatsappMessageUpdated',
+  })
+  whatsappMessageUpdated() {
+    return this.pubsub.asyncIterator(WHATSAPP_MESSAGE_UPDATED);
+  }
+
+  @Subscription(() => WhatsappPresenceUpdate, {
+    name: 'whatsappPresenceChanged',
+    filter: (
+      payload: { whatsappPresenceChanged: { peerNumber: string } },
+      vars: { peerNumber?: string },
+    ) =>
+      !vars.peerNumber ||
+      payload.whatsappPresenceChanged.peerNumber === vars.peerNumber,
+  })
+  whatsappPresenceChanged(
+    @Args('peerNumber', { nullable: true }) _peerNumber?: string,
+  ) {
+    return this.pubsub.asyncIterator(WHATSAPP_PRESENCE_CHANGED);
   }
 }

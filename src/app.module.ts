@@ -52,6 +52,9 @@ import { WhatsappSessionModule } from './modules/whatsappSession/whatsapp-sessio
       autoSchemaFile: join(process.cwd(), 'src/infra/graphql/schema.gql'),
       sortSchema: true,
       debug: true,
+      subscriptions: {
+        'graphql-ws': true,
+      },
       server: {
         // landingPageDisabled: true,
         csrfPrevention: false, // 👈 Desativa a proteção

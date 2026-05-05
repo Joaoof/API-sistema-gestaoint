@@ -19,6 +19,13 @@ import {
   WhatsappMessageEntity,
 } from '../entities/whatsapp-session.entity';
 import { WahaApiClient } from './waha-api.client';
+import {
+  WhatsappPubSubService,
+  WHATSAPP_CONVERSATION_UPDATED,
+  WHATSAPP_MESSAGE_RECEIVED,
+  WHATSAPP_MESSAGE_UPDATED,
+  WHATSAPP_PRESENCE_CHANGED,
+} from './whatsapp-pubsub';
 
 type RawInstance = Prisma.WhatsappInstanceGetPayload<{}>;
 type RawMessage = Prisma.MessageLogGetPayload<{}>;
@@ -96,6 +103,34 @@ function phoneFromJid(jid: string | null | undefined): string {
   return at >= 0 ? jid.slice(0, at) : jid;
 }
 
+function extractQuotedMeta(quoted: Record<string, unknown>): {
+  quotedMessageId: string | null;
+  quotedBody: string | null;
+  quotedParticipant: string | null;
+} {
+  const idVal = quoted.id;
+  let quotedMessageId: string | null = null;
+  if (typeof idVal === 'string') quotedMessageId = idVal;
+  else if (idVal && typeof idVal === 'object') {
+    const inner = (idVal as Record<string, unknown>).id;
+    if (typeof inner === 'string') quotedMessageId = inner;
+  }
+
+  const participantVal = quoted.participant;
+  let quotedParticipant: string | null = null;
+  if (typeof participantVal === 'string') quotedParticipant = participantVal;
+  else if (participantVal && typeof participantVal === 'object') {
+    const ser = (participantVal as Record<string, unknown>)._serialized;
+    if (typeof ser === 'string') quotedParticipant = ser;
+  }
+
+  return {
+    quotedMessageId,
+    quotedBody: (quoted.body as string | undefined) ?? null,
+    quotedParticipant,
+  };
+}
+
 function mapMessage(raw: RawMessage): WhatsappMessageEntity {
   const meta = (raw.metadataJson ?? {}) as Record<string, unknown>;
   const fromMe = raw.direction === 'OUTBOUND';
@@ -118,6 +153,9 @@ function mapMessage(raw: RawMessage): WhatsappMessageEntity {
     mediaType: (meta.mediaType as string | undefined) ?? null,
     mediaUrl: (meta.mediaUrl as string | undefined) ?? null,
     mediaMimetype: (meta.mediaMimetype as string | undefined) ?? null,
+    quotedMessageId: (meta.quotedMessageId as string | undefined) ?? null,
+    quotedBody: (meta.quotedBody as string | undefined) ?? null,
+    quotedParticipant: (meta.quotedParticipant as string | undefined) ?? null,
     createdAt: raw.createdAt,
     sentAt: raw.sentAt,
     deliveredAt: raw.deliveredAt,
@@ -132,6 +170,7 @@ export class WhatsappSessionService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly waha: WahaApiClient,
+    private readonly pubsub: WhatsappPubSubService,
   ) {}
 
   /**
@@ -685,7 +724,11 @@ export class WhatsappSessionService {
           sentAt: new Date(),
         },
       });
-      return mapMessage(updated);
+      const entity = mapMessage(updated);
+      this.pubsub.publish(WHATSAPP_MESSAGE_UPDATED, {
+        whatsappMessageUpdated: { ...entity, companyId },
+      });
+      return entity;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       await this.prisma.messageLog.update({
@@ -1350,6 +1393,25 @@ export class WhatsappSessionService {
         const text = rawText || media?.placeholder || '';
         if (!text && !media) continue;
 
+        // replyTo/quotedMsg — WAHA envia tanto em item.replyTo (formato novo)
+        // quanto em item._data.quotedMsg (formato wweb antigo). Capturamos os
+        // dois pra que o front possa renderizar a citação acima do balão.
+        const replyTo =
+          (item.replyTo as Record<string, unknown> | undefined) ?? null;
+        const innerData =
+          (item._data as Record<string, unknown> | undefined) ?? {};
+        const quoted =
+          replyTo ??
+          (innerData.quotedMsg
+            ? {
+                id: innerData.quotedStanzaID,
+                body: (innerData.quotedMsg as Record<string, unknown>).body,
+                participant: innerData.quotedParticipant,
+              }
+            : null);
+
+        const quotedMeta = quoted ? extractQuotedMeta(quoted) : null;
+
         if (externalId) {
           const existing = await this.prisma.messageLog.findFirst({
             where: { externalId },
@@ -1374,7 +1436,7 @@ export class WhatsappSessionService {
               ? new Date(Number(ts) * 1000)
               : new Date();
 
-        await this.prisma.messageLog.create({
+        const createdMsg = await this.prisma.messageLog.create({
           data: {
             companyId: inst.companyId,
             channel: NotificationChannel.WHATSAPP,
@@ -1398,10 +1460,15 @@ export class WhatsappSessionService {
                     mediaMimetype: media.mimetype ?? null,
                   }
                 : {}),
+              ...(quotedMeta ?? {}),
             },
             createdAt,
             ...(fromMe ? { sentAt: createdAt } : { deliveredAt: createdAt }),
           },
+        });
+        const entity = mapMessage(createdMsg);
+        this.pubsub.publish(WHATSAPP_MESSAGE_RECEIVED, {
+          whatsappMessageReceived: { ...entity, companyId: inst.companyId },
         });
       }
       return;
@@ -1413,6 +1480,19 @@ export class WhatsappSessionService {
         (data.id as string | undefined) ?? (data.chatId as string | undefined);
       const presence = (data.presence as string | undefined) ?? null;
       const lastSeenRaw = data.lastSeen as number | undefined;
+      if (chatId) {
+        this.pubsub.publish(WHATSAPP_PRESENCE_CHANGED, {
+          whatsappPresenceChanged: {
+            companyId: inst.companyId,
+            peerNumber: peerKeyFromJid(chatId),
+            presence,
+            lastSeen:
+              typeof lastSeenRaw === 'number'
+                ? new Date(lastSeenRaw * 1000)
+                : null,
+          },
+        });
+      }
       if (chatId) {
         const meta = {
           presence,
@@ -1457,6 +1537,104 @@ export class WhatsappSessionService {
             },
           });
         }
+      }
+      return;
+    }
+
+    // message.revoked — alguém apagou a mensagem
+    if (normalizedEvent === 'message.revoked') {
+      const idVal = data.id as string | { id?: string } | undefined;
+      const externalId =
+        typeof idVal === 'string' ? idVal : (idVal?.id ?? null);
+      if (externalId) {
+        const target = await this.prisma.messageLog.findFirst({
+          where: { externalId, companyId: inst.companyId },
+        });
+        if (target) {
+          const baseMeta = (target.metadataJson ?? {}) as Record<
+            string,
+            unknown
+          >;
+          await this.prisma.messageLog.update({
+            where: { id: target.id },
+            data: {
+              body: '🚫 Esta mensagem foi apagada',
+              metadataJson: {
+                ...baseMeta,
+                isRevoked: true,
+                revokedAt: Date.now(),
+              } as Prisma.InputJsonValue,
+            },
+          });
+        }
+      }
+      return;
+    }
+
+    // message.edited — texto alterado pelo remetente
+    if (normalizedEvent === 'message.edited') {
+      const idVal = data.id as string | { id?: string } | undefined;
+      const externalId =
+        typeof idVal === 'string' ? idVal : (idVal?.id ?? null);
+      const newBody =
+        ((data.message as Record<string, unknown> | undefined) ?? {}).body ??
+        data.body;
+      if (externalId && typeof newBody === 'string') {
+        const target = await this.prisma.messageLog.findFirst({
+          where: { externalId, companyId: inst.companyId },
+        });
+        if (target) {
+          const baseMeta = (target.metadataJson ?? {}) as Record<
+            string,
+            unknown
+          >;
+          await this.prisma.messageLog.update({
+            where: { id: target.id },
+            data: {
+              body: newBody,
+              metadataJson: {
+                ...baseMeta,
+                isEdited: true,
+                editedAt: Date.now(),
+                originalBody: baseMeta.originalBody ?? target.body,
+              } as Prisma.InputJsonValue,
+            },
+          });
+        }
+      }
+      return;
+    }
+
+    // call.received / accepted / rejected — registra como mensagem virtual
+    if (
+      normalizedEvent === 'call.received' ||
+      normalizedEvent === 'call.accepted' ||
+      normalizedEvent === 'call.rejected'
+    ) {
+      const fromJid =
+        (data.from as string | undefined) ??
+        (data.peerJid as string | undefined);
+      if (fromJid) {
+        const isVideo = !!data.isVideo;
+        const peer = peerKeyFromJid(fromJid);
+        await this.prisma.messageLog.create({
+          data: {
+            companyId: inst.companyId,
+            channel: NotificationChannel.WHATSAPP,
+            direction: 'INBOUND',
+            toAddress: '',
+            fromAddress: peer,
+            body: isVideo ? '📹 Chamada de vídeo' : '📞 Chamada de voz',
+            status: MessageStatus.DELIVERED,
+            metadataJson: {
+              kind: 'call',
+              callType: isVideo ? 'video' : 'voice',
+              callEvent: normalizedEvent,
+              remoteJid: fromJid,
+            },
+            createdAt: new Date(),
+          },
+        });
       }
       return;
     }
@@ -1816,7 +1994,11 @@ export class WhatsappSessionService {
           sentAt: new Date(),
         },
       });
-      return mapMessage(updated);
+      const entity = mapMessage(updated);
+      this.pubsub.publish(WHATSAPP_MESSAGE_UPDATED, {
+        whatsappMessageUpdated: { ...entity, companyId },
+      });
+      return entity;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       await this.prisma.messageLog.update({
@@ -1872,7 +2054,11 @@ export class WhatsappSessionService {
           sentAt: new Date(),
         },
       });
-      return mapMessage(updated);
+      const entity = mapMessage(updated);
+      this.pubsub.publish(WHATSAPP_MESSAGE_UPDATED, {
+        whatsappMessageUpdated: { ...entity, companyId },
+      });
+      return entity;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       await this.prisma.messageLog.update({
@@ -2038,6 +2224,212 @@ export class WhatsappSessionService {
         },
       ];
     });
+  }
+
+  // ===========================================================
+  // Phase 5 — Edit / delete / star / pin / forward
+  // ===========================================================
+
+  async editWhatsappMessage(
+    companyId: string,
+    messageId: string,
+    newBody: string,
+  ): Promise<WhatsappMessageEntity> {
+    const log = await this.prisma.messageLog.findUnique({
+      where: { id: messageId },
+    });
+    if (!log || log.companyId !== companyId) {
+      throw new NotFoundException('Mensagem não encontrada.');
+    }
+    if (!log.externalId) {
+      throw new BadRequestException(
+        'Mensagem sem externalId — não pode ser editada.',
+      );
+    }
+    const inst = await this.requireConnected(companyId);
+    const meta = (log.metadataJson ?? {}) as Record<string, unknown>;
+    const remoteJid = (meta.remoteJid as string | undefined) ?? log.toAddress;
+    await this.waha.editMessage(
+      this.wahaSessionFor(inst),
+      jidFromPeerKey(remoteJid),
+      log.externalId,
+      newBody,
+    );
+    const updated = await this.prisma.messageLog.update({
+      where: { id: messageId },
+      data: {
+        body: newBody,
+        metadataJson: {
+          ...meta,
+          isEdited: true,
+          editedAt: Date.now(),
+          originalBody: meta.originalBody ?? log.body,
+        } as Prisma.InputJsonValue,
+      },
+    });
+    return mapMessage(updated);
+  }
+
+  async deleteWhatsappMessage(
+    companyId: string,
+    messageId: string,
+  ): Promise<boolean> {
+    const log = await this.prisma.messageLog.findUnique({
+      where: { id: messageId },
+    });
+    if (!log || log.companyId !== companyId) {
+      throw new NotFoundException('Mensagem não encontrada.');
+    }
+    if (!log.externalId) {
+      throw new BadRequestException(
+        'Mensagem sem externalId — não pode ser apagada.',
+      );
+    }
+    const inst = await this.requireConnected(companyId);
+    const meta = (log.metadataJson ?? {}) as Record<string, unknown>;
+    const remoteJid = (meta.remoteJid as string | undefined) ?? log.toAddress;
+    await this.waha.deleteMessage(
+      this.wahaSessionFor(inst),
+      jidFromPeerKey(remoteJid),
+      log.externalId,
+    );
+    await this.prisma.messageLog.update({
+      where: { id: messageId },
+      data: {
+        body: '🚫 Esta mensagem foi apagada',
+        metadataJson: {
+          ...meta,
+          isRevoked: true,
+          revokedAt: Date.now(),
+        } as Prisma.InputJsonValue,
+      },
+    });
+    return true;
+  }
+
+  async starWhatsappMessage(
+    companyId: string,
+    messageId: string,
+    star: boolean,
+  ): Promise<boolean> {
+    const log = await this.prisma.messageLog.findUnique({
+      where: { id: messageId },
+    });
+    if (!log || log.companyId !== companyId) {
+      throw new NotFoundException('Mensagem não encontrada.');
+    }
+    if (!log.externalId) return false;
+    const inst = await this.requireConnected(companyId);
+    const meta = (log.metadataJson ?? {}) as Record<string, unknown>;
+    const remoteJid = (meta.remoteJid as string | undefined) ?? log.toAddress;
+    await this.waha.starMessage(
+      this.wahaSessionFor(inst),
+      jidFromPeerKey(remoteJid),
+      log.externalId,
+      star,
+    );
+    await this.prisma.messageLog.update({
+      where: { id: messageId },
+      data: {
+        metadataJson: { ...meta, starred: star } as Prisma.InputJsonValue,
+      },
+    });
+    return true;
+  }
+
+  async pinWhatsappMessage(
+    companyId: string,
+    messageId: string,
+    pin: boolean,
+  ): Promise<boolean> {
+    const log = await this.prisma.messageLog.findUnique({
+      where: { id: messageId },
+    });
+    if (!log || log.companyId !== companyId) {
+      throw new NotFoundException('Mensagem não encontrada.');
+    }
+    if (!log.externalId) return false;
+    const inst = await this.requireConnected(companyId);
+    const meta = (log.metadataJson ?? {}) as Record<string, unknown>;
+    const remoteJid = (meta.remoteJid as string | undefined) ?? log.toAddress;
+    if (pin) {
+      await this.waha.pinMessage(
+        this.wahaSessionFor(inst),
+        jidFromPeerKey(remoteJid),
+        log.externalId,
+      );
+    } else {
+      await this.waha.unpinMessage(
+        this.wahaSessionFor(inst),
+        jidFromPeerKey(remoteJid),
+        log.externalId,
+      );
+    }
+    await this.prisma.messageLog.update({
+      where: { id: messageId },
+      data: { metadataJson: { ...meta, pinned: pin } as Prisma.InputJsonValue },
+    });
+    return true;
+  }
+
+  async forwardWhatsappMessage(
+    companyId: string,
+    messageId: string,
+    toPeerNumber: string,
+  ): Promise<WhatsappMessageEntity> {
+    const log = await this.prisma.messageLog.findUnique({
+      where: { id: messageId },
+    });
+    if (!log || log.companyId !== companyId) {
+      throw new NotFoundException('Mensagem não encontrada.');
+    }
+    if (!log.externalId) {
+      throw new BadRequestException(
+        'Mensagem sem externalId — não pode ser encaminhada.',
+      );
+    }
+    const inst = await this.requireConnected(companyId);
+    const targetChat = jidFromPeerKey(toPeerNumber);
+    const result = await this.waha.forwardMessage(
+      this.wahaSessionFor(inst),
+      targetChat,
+      log.externalId,
+    );
+    const created = await this.prisma.messageLog.create({
+      data: {
+        companyId,
+        channel: NotificationChannel.WHATSAPP,
+        direction: 'OUTBOUND',
+        toAddress: targetChat,
+        body: log.body,
+        status: MessageStatus.SENT,
+        externalId: result.id ?? null,
+        sentAt: new Date(),
+        metadataJson: {
+          kind: 'forward',
+          forwardedFrom: log.id,
+        } as Prisma.InputJsonValue,
+      },
+    });
+    const entity = mapMessage(created);
+    this.pubsub.publish(WHATSAPP_MESSAGE_RECEIVED, {
+      whatsappMessageReceived: { ...entity, companyId },
+    });
+    return entity;
+  }
+
+  async archiveWhatsappChat(
+    companyId: string,
+    peerNumber: string,
+    archive: boolean,
+  ): Promise<boolean> {
+    const inst = await this.requireConnected(companyId);
+    await this.waha.archiveChat(
+      this.wahaSessionFor(inst),
+      jidFromPeerKey(peerNumber),
+      archive,
+    );
+    return true;
   }
 
   // ===========================================================

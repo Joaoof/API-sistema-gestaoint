@@ -740,6 +740,93 @@ export class WahaApiClient {
 
   // ---------- Groups ----------
 
+  // ---------- Edit / delete / star / pin / forward ----------
+
+  async editMessage(
+    sessionName: string,
+    chatId: string,
+    messageId: string,
+    text: string,
+  ): Promise<void> {
+    await this.request<void>(
+      'PUT',
+      `/api/${encodeURIComponent(sessionName)}/chats/${encodeURIComponent(chatId)}/messages/${encodeURIComponent(messageId)}`,
+      { text },
+    );
+  }
+
+  async deleteMessage(
+    sessionName: string,
+    chatId: string,
+    messageId: string,
+  ): Promise<void> {
+    await this.request<void>(
+      'DELETE',
+      `/api/${encodeURIComponent(sessionName)}/chats/${encodeURIComponent(chatId)}/messages/${encodeURIComponent(messageId)}`,
+    );
+  }
+
+  async starMessage(
+    sessionName: string,
+    chatId: string,
+    messageId: string,
+    star: boolean,
+  ): Promise<void> {
+    const action = star ? 'star' : 'unstar';
+    await this.request<void>(
+      'POST',
+      `/api/${encodeURIComponent(sessionName)}/chats/${encodeURIComponent(chatId)}/messages/${encodeURIComponent(messageId)}/${action}`,
+    );
+  }
+
+  async pinMessage(
+    sessionName: string,
+    chatId: string,
+    messageId: string,
+    durationSeconds = 86400,
+  ): Promise<void> {
+    await this.request<void>(
+      'POST',
+      `/api/${encodeURIComponent(sessionName)}/chats/${encodeURIComponent(chatId)}/messages/${encodeURIComponent(messageId)}/pin`,
+      { duration: durationSeconds },
+    );
+  }
+
+  async unpinMessage(
+    sessionName: string,
+    chatId: string,
+    messageId: string,
+  ): Promise<void> {
+    await this.request<void>(
+      'POST',
+      `/api/${encodeURIComponent(sessionName)}/chats/${encodeURIComponent(chatId)}/messages/${encodeURIComponent(messageId)}/unpin`,
+    );
+  }
+
+  async forwardMessage(
+    sessionName: string,
+    chatId: string,
+    messageId: string,
+  ): Promise<WahaSendResult> {
+    return this.request<WahaSendResult>('POST', '/api/forwardMessage', {
+      session: sessionName,
+      chatId,
+      messageId,
+    });
+  }
+
+  async archiveChat(
+    sessionName: string,
+    chatId: string,
+    archive: boolean,
+  ): Promise<void> {
+    const action = archive ? 'archive' : 'unarchive';
+    await this.request<void>(
+      'POST',
+      `/api/${encodeURIComponent(sessionName)}/chats/${encodeURIComponent(chatId)}/${action}`,
+    );
+  }
+
   async getGroupParticipants(
     sessionName: string,
     groupId: string,
