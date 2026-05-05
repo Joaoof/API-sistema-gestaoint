@@ -1,6 +1,9 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { GqlAuthGuard } from '../../auth/guards/auth.guard';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { TenancyService } from '../construction/shared/tenancy.service';
+import { AuthUser } from '../construction/shared/auth-user';
 import { CreateDriverInput, UpdateDriverInput } from './dto/driver.input';
 import { DriverEntity } from './entities/driver.entity';
 import { DriverUseCases } from './use-cases/driver.use-cases';
@@ -8,7 +11,10 @@ import { DriverUseCases } from './use-cases/driver.use-cases';
 @Resolver(() => DriverEntity)
 @UseGuards(GqlAuthGuard)
 export class DriverResolver {
-  constructor(private readonly useCases: DriverUseCases) {}
+  constructor(
+    private readonly useCases: DriverUseCases,
+    private readonly tenancy: TenancyService,
+  ) {}
 
   @Query(() => [DriverEntity])
   async drivers(
@@ -24,20 +30,30 @@ export class DriverResolver {
   }
 
   @Mutation(() => DriverEntity)
-  async createDriver(@Args('input') input: CreateDriverInput): Promise<DriverEntity> {
-    return this.useCases.create(input);
+  async createDriver(
+    @CurrentUser() user: AuthUser,
+    @Args('input') input: CreateDriverInput,
+  ): Promise<DriverEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.create({ userId: user.id!, companyId }, input);
   }
 
   @Mutation(() => DriverEntity)
   async updateDriver(
+    @CurrentUser() user: AuthUser,
     @Args('id') id: string,
     @Args('input') input: UpdateDriverInput,
   ): Promise<DriverEntity> {
-    return this.useCases.update(id, input);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.update({ userId: user.id!, companyId }, id, input);
   }
 
   @Mutation(() => Boolean)
-  async deleteDriver(@Args('id') id: string): Promise<boolean> {
-    return this.useCases.remove(id);
+  async deleteDriver(
+    @CurrentUser() user: AuthUser,
+    @Args('id') id: string,
+  ): Promise<boolean> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.remove({ userId: user.id!, companyId }, id);
   }
 }

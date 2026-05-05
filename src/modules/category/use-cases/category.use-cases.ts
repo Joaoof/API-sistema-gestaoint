@@ -1,6 +1,8 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { CategoryStatus, Prisma } from '@prisma/client';
+import { AuditAction, CategoryStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
+import { AuditLogService } from '../../audit/use-cases/audit-log.service';
+import { AuditActor } from '../../audit/types/actor';
 import {
   CategoryFiltersInput,
   CreateCategoryInput,
@@ -29,7 +31,10 @@ function toEntity(raw: RawCategory): CategoryEntity {
 
 @Injectable()
 export class CategoryUseCases {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditLogService,
+  ) {}
 
   async list(
     pagination?: PaginationInput,
@@ -85,7 +90,10 @@ export class CategoryUseCases {
     return toEntity(found);
   }
 
-  async create(input: CreateCategoryInput): Promise<CategoryEntity> {
+  async create(
+    actor: AuditActor,
+    input: CreateCategoryInput,
+  ): Promise<CategoryEntity> {
     try {
       const created = await this.prisma.category.create({
         data: {
@@ -94,6 +102,14 @@ export class CategoryUseCases {
           color: input.color,
           status: input.active ? CategoryStatus.ACTIVE : CategoryStatus.INACTIVE,
         },
+      });
+      await this.audit.log({
+        companyId: actor.companyId,
+        userId: actor.userId,
+        entity: 'Category',
+        entityId: created.id,
+        action: AuditAction.CREATE,
+        after: created,
       });
       return toEntity(created);
     } catch (err: unknown) {
@@ -110,6 +126,7 @@ export class CategoryUseCases {
   }
 
   async update(
+    actor: AuditActor,
     id: string,
     input: UpdateCategoryInput,
   ): Promise<CategoryEntity> {
@@ -127,10 +144,22 @@ export class CategoryUseCases {
     }
 
     const updated = await this.prisma.category.update({ where: { id }, data });
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'Category',
+      entityId: id,
+      action: AuditAction.UPDATE,
+      before: existing,
+      after: updated,
+    });
     return toEntity(updated);
   }
 
-  async delete(id: string): Promise<DeleteCategoryResult> {
+  async delete(
+    actor: AuditActor,
+    id: string,
+  ): Promise<DeleteCategoryResult> {
     const existing = await this.prisma.category.findUnique({ where: { id } });
     if (!existing) {
       return { success: false, message: 'Categoria não encontrada.' };
@@ -145,10 +174,21 @@ export class CategoryUseCases {
       };
     }
     await this.prisma.category.delete({ where: { id } });
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'Category',
+      entityId: id,
+      action: AuditAction.DELETE,
+      before: existing,
+    });
     return { success: true, message: 'Categoria excluída com sucesso.' };
   }
 
-  async toggleStatus(id: string): Promise<CategoryEntity> {
+  async toggleStatus(
+    actor: AuditActor,
+    id: string,
+  ): Promise<CategoryEntity> {
     const existing = await this.prisma.category.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Categoria não encontrada.');
     const updated = await this.prisma.category.update({
@@ -159,6 +199,18 @@ export class CategoryUseCases {
             ? CategoryStatus.INACTIVE
             : CategoryStatus.ACTIVE,
       },
+    });
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'Category',
+      entityId: id,
+      action:
+        updated.status === CategoryStatus.ACTIVE
+          ? AuditAction.ACTIVATE
+          : AuditAction.FREEZE,
+      before: existing,
+      after: updated,
     });
     return toEntity(updated);
   }

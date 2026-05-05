@@ -30,6 +30,7 @@ import { ConstructionModule } from './modules/construction/construction.module';
 import { BankModule } from './modules/bank/bank.module';
 import { InvoiceModule } from './modules/invoice/invoice.module';
 import { CompanyFiscalConfigModule } from './modules/companyFiscalConfig/company-fiscal-config.module';
+import { AuditModule } from './modules/audit/audit.module';
 
 @Module({
   imports: [
@@ -82,6 +83,7 @@ import { CompanyFiscalConfigModule } from './modules/companyFiscalConfig/company
     BankModule,
     InvoiceModule,
     CompanyFiscalConfigModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [

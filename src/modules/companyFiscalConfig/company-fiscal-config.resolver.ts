@@ -3,6 +3,7 @@ import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { GqlAuthGuard } from '../../auth/guards/auth.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { User } from '../../core/entities/user.entity';
+import { TenancyService } from '../construction/shared/tenancy.service';
 import { CompanyFiscalConfigEntity } from './entities/company-fiscal-config.entity';
 import { UpsertCompanyFiscalConfigInput } from './dto/upsert-company-fiscal-config.input';
 import { CompanyFiscalConfigUseCases } from './use-cases/company-fiscal-config.use-cases';
@@ -19,7 +20,10 @@ function requireCompany(user: User): string {
 @Resolver(() => CompanyFiscalConfigEntity)
 @UseGuards(GqlAuthGuard)
 export class CompanyFiscalConfigResolver {
-  constructor(private readonly useCases: CompanyFiscalConfigUseCases) {}
+  constructor(
+    private readonly useCases: CompanyFiscalConfigUseCases,
+    private readonly tenancy: TenancyService,
+  ) {}
 
   @Query(() => CompanyFiscalConfigEntity, { nullable: true })
   async companyFiscalConfig(
@@ -34,15 +38,19 @@ export class CompanyFiscalConfigResolver {
     @CurrentUser() user: User,
     @Args('input') input: UpsertCompanyFiscalConfigInput,
   ): Promise<CompanyFiscalConfigEntity> {
-    const companyId = requireCompany(user);
-    return this.useCases.upsert(companyId, input);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.upsert(
+      { userId: user.id, companyId },
+      companyId,
+      input,
+    );
   }
 
   @Mutation(() => Boolean)
   async deleteCompanyFiscalConfig(
     @CurrentUser() user: User,
   ): Promise<boolean> {
-    const companyId = requireCompany(user);
-    return this.useCases.remove(companyId);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.remove({ userId: user.id, companyId }, companyId);
   }
 }

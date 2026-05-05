@@ -12,15 +12,12 @@ import {
 import { OrderStatus } from '@prisma/client';
 import { GqlAuthGuard } from '../../auth/guards/auth.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { User } from '../../core/entities/user.entity';
+import { TenancyService } from '../construction/shared/tenancy.service';
 import { CreateOrderInput } from './dto/create-order.input';
 import { OrderPrintDto } from './dto/order-print.dto';
 import { OrderEntity } from './entities/order.entity';
 import { OrderUseCases } from './use-cases/order.use-cases';
-
-interface AuthUser {
-  id?: string;
-  sub?: string;
-}
 
 @ObjectType()
 export class OrderSummary {
@@ -33,7 +30,10 @@ export class OrderSummary {
 @Resolver(() => OrderEntity)
 @UseGuards(GqlAuthGuard)
 export class OrderResolver {
-  constructor(private readonly useCases: OrderUseCases) {}
+  constructor(
+    private readonly useCases: OrderUseCases,
+    private readonly tenancy: TenancyService,
+  ) {}
 
   @Query(() => [OrderEntity])
   async orders(
@@ -60,20 +60,28 @@ export class OrderResolver {
 
   @Mutation(() => OrderEntity)
   async createOrder(
+    @CurrentUser() user: User,
     @Args('input') input: CreateOrderInput,
-    @CurrentUser() user: AuthUser,
   ): Promise<OrderEntity> {
-    const userId = user?.id ?? user?.sub;
-    return this.useCases.create(input, userId);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.create({ userId: user.id, companyId }, input);
   }
 
   @Mutation(() => OrderEntity)
-  async cancelOrder(@Args('id') id: string): Promise<OrderEntity> {
-    return this.useCases.cancel(id);
+  async cancelOrder(
+    @CurrentUser() user: User,
+    @Args('id') id: string,
+  ): Promise<OrderEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.cancel({ userId: user.id, companyId }, id);
   }
 
   @Mutation(() => Boolean)
-  async deleteOrder(@Args('id') id: string): Promise<boolean> {
-    return this.useCases.remove(id);
+  async deleteOrder(
+    @CurrentUser() user: User,
+    @Args('id') id: string,
+  ): Promise<boolean> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.remove({ userId: user.id, companyId }, id);
   }
 }

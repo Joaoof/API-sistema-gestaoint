@@ -7,12 +7,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  AuditAction,
   CompanyFiscalConfig,
   InvoiceStatus,
   InvoiceType,
   Prisma,
 } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
+import { AuditLogService } from '../../audit/use-cases/audit-log.service';
+import { AuditActor } from '../../audit/types/actor';
 import {
   IssueInvoiceInput,
   IssueInvoiceItemInput,
@@ -96,6 +99,24 @@ function toEntity(raw: RawInvoice): InvoiceEntity {
   };
 }
 
+function toAuditSnapshot(raw: RawInvoice): Record<string, unknown> {
+  return {
+    ...raw,
+    valorProdutos: Number(raw.valorProdutos),
+    valorDesconto: Number(raw.valorDesconto),
+    valorFrete: Number(raw.valorFrete),
+    valorTotal: Number(raw.valorTotal),
+    items: (raw.items ?? []).map((i) => ({
+      ...i,
+      quantidade: Number(i.quantidade),
+      valorUnitario: Number(i.valorUnitario),
+      valorDesconto: Number(i.valorDesconto),
+      valorTotal: Number(i.valorTotal),
+      aliquotaIcms: i.aliquotaIcms ? Number(i.aliquotaIcms) : null,
+    })),
+  };
+}
+
 function buildIssuerConfig(config: CompanyFiscalConfig): IssuerConfig {
   return {
     cnpj: config.cnpj,
@@ -168,6 +189,7 @@ export class InvoiceUseCases {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly audit: AuditLogService,
     @Inject(DefaultInvoiceProviderRegistry)
     private readonly providers: DefaultInvoiceProviderRegistry,
   ) {}
@@ -211,10 +233,12 @@ export class InvoiceUseCases {
   }
 
   async issue(
-    companyId: string,
-    userId: string,
+    actor: AuditActor,
     input: IssueInvoiceInput,
   ): Promise<InvoiceEntity> {
+    const companyId = actor.companyId;
+    const userId = actor.userId;
+
     const config = await this.prisma.companyFiscalConfig.findUnique({
       where: { companyId },
     });
@@ -293,6 +317,16 @@ export class InvoiceUseCases {
       include: { items: { orderBy: { ordem: 'asc' } } },
     });
 
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'Invoice',
+      entityId: draft.id,
+      action: AuditAction.CREATE,
+      after: toAuditSnapshot(draft),
+      reason: `Emissão de nota ${input.type} iniciada.`,
+    });
+
     try {
       const result = await provider.issue({
         type: input.type,
@@ -335,6 +369,21 @@ export class InvoiceUseCases {
         },
         include: { items: { orderBy: { ordem: 'asc' } } },
       });
+
+      await this.audit.log({
+        companyId: actor.companyId,
+        userId: actor.userId,
+        entity: 'Invoice',
+        entityId: updated.id,
+        action:
+          result.status === InvoiceStatus.AUTHORIZED
+            ? AuditAction.CONFIRM
+            : AuditAction.UPDATE,
+        before: toAuditSnapshot(draft),
+        after: toAuditSnapshot(updated),
+        reason: `Resposta do provedor: ${result.status}.`,
+      });
+
       return toEntity(updated);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro desconhecido';
@@ -350,15 +399,29 @@ export class InvoiceUseCases {
         },
         include: { items: { orderBy: { ordem: 'asc' } } },
       });
+
+      await this.audit.log({
+        companyId: actor.companyId,
+        userId: actor.userId,
+        entity: 'Invoice',
+        entityId: updated.id,
+        action: AuditAction.UPDATE,
+        before: toAuditSnapshot(draft),
+        after: toAuditSnapshot(updated),
+        reason: `Falha na emissão: ${message}`,
+      });
+
       return toEntity(updated);
     }
   }
 
   async cancel(
-    companyId: string,
+    actor: AuditActor,
     invoiceId: string,
     motivo: string,
   ): Promise<InvoiceEntity> {
+    const companyId = actor.companyId;
+
     if (!motivo || motivo.trim().length < 15) {
       throw new BadRequestException(
         'Motivo de cancelamento deve ter ao menos 15 caracteres (exigência SEFAZ).',
@@ -367,7 +430,7 @@ export class InvoiceUseCases {
 
     const invoice = await this.prisma.invoice.findUnique({
       where: { id: invoiceId },
-      include: { items: true },
+      include: { items: { orderBy: { ordem: 'asc' } } },
     });
     if (!invoice || invoice.companyId !== companyId) {
       throw new NotFoundException('Nota fiscal não encontrada.');
@@ -417,13 +480,27 @@ export class InvoiceUseCases {
       },
       include: { items: { orderBy: { ordem: 'asc' } } },
     });
+
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'Invoice',
+      entityId: updated.id,
+      action: AuditAction.REVERT,
+      before: toAuditSnapshot(invoice),
+      after: toAuditSnapshot(updated),
+      reason: `Cancelamento da nota: ${motivo.trim()}`,
+    });
+
     return toEntity(updated);
   }
 
-  async resync(companyId: string, invoiceId: string): Promise<InvoiceEntity> {
+  async resync(actor: AuditActor, invoiceId: string): Promise<InvoiceEntity> {
+    const companyId = actor.companyId;
+
     const invoice = await this.prisma.invoice.findUnique({
       where: { id: invoiceId },
-      include: { items: true },
+      include: { items: { orderBy: { ordem: 'asc' } } },
     });
     if (!invoice || invoice.companyId !== companyId) {
       throw new NotFoundException('Nota fiscal não encontrada.');
@@ -469,6 +546,18 @@ export class InvoiceUseCases {
       },
       include: { items: { orderBy: { ordem: 'asc' } } },
     });
+
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'Invoice',
+      entityId: updated.id,
+      action: AuditAction.UPDATE,
+      before: toAuditSnapshot(invoice),
+      after: toAuditSnapshot(updated),
+      reason: 'Ressincronização com provedor.',
+    });
+
     return toEntity(updated);
   }
 
@@ -498,6 +587,7 @@ export class InvoiceUseCases {
 
     const invoice = await this.prisma.invoice.findFirst({
       where: { providerRef: event.providerRef, providerName },
+      include: { items: { orderBy: { ordem: 'asc' } } },
     });
     if (!invoice) {
       this.logger.warn(
@@ -506,7 +596,7 @@ export class InvoiceUseCases {
       return { ok: false };
     }
 
-    await this.prisma.invoice.update({
+    const updated = await this.prisma.invoice.update({
       where: { id: invoice.id },
       data: {
         status: event.status,
@@ -528,7 +618,20 @@ export class InvoiceUseCases {
             ? new Date()
             : invoice.dataCancelamento,
       },
+      include: { items: { orderBy: { ordem: 'asc' } } },
     });
+
+    await this.audit.log({
+      companyId: invoice.companyId,
+      userId: null,
+      entity: 'Invoice',
+      entityId: updated.id,
+      action: AuditAction.UPDATE,
+      before: toAuditSnapshot(invoice),
+      after: toAuditSnapshot(updated),
+      reason: `Webhook do provedor ${providerName}.`,
+    });
+
     return { ok: true, invoiceId: invoice.id };
   }
 

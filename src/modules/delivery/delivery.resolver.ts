@@ -12,6 +12,9 @@ import {
 } from '@nestjs/graphql';
 import { DeliveryStatus } from '@prisma/client';
 import { GqlAuthGuard } from '../../auth/guards/auth.guard';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { User } from '../../core/entities/user.entity';
+import { TenancyService } from '../construction/shared/tenancy.service';
 import { CreateDeliveryInput, UpdateDeliveryInput } from './dto/delivery.input';
 import { DeliveryEntity } from './entities/delivery.entity';
 import { DeliveryUseCases } from './use-cases/delivery.use-cases';
@@ -53,7 +56,10 @@ export class DeliverySummary {
 @Resolver(() => DeliveryEntity)
 @UseGuards(GqlAuthGuard)
 export class DeliveryResolver {
-  constructor(private readonly useCases: DeliveryUseCases) {}
+  constructor(
+    private readonly useCases: DeliveryUseCases,
+    private readonly tenancy: TenancyService,
+  ) {}
 
   @Query(() => [DeliveryEntity])
   async deliveries(
@@ -80,28 +86,38 @@ export class DeliveryResolver {
 
   @Mutation(() => DeliveryEntity)
   async createDelivery(
+    @CurrentUser() user: User,
     @Args('input') input: CreateDeliveryInput,
   ): Promise<DeliveryEntity> {
-    return this.useCases.create(input);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.create({ userId: user.id, companyId }, input);
   }
 
   @Mutation(() => DeliveryEntity)
   async updateDelivery(
+    @CurrentUser() user: User,
     @Args('input') input: UpdateDeliveryInput,
   ): Promise<DeliveryEntity> {
-    return this.useCases.update(input);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.update({ userId: user.id, companyId }, input);
   }
 
   @Mutation(() => DeliveryEntity)
   async completeDelivery(
+    @CurrentUser() user: User,
     @Args('id') id: string,
     @Args('notes', { nullable: true }) notes?: string,
   ): Promise<DeliveryEntity> {
-    return this.useCases.complete(id, notes);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.complete({ userId: user.id, companyId }, id, notes);
   }
 
   @Mutation(() => DeliveryEntity)
-  async cancelDelivery(@Args('id') id: string): Promise<DeliveryEntity> {
-    return this.useCases.cancel(id);
+  async cancelDelivery(
+    @CurrentUser() user: User,
+    @Args('id') id: string,
+  ): Promise<DeliveryEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.cancel({ userId: user.id, companyId }, id);
   }
 }

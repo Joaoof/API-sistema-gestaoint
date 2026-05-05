@@ -1,12 +1,16 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { DeliveryStatus, Prisma } from '@prisma/client';
+import { AuditAction, DeliveryStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
+import { AuditLogService } from '../../audit/use-cases/audit-log.service';
+import { AuditActor } from '../../audit/types/actor';
 import { CreateDeliveryInput, UpdateDeliveryInput } from '../dto/delivery.input';
 import { DeliveryEntity } from '../entities/delivery.entity';
 
 type RawDelivery = Prisma.DeliveryGetPayload<{
   include: { order: { include: { customer: true; items: true } } };
 }>;
+
+type RawDeliveryBase = Prisma.DeliveryGetPayload<{}>;
 
 function toEntity(raw: RawDelivery): DeliveryEntity {
   return {
@@ -54,9 +58,18 @@ function toEntity(raw: RawDelivery): DeliveryEntity {
   };
 }
 
+function toAuditSnapshot(
+  raw: RawDelivery | RawDeliveryBase,
+): Record<string, unknown> {
+  return { ...raw };
+}
+
 @Injectable()
 export class DeliveryUseCases {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditLogService,
+  ) {}
 
   async list(args: { status?: DeliveryStatus; search?: string } = {}): Promise<DeliveryEntity[]> {
     const records = await this.prisma.delivery.findMany({
@@ -95,7 +108,7 @@ export class DeliveryUseCases {
     return toEntity(record);
   }
 
-  async create(input: CreateDeliveryInput): Promise<DeliveryEntity> {
+  async create(actor: AuditActor, input: CreateDeliveryInput): Promise<DeliveryEntity> {
     const order = await this.prisma.order.findUnique({ where: { id: input.orderId } });
     if (!order) throw new NotFoundException('Pedido não encontrado.');
 
@@ -143,12 +156,23 @@ export class DeliveryUseCases {
           data: { totalDeliveries: { increment: 1 } },
         });
       }
+      await this.audit.log(
+        {
+          companyId: actor.companyId,
+          userId: actor.userId,
+          entity: 'Delivery',
+          entityId: c.id,
+          action: AuditAction.CREATE,
+          after: toAuditSnapshot(c),
+        },
+        tx,
+      );
       return c;
     });
     return toEntity(created);
   }
 
-  async update(input: UpdateDeliveryInput): Promise<DeliveryEntity> {
+  async update(actor: AuditActor, input: UpdateDeliveryInput): Promise<DeliveryEntity> {
     const existing = await this.prisma.delivery.findUnique({ where: { id: input.id } });
     if (!existing) throw new NotFoundException('Entrega não encontrada.');
 
@@ -195,10 +219,21 @@ export class DeliveryUseCases {
       data,
       include: { order: { include: { customer: true, items: true } } },
     });
+
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'Delivery',
+      entityId: updated.id,
+      action: AuditAction.UPDATE,
+      before: toAuditSnapshot(existing),
+      after: toAuditSnapshot(updated),
+    });
+
     return toEntity(updated);
   }
 
-  async complete(id: string, notes?: string): Promise<DeliveryEntity> {
+  async complete(actor: AuditActor, id: string, notes?: string): Promise<DeliveryEntity> {
     const existing = await this.prisma.delivery.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Entrega não encontrada.');
     if (existing.status === DeliveryStatus.DELIVERED) {
@@ -214,10 +249,22 @@ export class DeliveryUseCases {
       },
       include: { order: { include: { customer: true, items: true } } },
     });
+
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'Delivery',
+      entityId: updated.id,
+      action: AuditAction.CONFIRM,
+      before: toAuditSnapshot(existing),
+      after: toAuditSnapshot(updated),
+      reason: 'Entrega concluída.',
+    });
+
     return toEntity(updated);
   }
 
-  async cancel(id: string): Promise<DeliveryEntity> {
+  async cancel(actor: AuditActor, id: string): Promise<DeliveryEntity> {
     const existing = await this.prisma.delivery.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Entrega não encontrada.');
     const updated = await this.prisma.delivery.update({
@@ -225,6 +272,18 @@ export class DeliveryUseCases {
       data: { status: DeliveryStatus.CANCELED },
       include: { order: { include: { customer: true, items: true } } },
     });
+
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'Delivery',
+      entityId: updated.id,
+      action: AuditAction.REVERT,
+      before: toAuditSnapshot(existing),
+      after: toAuditSnapshot(updated),
+      reason: 'Entrega cancelada.',
+    });
+
     return toEntity(updated);
   }
 

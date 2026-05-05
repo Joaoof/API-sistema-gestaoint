@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CompanyFiscalConfig } from '@prisma/client';
+import { AuditAction, CompanyFiscalConfig } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
+import { AuditLogService } from '../../audit/use-cases/audit-log.service';
+import { AuditActor } from '../../audit/types/actor';
 import { CompanyFiscalConfigEntity } from '../entities/company-fiscal-config.entity';
 import { UpsertCompanyFiscalConfigInput } from '../dto/upsert-company-fiscal-config.input';
 
@@ -41,9 +43,29 @@ function toEntity(raw: CompanyFiscalConfig): CompanyFiscalConfigEntity {
   };
 }
 
+function toAuditSnapshot(raw: CompanyFiscalConfig): Record<string, unknown> {
+  // Avoid logging secrets (certificate base64, encrypted password, provider token, webhook secret).
+  const {
+    certificadoB64: _certificadoB64,
+    certificadoSenhaCifrada: _certificadoSenhaCifrada,
+    providerApiToken: _providerApiToken,
+    providerWebhookSecret: _providerWebhookSecret,
+    cscNfce: _cscNfce,
+    ...safe
+  } = raw;
+  return {
+    ...safe,
+    hasCertificado: Boolean(_certificadoB64),
+    hasProviderToken: Boolean(_providerApiToken),
+  };
+}
+
 @Injectable()
 export class CompanyFiscalConfigUseCases {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditLogService,
+  ) {}
 
   async get(companyId: string): Promise<CompanyFiscalConfigEntity | null> {
     const config = await this.prisma.companyFiscalConfig.findUnique({
@@ -53,6 +75,7 @@ export class CompanyFiscalConfigUseCases {
   }
 
   async upsert(
+    actor: AuditActor,
     companyId: string,
     input: UpsertCompanyFiscalConfigInput,
   ): Promise<CompanyFiscalConfigEntity> {
@@ -90,15 +113,30 @@ export class CompanyFiscalConfigUseCases {
       ativo: input.ativo,
     };
 
+    const existing = await this.prisma.companyFiscalConfig.findUnique({
+      where: { companyId },
+    });
+
     const saved = await this.prisma.companyFiscalConfig.upsert({
       where: { companyId },
       create: { companyId, ...data },
       update: data,
     });
+
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'CompanyFiscalConfig',
+      entityId: saved.id,
+      action: existing ? AuditAction.UPDATE : AuditAction.CREATE,
+      before: existing ? toAuditSnapshot(existing) : undefined,
+      after: toAuditSnapshot(saved),
+    });
+
     return toEntity(saved);
   }
 
-  async remove(companyId: string): Promise<boolean> {
+  async remove(actor: AuditActor, companyId: string): Promise<boolean> {
     const config = await this.prisma.companyFiscalConfig.findUnique({
       where: { companyId },
     });
@@ -108,6 +146,16 @@ export class CompanyFiscalConfigUseCases {
     await this.prisma.companyFiscalConfig.delete({
       where: { companyId },
     });
+
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'CompanyFiscalConfig',
+      entityId: config.id,
+      action: AuditAction.DELETE,
+      before: toAuditSnapshot(config),
+    });
+
     return true;
   }
 }

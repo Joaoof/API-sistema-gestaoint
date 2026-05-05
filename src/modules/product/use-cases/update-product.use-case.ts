@@ -4,11 +4,24 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, ProductKind, ProductStatus } from '@prisma/client';
+import { AuditAction, Prisma, ProductKind, ProductStatus } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { R2Service } from '../../../infra/services/r2/r2.service';
+import { AuditLogService } from '../../audit/use-cases/audit-log.service';
+import { AuditActor } from '../../audit/types/actor';
 import { UpdateProductInput } from '../dto/update-product.input';
 import { ProductEntity } from '../entities/product.entity';
+
+function snapshot(
+  raw: Prisma.ProductGetPayload<{ include: { images: true } }>,
+): Record<string, unknown> {
+  return {
+    ...raw,
+    costPrice: Number(raw.costPrice),
+    salePrice: Number(raw.salePrice),
+    weight: raw.weight ? Number(raw.weight) : null,
+  };
+}
 
 @Injectable()
 export class UpdateProductUseCase {
@@ -17,9 +30,13 @@ export class UpdateProductUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly r2: R2Service,
+    private readonly audit: AuditLogService,
   ) {}
 
-  async execute(input: UpdateProductInput): Promise<ProductEntity> {
+  async execute(
+    actor: AuditActor,
+    input: UpdateProductInput,
+  ): Promise<ProductEntity> {
     const existing = await this.prisma.product.findFirst({
       where: { id: input.id, deletedAt: null },
       include: { images: true },
@@ -94,10 +111,27 @@ export class UpdateProductUseCase {
           }
         }
 
-        return tx.product.findUnique({
+        const final = await tx.product.findUnique({
           where: { id: input.id },
           include: { images: { orderBy: { order: 'asc' } } },
         });
+
+        if (final) {
+          await this.audit.log(
+            {
+              companyId: actor.companyId,
+              userId: actor.userId,
+              entity: 'Product',
+              entityId: final.id,
+              action: AuditAction.UPDATE,
+              before: snapshot(existing),
+              after: snapshot(final),
+            },
+            tx,
+          );
+        }
+
+        return final;
       });
 
       if (replacingImages) {

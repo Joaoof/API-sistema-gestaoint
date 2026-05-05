@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  AuditAction,
   OrderPaymentMethod,
   OrderStatus,
   OrderType,
@@ -7,6 +8,8 @@ import {
   ProductKind,
 } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
+import { AuditLogService } from '../../audit/use-cases/audit-log.service';
+import { AuditActor } from '../../audit/types/actor';
 import { CreateOrderInput } from '../dto/create-order.input';
 import { OrderEntity } from '../entities/order.entity';
 import { OrderPrintDto } from '../dto/order-print.dto';
@@ -75,9 +78,30 @@ function toEntity(raw: RawOrder): OrderEntity {
   };
 }
 
+function toAuditSnapshot(raw: RawOrder): Record<string, unknown> {
+  return {
+    ...raw,
+    commissionPercent: Number(raw.commissionPercent),
+    commissionAmount: Number(raw.commissionAmount),
+    depositAmount: Number(raw.depositAmount),
+    subtotal: Number(raw.subtotal),
+    discount: Number(raw.discount),
+    total: Number(raw.total),
+    items: raw.items.map((i) => ({
+      ...i,
+      unitPrice: Number(i.unitPrice),
+      discount: Number(i.discount),
+      total: Number(i.total),
+    })),
+  };
+}
+
 @Injectable()
 export class OrderUseCases {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditLogService,
+  ) {}
 
   async list(args: { search?: string; status?: OrderStatus; take?: number } = {}): Promise<OrderEntity[]> {
     const orders = await this.prisma.order.findMany({
@@ -108,7 +132,7 @@ export class OrderUseCases {
     return toEntity(order);
   }
 
-  async create(input: CreateOrderInput, createdById?: string): Promise<OrderEntity> {
+  async create(actor: AuditActor, input: CreateOrderInput): Promise<OrderEntity> {
     if (input.items.length === 0) {
       throw new BadRequestException('Pelo menos um item é obrigatório.');
     }
@@ -256,7 +280,7 @@ export class OrderUseCases {
           discount: input.discount,
           total,
           notes: input.notes ?? null,
-          createdById: createdById ?? null,
+          createdById: actor.userId,
           items: { create: itemsToCreate },
         },
         include: { customer: true, items: true },
@@ -287,16 +311,28 @@ export class OrderUseCases {
         });
       }
 
+      await this.audit.log(
+        {
+          companyId: actor.companyId,
+          userId: actor.userId,
+          entity: 'Order',
+          entityId: created.id,
+          action: AuditAction.CREATE,
+          after: toAuditSnapshot(created),
+        },
+        tx,
+      );
+
       return created;
     });
 
     return toEntity(order);
   }
 
-  async cancel(id: string): Promise<OrderEntity> {
+  async cancel(actor: AuditActor, id: string): Promise<OrderEntity> {
     const order = await this.prisma.order.findUnique({
       where: { id },
-      include: { items: true },
+      include: { customer: true, items: true },
     });
     if (!order) throw new NotFoundException('Pedido não encontrado.');
     if (order.status === OrderStatus.CANCELED || order.status === OrderStatus.REFUNDED) {
@@ -317,20 +353,36 @@ export class OrderUseCases {
           });
         }
       }
-      return tx.order.update({
+      const u = await tx.order.update({
         where: { id },
         data: { status: OrderStatus.CANCELED },
         include: { customer: true, items: true },
       });
+
+      await this.audit.log(
+        {
+          companyId: actor.companyId,
+          userId: actor.userId,
+          entity: 'Order',
+          entityId: u.id,
+          action: AuditAction.REVERT,
+          before: toAuditSnapshot(order),
+          after: toAuditSnapshot(u),
+          reason: 'Pedido cancelado.',
+        },
+        tx,
+      );
+
+      return u;
     });
 
     return toEntity(updated);
   }
 
-  async remove(id: string): Promise<boolean> {
+  async remove(actor: AuditActor, id: string): Promise<boolean> {
     const order = await this.prisma.order.findUnique({
       where: { id },
-      include: { items: true },
+      include: { customer: true, items: true },
     });
     if (!order) throw new NotFoundException('Pedido não encontrado.');
 
@@ -361,6 +413,18 @@ export class OrderUseCases {
       }
       await tx.delivery.deleteMany({ where: { orderId: id } });
       await tx.order.delete({ where: { id } });
+
+      await this.audit.log(
+        {
+          companyId: actor.companyId,
+          userId: actor.userId,
+          entity: 'Order',
+          entityId: id,
+          action: AuditAction.DELETE,
+          before: toAuditSnapshot(order),
+        },
+        tx,
+      );
     });
 
     return true;

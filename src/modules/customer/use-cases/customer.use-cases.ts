@@ -1,13 +1,19 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { AuditAction } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
+import { AuditLogService } from '../../audit/use-cases/audit-log.service';
+import { AuditActor } from '../../audit/types/actor';
 import { CreateCustomerInput } from '../dto/create-customer.input';
 import { CustomerEntity } from '../entities/customer.entity';
 
 @Injectable()
 export class CustomerUseCases {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditLogService,
+  ) {}
 
-  async create(input: CreateCustomerInput): Promise<CustomerEntity> {
+  async create(actor: AuditActor, input: CreateCustomerInput): Promise<CustomerEntity> {
     const customer = await this.prisma.customer.create({
       data: {
         name: input.name,
@@ -25,10 +31,18 @@ export class CustomerUseCases {
         longitude: input.longitude ?? null,
       },
     });
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'Customer',
+      entityId: customer.id,
+      action: AuditAction.CREATE,
+      after: customer,
+    });
     return customer as unknown as CustomerEntity;
   }
 
-  async update(id: string, input: Partial<CreateCustomerInput>): Promise<CustomerEntity> {
+  async update(actor: AuditActor, id: string, input: Partial<CreateCustomerInput>): Promise<CustomerEntity> {
     const existing = await this.prisma.customer.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Cliente não encontrado.');
 
@@ -49,6 +63,15 @@ export class CustomerUseCases {
         ...(input.latitude !== undefined ? { latitude: input.latitude } : {}),
         ...(input.longitude !== undefined ? { longitude: input.longitude } : {}),
       },
+    });
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'Customer',
+      entityId: id,
+      action: AuditAction.UPDATE,
+      before: existing,
+      after: customer,
     });
     return customer as unknown as CustomerEntity;
   }

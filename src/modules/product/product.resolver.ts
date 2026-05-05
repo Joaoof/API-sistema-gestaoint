@@ -3,6 +3,8 @@ import { UseGuards } from '@nestjs/common';
 import { ProductStatus } from '@prisma/client';
 import { GqlAuthGuard } from '../../auth/guards/auth.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { User } from '../../core/entities/user.entity';
+import { TenancyService } from '../construction/shared/tenancy.service';
 import { CreateProductInput } from './dto/create-product.input';
 import { UpdateProductInput } from './dto/update-product.input';
 import { ProductEntity } from './entities/product.entity';
@@ -10,11 +12,6 @@ import { CreateProductUseCase } from './use-cases/create-product.use-case';
 import { DeleteProductUseCase } from './use-cases/delete-product.use-case';
 import { ListProductsUseCase } from './use-cases/list-products.use-case';
 import { UpdateProductUseCase } from './use-cases/update-product.use-case';
-
-interface AuthUser {
-  id?: string;
-  sub?: string;
-}
 
 @Resolver(() => ProductEntity)
 @UseGuards(GqlAuthGuard)
@@ -24,6 +21,7 @@ export class ProductResolver {
     private readonly listProducts: ListProductsUseCase,
     private readonly deleteProduct: DeleteProductUseCase,
     private readonly updateProduct: UpdateProductUseCase,
+    private readonly tenancy: TenancyService,
   ) {}
 
   @Query(() => [ProductEntity])
@@ -46,23 +44,29 @@ export class ProductResolver {
 
   @Mutation(() => ProductEntity)
   async createProductMutation(
+    @CurrentUser() user: User,
     @Args('input') input: CreateProductInput,
-    @CurrentUser() user: AuthUser,
   ): Promise<ProductEntity> {
-    const userId = user?.id ?? user?.sub;
-    return this.createProduct.execute(input, userId);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.createProduct.execute({ userId: user.id, companyId }, input);
   }
 
   @Mutation(() => Boolean)
-  async deleteProductMutation(@Args('id') id: string): Promise<boolean> {
-    return this.deleteProduct.execute(id);
+  async deleteProductMutation(
+    @CurrentUser() user: User,
+    @Args('id') id: string,
+  ): Promise<boolean> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.deleteProduct.execute({ userId: user.id, companyId }, id);
   }
 
   @Mutation(() => ProductEntity)
   async updateProductMutation(
+    @CurrentUser() user: User,
     @Args('input') input: UpdateProductInput,
   ): Promise<ProductEntity> {
-    return this.updateProduct.execute(input);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.updateProduct.execute({ userId: user.id, companyId }, input);
   }
 
   @Query(() => ProductEntity, { nullable: true })

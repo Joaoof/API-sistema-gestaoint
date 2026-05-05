@@ -3,6 +3,7 @@ import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { GqlAuthGuard } from '../../auth/guards/auth.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { User } from '../../core/entities/user.entity';
+import { TenancyService } from '../construction/shared/tenancy.service';
 import { CreateBankInput, UpdateBankInput } from './dto/create-bank.input';
 import { BankEntity } from './entities/bank.entity';
 import { BankUseCases } from './use-cases/bank.use-cases';
@@ -10,7 +11,10 @@ import { BankUseCases } from './use-cases/bank.use-cases';
 @Resolver(() => BankEntity)
 @UseGuards(GqlAuthGuard)
 export class BankResolver {
-  constructor(private readonly useCases: BankUseCases) {}
+  constructor(
+    private readonly useCases: BankUseCases,
+    private readonly tenancy: TenancyService,
+  ) {}
 
   @Query(() => [BankEntity])
   async banks(
@@ -34,7 +38,8 @@ export class BankResolver {
     @CurrentUser() user: User,
     @Args('input') input: CreateBankInput,
   ): Promise<BankEntity> {
-    return this.useCases.create(user.id, input);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.create({ userId: user.id, companyId }, input);
   }
 
   @Mutation(() => BankEntity)
@@ -43,7 +48,8 @@ export class BankResolver {
     @Args('id') id: string,
     @Args('input') input: UpdateBankInput,
   ): Promise<BankEntity> {
-    return this.useCases.update(user.id, id, input);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.update({ userId: user.id, companyId }, id, input);
   }
 
   @Mutation(() => Boolean)
@@ -51,6 +57,7 @@ export class BankResolver {
     @CurrentUser() user: User,
     @Args('id') id: string,
   ): Promise<boolean> {
-    return this.useCases.remove(user.id, id);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.remove({ userId: user.id, companyId }, id);
   }
 }

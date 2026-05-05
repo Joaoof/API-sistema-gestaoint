@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { AccountStatus, Prisma } from '@prisma/client';
+import { AccountStatus, AuditAction, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
+import { AuditLogService } from '../../audit/use-cases/audit-log.service';
+import { AuditActor } from '../../audit/types/actor';
 import { CreateAccountReceivableInput } from '../dto/create-account-receivable.input';
 import { UpdateAccountReceivableInput } from '../dto/update-account-receivable.input';
 import { AccountReceivableEntity } from '../entities/account-receivable.entity';
@@ -8,6 +10,8 @@ import { AccountReceivableEntity } from '../entities/account-receivable.entity';
 type RawAccount = Prisma.AccountReceivableGetPayload<{
   include: { customer: true; product: { include: { images: true } } };
 }>;
+
+type RawAccountBase = Prisma.AccountReceivableGetPayload<{}>;
 
 const PAID_STATUSES = new Set<AccountStatus>([
   AccountStatus.PAID,
@@ -64,9 +68,22 @@ function toEntity(raw: RawAccount): AccountReceivableEntity {
   };
 }
 
+function toAuditSnapshot(
+  raw: RawAccount | RawAccountBase,
+): Record<string, unknown> {
+  return {
+    ...raw,
+    amount: Number(raw.amount),
+    interestRate: Number(raw.interestRate),
+  };
+}
+
 @Injectable()
 export class AccountReceivableUseCases {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditLogService,
+  ) {}
 
   async list(args: {
     status?: AccountStatus;
@@ -105,6 +122,7 @@ export class AccountReceivableUseCases {
   }
 
   async create(
+    actor: AuditActor,
     input: CreateAccountReceivableInput,
   ): Promise<AccountReceivableEntity> {
     const created = await this.prisma.accountReceivable.create({
@@ -120,14 +138,26 @@ export class AccountReceivableUseCases {
       },
       include: { customer: true, product: { include: { images: true } } },
     });
+
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'AccountReceivable',
+      entityId: created.id,
+      action: AuditAction.CREATE,
+      after: toAuditSnapshot(created),
+    });
+
     return toEntity(created);
   }
 
   async update(
+    actor: AuditActor,
     input: UpdateAccountReceivableInput,
   ): Promise<AccountReceivableEntity> {
     const existing = await this.prisma.accountReceivable.findUnique({
       where: { id: input.id },
+      include: { customer: true, product: { include: { images: true } } },
     });
     if (!existing) throw new NotFoundException('Conta a receber não encontrada.');
 
@@ -159,11 +189,36 @@ export class AccountReceivableUseCases {
       include: { customer: true, product: { include: { images: true } } },
     });
 
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'AccountReceivable',
+      entityId: updated.id,
+      action: AuditAction.UPDATE,
+      before: toAuditSnapshot(existing),
+      after: toAuditSnapshot(updated),
+    });
+
     return toEntity(updated);
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(actor: AuditActor, id: string): Promise<boolean> {
+    const existing = await this.prisma.accountReceivable.findUnique({
+      where: { id },
+    });
+    if (!existing) throw new NotFoundException('Conta a receber não encontrada.');
+
     await this.prisma.accountReceivable.delete({ where: { id } });
+
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'AccountReceivable',
+      entityId: id,
+      action: AuditAction.DELETE,
+      before: toAuditSnapshot(existing),
+    });
+
     return true;
   }
 

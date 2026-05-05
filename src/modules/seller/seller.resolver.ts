@@ -1,6 +1,9 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { GqlAuthGuard } from '../../auth/guards/auth.guard';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { TenancyService } from '../construction/shared/tenancy.service';
+import { AuthUser } from '../construction/shared/auth-user';
 import { CreateSellerInput, UpdateSellerInput } from './dto/create-seller.input';
 import { SellerEntity } from './entities/seller.entity';
 import { SellerUseCases } from './use-cases/seller.use-cases';
@@ -8,7 +11,10 @@ import { SellerUseCases } from './use-cases/seller.use-cases';
 @Resolver(() => SellerEntity)
 @UseGuards(GqlAuthGuard)
 export class SellerResolver {
-  constructor(private readonly useCases: SellerUseCases) {}
+  constructor(
+    private readonly useCases: SellerUseCases,
+    private readonly tenancy: TenancyService,
+  ) {}
 
   @Query(() => [SellerEntity])
   async sellers(
@@ -24,20 +30,30 @@ export class SellerResolver {
   }
 
   @Mutation(() => SellerEntity)
-  async createSeller(@Args('input') input: CreateSellerInput): Promise<SellerEntity> {
-    return this.useCases.create(input);
+  async createSeller(
+    @CurrentUser() user: AuthUser,
+    @Args('input') input: CreateSellerInput,
+  ): Promise<SellerEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.create({ userId: user.id!, companyId }, input);
   }
 
   @Mutation(() => SellerEntity)
   async updateSeller(
+    @CurrentUser() user: AuthUser,
     @Args('id') id: string,
     @Args('input') input: UpdateSellerInput,
   ): Promise<SellerEntity> {
-    return this.useCases.update(id, input);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.update({ userId: user.id!, companyId }, id, input);
   }
 
   @Mutation(() => Boolean)
-  async deleteSeller(@Args('id') id: string): Promise<boolean> {
-    return this.useCases.remove(id);
+  async deleteSeller(
+    @CurrentUser() user: AuthUser,
+    @Args('id') id: string,
+  ): Promise<boolean> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.remove({ userId: user.id!, companyId }, id);
   }
 }

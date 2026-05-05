@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { AuditAction, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
+import { AuditLogService } from '../../audit/use-cases/audit-log.service';
+import { AuditActor } from '../../audit/types/actor';
 import { CreateDriverInput, UpdateDriverInput } from '../dto/driver.input';
 import { DriverEntity } from '../entities/driver.entity';
 
@@ -27,7 +29,10 @@ function toEntity(raw: RawDriver): DriverEntity {
 
 @Injectable()
 export class DriverUseCases {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditLogService,
+  ) {}
 
   async list(args: { search?: string; activeOnly?: boolean } = {}): Promise<DriverEntity[]> {
     const drivers = await this.prisma.driver.findMany({
@@ -56,7 +61,7 @@ export class DriverUseCases {
     return toEntity(driver);
   }
 
-  async create(input: CreateDriverInput): Promise<DriverEntity> {
+  async create(actor: AuditActor, input: CreateDriverInput): Promise<DriverEntity> {
     const driver = await this.prisma.driver.create({
       data: {
         name: input.name,
@@ -71,10 +76,18 @@ export class DriverUseCases {
         notes: input.notes ?? null,
       },
     });
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'Driver',
+      entityId: driver.id,
+      action: AuditAction.CREATE,
+      after: driver,
+    });
     return toEntity(driver);
   }
 
-  async update(id: string, input: UpdateDriverInput): Promise<DriverEntity> {
+  async update(actor: AuditActor, id: string, input: UpdateDriverInput): Promise<DriverEntity> {
     const existing = await this.prisma.driver.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Motorista não encontrado.');
     const driver = await this.prisma.driver.update({
@@ -92,20 +105,49 @@ export class DriverUseCases {
         ...(input.notes !== undefined ? { notes: input.notes } : {}),
       },
     });
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'Driver',
+      entityId: id,
+      action: AuditAction.UPDATE,
+      before: existing,
+      after: driver,
+    });
     return toEntity(driver);
   }
 
-  async remove(id: string): Promise<boolean> {
+  async remove(actor: AuditActor, id: string): Promise<boolean> {
+    const existing = await this.prisma.driver.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Motorista não encontrado.');
+
     const inUse = await this.prisma.delivery.findFirst({
       where: { driverId: id },
       select: { id: true },
     });
     if (inUse) {
-      // Soft-delete (inativa) se houver entregas vinculadas
-      await this.prisma.driver.update({ where: { id }, data: { active: false } });
+      const updated = await this.prisma.driver.update({ where: { id }, data: { active: false } });
+      await this.audit.log({
+        companyId: actor.companyId,
+        userId: actor.userId,
+        entity: 'Driver',
+        entityId: id,
+        action: AuditAction.SOFT_DELETE,
+        before: existing,
+        after: updated,
+        reason: 'Motorista com entregas vinculadas; inativado em vez de excluído.',
+      });
       return true;
     }
     await this.prisma.driver.delete({ where: { id } });
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'Driver',
+      entityId: id,
+      action: AuditAction.DELETE,
+      before: existing,
+    });
     return true;
   }
 }

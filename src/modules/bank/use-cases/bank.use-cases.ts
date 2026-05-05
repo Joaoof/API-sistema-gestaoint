@@ -3,8 +3,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { AuditAction, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
+import { AuditLogService } from '../../audit/use-cases/audit-log.service';
+import { AuditActor } from '../../audit/types/actor';
 import { CreateBankInput, UpdateBankInput } from '../dto/create-bank.input';
 import { BankEntity } from '../entities/bank.entity';
 
@@ -31,9 +33,19 @@ function toEntity(raw: RawBank): BankEntity {
   };
 }
 
+function toAuditSnapshot(raw: RawBank): Record<string, unknown> {
+  return {
+    ...raw,
+    saldoInicial: Number(raw.saldoInicial),
+  };
+}
+
 @Injectable()
 export class BankUseCases {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditLogService,
+  ) {}
 
   async list(
     userId: string,
@@ -68,14 +80,14 @@ export class BankUseCases {
     return toEntity(bank);
   }
 
-  async create(userId: string, input: CreateBankInput): Promise<BankEntity> {
+  async create(actor: AuditActor, input: CreateBankInput): Promise<BankEntity> {
     if (!input.name || input.name.trim().length === 0) {
       throw new BadRequestException('Nome do banco é obrigatório.');
     }
 
     const bank = await this.prisma.bank.create({
       data: {
-        user_id: userId,
+        user_id: actor.userId,
         name: input.name.trim(),
         tipo: input.tipo,
         agencia: input.agencia ?? null,
@@ -90,16 +102,26 @@ export class BankUseCases {
         observacoes: input.observacoes ?? null,
       },
     });
+
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'Bank',
+      entityId: bank.id,
+      action: AuditAction.CREATE,
+      after: toAuditSnapshot(bank),
+    });
+
     return toEntity(bank);
   }
 
   async update(
-    userId: string,
+    actor: AuditActor,
     id: string,
     input: UpdateBankInput,
   ): Promise<BankEntity> {
     const existing = await this.prisma.bank.findUnique({ where: { id } });
-    if (!existing || existing.user_id !== userId) {
+    if (!existing || existing.user_id !== actor.userId) {
       throw new NotFoundException('Banco não encontrado.');
     }
 
@@ -126,12 +148,23 @@ export class BankUseCases {
           : {}),
       },
     });
+
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'Bank',
+      entityId: updated.id,
+      action: AuditAction.UPDATE,
+      before: toAuditSnapshot(existing),
+      after: toAuditSnapshot(updated),
+    });
+
     return toEntity(updated);
   }
 
-  async remove(userId: string, id: string): Promise<boolean> {
+  async remove(actor: AuditActor, id: string): Promise<boolean> {
     const existing = await this.prisma.bank.findUnique({ where: { id } });
-    if (!existing || existing.user_id !== userId) {
+    if (!existing || existing.user_id !== actor.userId) {
       throw new NotFoundException('Banco não encontrado.');
     }
 
@@ -141,14 +174,32 @@ export class BankUseCases {
     });
 
     if (inUse) {
-      await this.prisma.bank.update({
+      const softDeleted = await this.prisma.bank.update({
         where: { id },
         data: { ativo: false },
+      });
+      await this.audit.log({
+        companyId: actor.companyId,
+        userId: actor.userId,
+        entity: 'Bank',
+        entityId: id,
+        action: AuditAction.SOFT_DELETE,
+        before: toAuditSnapshot(existing),
+        after: toAuditSnapshot(softDeleted),
+        reason: 'Banco em uso por movimentações; desativado em vez de excluído.',
       });
       return true;
     }
 
     await this.prisma.bank.delete({ where: { id } });
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'Bank',
+      entityId: id,
+      action: AuditAction.DELETE,
+      before: toAuditSnapshot(existing),
+    });
     return true;
   }
 }

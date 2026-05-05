@@ -23,6 +23,7 @@ import { DeleteCashMovementUseCase } from '../../../../core/use-cases/cashMoveme
 import { UpdateCashMovementInput } from '../../../../core/use-cases/cashMovement/dtos/update-cash-movement.input';
 import { UpdateCashMovementUseCase } from 'src/core/use-cases/cashMovement/update-cash-movement.use-case';
 import { FindPaginatedCashMovementUseCase } from 'src/core/use-cases/cashMovement/find-paginated-cash-movement.use-case';
+import { TenancyService } from '../../../../modules/construction/shared/tenancy.service';
 
 const CATEGORY_SUCCESS_MESSAGES: Record<string, string> = {
   SALE: 'Venda registrada com sucesso!',
@@ -42,6 +43,7 @@ export class CashMovementResolver {
     private readonly deleteCashMovementUseCase: DeleteCashMovementUseCase,
     private readonly updateCashMovementUseCase: UpdateCashMovementUseCase,
     private readonly findPaginatedCashMovementUseCase: FindPaginatedCashMovementUseCase,
+    private readonly tenancy: TenancyService,
   ) {}
 
   @Mutation(() => CashMovementGraphQL)
@@ -50,9 +52,10 @@ export class CashMovementResolver {
     @Args('input') input: CreateCashMovementInput,
     @CurrentUser() user: User,
   ): Promise<CashMovementGraphQL> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
     const movement = await this.createCashMovementUseCase.execute(
+      { userId: user.id, companyId },
       { ...input, user_id: user.id },
-      user.id,
     );
 
     const message =
@@ -116,7 +119,11 @@ export class CashMovementResolver {
     @Args('movementId') movementId: string,
     @CurrentUser() user: User,
   ): Promise<boolean> {
-    return this.deleteCashMovementUseCase.execute(user.id, movementId);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.deleteCashMovementUseCase.execute(
+      { userId: user.id, companyId },
+      movementId,
+    );
   }
 
   @Mutation(() => Boolean)
@@ -126,10 +133,11 @@ export class CashMovementResolver {
     @Args('movementUpdateCash') movementUpdateCash: UpdateCashMovementInput,
     @CurrentUser() user: User,
   ): Promise<boolean> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
     return this.updateCashMovementUseCase.execute(
+      { userId: user.id, companyId },
       movementId,
       movementUpdateCash,
-      user.id,
     );
   }
 

@@ -1,7 +1,9 @@
 import { ConflictException, Injectable, Logger } from '@nestjs/common';
-import { ProductKind, ProductStatus } from '@prisma/client';
+import { AuditAction, ProductKind, ProductStatus } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { R2Service } from '../../../infra/services/r2/r2.service';
+import { AuditLogService } from '../../audit/use-cases/audit-log.service';
+import { AuditActor } from '../../audit/types/actor';
 import { CreateProductInput } from '../dto/create-product.input';
 import { ProductEntity } from '../entities/product.entity';
 
@@ -12,11 +14,12 @@ export class CreateProductUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly r2: R2Service,
+    private readonly audit: AuditLogService,
   ) {}
 
   async execute(
+    actor: AuditActor,
     input: CreateProductInput,
-    createdById?: string,
   ): Promise<ProductEntity> {
     // Garante exatamente uma capa (ou primeira ordem)
     const images = (input.images ?? []).map((img, idx) => ({
@@ -52,10 +55,24 @@ export class CreateProductUseCase {
           supplierId: input.supplierId ?? null,
           description: input.description ?? null,
           status: input.active ? ProductStatus.ACTIVE : ProductStatus.INACTIVE,
-          createdById: createdById ?? null,
+          createdById: actor.userId,
           images: { create: images },
         },
         include: { images: { orderBy: { order: 'asc' } } },
+      });
+
+      await this.audit.log({
+        companyId: actor.companyId,
+        userId: actor.userId,
+        entity: 'Product',
+        entityId: product.id,
+        action: AuditAction.CREATE,
+        after: {
+          ...product,
+          costPrice: Number(product.costPrice),
+          salePrice: Number(product.salePrice),
+          weight: product.weight ? Number(product.weight) : null,
+        },
       });
 
       return product as unknown as ProductEntity;

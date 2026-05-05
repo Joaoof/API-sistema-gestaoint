@@ -11,6 +11,9 @@ import {
 } from '@nestjs/graphql';
 import { AccountStatus } from '@prisma/client';
 import { GqlAuthGuard } from '../../auth/guards/auth.guard';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { User } from '../../core/entities/user.entity';
+import { TenancyService } from '../construction/shared/tenancy.service';
 import { CreateAccountPayableInput } from './dto/create-account-payable.input';
 import { UpdateAccountPayableInput } from './dto/update-account-payable.input';
 import { AccountPayableEntity } from './entities/account-payable.entity';
@@ -28,7 +31,10 @@ export class AccountPayableSummary {
 @Resolver(() => AccountPayableEntity)
 @UseGuards(GqlAuthGuard)
 export class AccountPayableResolver {
-  constructor(private readonly useCases: AccountPayableUseCases) {}
+  constructor(
+    private readonly useCases: AccountPayableUseCases,
+    private readonly tenancy: TenancyService,
+  ) {}
 
   @Query(() => [AccountPayableEntity])
   async accountsPayable(
@@ -53,20 +59,28 @@ export class AccountPayableResolver {
 
   @Mutation(() => AccountPayableEntity)
   async createAccountPayable(
+    @CurrentUser() user: User,
     @Args('input') input: CreateAccountPayableInput,
   ): Promise<AccountPayableEntity> {
-    return this.useCases.create(input);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.create({ userId: user.id, companyId }, input);
   }
 
   @Mutation(() => AccountPayableEntity)
   async updateAccountPayable(
+    @CurrentUser() user: User,
     @Args('input') input: UpdateAccountPayableInput,
   ): Promise<AccountPayableEntity> {
-    return this.useCases.update(input);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.update({ userId: user.id, companyId }, input);
   }
 
   @Mutation(() => Boolean)
-  async deleteAccountPayable(@Args('id') id: string): Promise<boolean> {
-    return this.useCases.delete(id);
+  async deleteAccountPayable(
+    @CurrentUser() user: User,
+    @Args('id') id: string,
+  ): Promise<boolean> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.delete({ userId: user.id, companyId }, id);
   }
 }

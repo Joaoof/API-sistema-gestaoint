@@ -3,6 +3,7 @@ import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { GqlAuthGuard } from '../../auth/guards/auth.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { User } from '../../core/entities/user.entity';
+import { TenancyService } from '../construction/shared/tenancy.service';
 import { InvoiceEntity } from './entities/invoice.entity';
 import {
   CancelInvoiceInput,
@@ -23,7 +24,10 @@ function requireCompany(user: User): string {
 @Resolver(() => InvoiceEntity)
 @UseGuards(GqlAuthGuard)
 export class InvoiceResolver {
-  constructor(private readonly useCases: InvoiceUseCases) {}
+  constructor(
+    private readonly useCases: InvoiceUseCases,
+    private readonly tenancy: TenancyService,
+  ) {}
 
   @Query(() => [InvoiceEntity])
   async invoices(
@@ -49,8 +53,8 @@ export class InvoiceResolver {
     @CurrentUser() user: User,
     @Args('input') input: IssueInvoiceInput,
   ): Promise<InvoiceEntity> {
-    const companyId = requireCompany(user);
-    return this.useCases.issue(companyId, user.id, input);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.issue({ userId: user.id, companyId }, input);
   }
 
   @Mutation(() => InvoiceEntity)
@@ -58,8 +62,12 @@ export class InvoiceResolver {
     @CurrentUser() user: User,
     @Args('input') input: CancelInvoiceInput,
   ): Promise<InvoiceEntity> {
-    const companyId = requireCompany(user);
-    return this.useCases.cancel(companyId, input.invoiceId, input.motivo);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.cancel(
+      { userId: user.id, companyId },
+      input.invoiceId,
+      input.motivo,
+    );
   }
 
   @Mutation(() => InvoiceEntity)
@@ -67,7 +75,7 @@ export class InvoiceResolver {
     @CurrentUser() user: User,
     @Args('id') id: string,
   ): Promise<InvoiceEntity> {
-    const companyId = requireCompany(user);
-    return this.useCases.resync(companyId, id);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.resync({ userId: user.id, companyId }, id);
   }
 }

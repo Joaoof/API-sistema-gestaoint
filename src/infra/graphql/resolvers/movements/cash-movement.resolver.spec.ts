@@ -23,12 +23,17 @@ const MOCK_USER_ID = 'b738c8c5-23f2-4d01-a1c2-678901234567'; // Usando UUID vál
 const MOCK_MOVEMENT_ID = 'mov-456';
 const MOCK_DATE = new Date('2025-09-29T10:00:00.000Z');
 
+const MOCK_COMPANY_ID = 'company-uuid-123';
+
 const mockCreateCashMovementUseCase = { execute: jest.fn() };
 const mockFindAllCashMovementUseCase = { execute: jest.fn() };
 const mockDashboardMovementUseCase = { execute: jest.fn() };
 const mockDeleteCashMovementUseCase = { execute: jest.fn() };
 const mockUpdateCashMovementUseCase = { execute: jest.fn() };
 const mockFindPaginatedCashMovementUseCase = { execute: jest.fn() };
+const mockTenancyService = {
+  resolveCompanyId: jest.fn().mockResolvedValue(MOCK_COMPANY_ID),
+};
 
 const mockUser: User = {
   id: MOCK_USER_ID,
@@ -86,6 +91,12 @@ describe('CashMovementResolver (Integration/GraphQL)', () => {
               .FindPaginatedCashMovementUseCase,
           useValue: mockFindPaginatedCashMovementUseCase,
         },
+        {
+          provide:
+            require('../../../../modules/construction/shared/tenancy.service')
+              .TenancyService,
+          useValue: mockTenancyService,
+        },
       ],
     }).compile();
 
@@ -113,9 +124,8 @@ describe('CashMovementResolver (Integration/GraphQL)', () => {
 
       // Assert
       expect(mockCreateCashMovementUseCase.execute).toHaveBeenCalledWith(
-        // O Use Case (corrigido) espera { ...input, userId: user.id }
-        { ...input, userId: MOCK_USER_ID },
-        MOCK_USER_ID,
+        { userId: MOCK_USER_ID, companyId: MOCK_COMPANY_ID },
+        { ...input, user_id: MOCK_USER_ID },
       );
       expect(result.category).toBe(MovementCategory.SALE);
     });

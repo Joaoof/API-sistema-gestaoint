@@ -2,6 +2,9 @@ import { UseGuards } from '@nestjs/common';
 import { Args, Field, Float, Int, Mutation, ObjectType, Query, Resolver } from '@nestjs/graphql';
 import { AccountStatus } from '@prisma/client';
 import { GqlAuthGuard } from '../../auth/guards/auth.guard';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { User } from '../../core/entities/user.entity';
+import { TenancyService } from '../construction/shared/tenancy.service';
 import { CreateAccountReceivableInput } from './dto/create-account-receivable.input';
 import { UpdateAccountReceivableInput } from './dto/update-account-receivable.input';
 import { AccountReceivableEntity } from './entities/account-receivable.entity';
@@ -19,7 +22,10 @@ export class AccountReceivableSummary {
 @Resolver(() => AccountReceivableEntity)
 @UseGuards(GqlAuthGuard)
 export class AccountReceivableResolver {
-  constructor(private readonly useCases: AccountReceivableUseCases) {}
+  constructor(
+    private readonly useCases: AccountReceivableUseCases,
+    private readonly tenancy: TenancyService,
+  ) {}
 
   @Query(() => [AccountReceivableEntity])
   async accountsReceivable(
@@ -44,20 +50,28 @@ export class AccountReceivableResolver {
 
   @Mutation(() => AccountReceivableEntity)
   async createAccountReceivable(
+    @CurrentUser() user: User,
     @Args('input') input: CreateAccountReceivableInput,
   ): Promise<AccountReceivableEntity> {
-    return this.useCases.create(input);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.create({ userId: user.id, companyId }, input);
   }
 
   @Mutation(() => AccountReceivableEntity)
   async updateAccountReceivable(
+    @CurrentUser() user: User,
     @Args('input') input: UpdateAccountReceivableInput,
   ): Promise<AccountReceivableEntity> {
-    return this.useCases.update(input);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.update({ userId: user.id, companyId }, input);
   }
 
   @Mutation(() => Boolean)
-  async deleteAccountReceivable(@Args('id') id: string): Promise<boolean> {
-    return this.useCases.delete(id);
+  async deleteAccountReceivable(
+    @CurrentUser() user: User,
+    @Args('id') id: string,
+  ): Promise<boolean> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.delete({ userId: user.id, companyId }, id);
   }
 }
