@@ -66,19 +66,24 @@ function isNewsletterJid(jid: string | null | undefined): boolean {
 }
 
 /**
- * Para individuais → retorna telefone (só dígitos).
- * Para grupos → retorna o JID completo (`xxxx-yyy@g.us`) como "peerNumber".
- * Isso preserva a distinção e permite reconstruir o JID ao enviar.
+ * Para individuais com phone → retorna telefone (só dígitos).
+ * Para grupos (`@g.us`) e números ocultos (`@lid`) → preserva o JID completo
+ * como "peerNumber". Isso mantém a distinção e permite reconstruir o JID ao
+ * enviar (LID curto seria recusado pela validação de telefone).
  */
 function peerKeyFromJid(jid: string | null | undefined): string {
   if (!jid) return '';
-  if (isGroupJid(jid)) return jid;
+  if (isGroupJid(jid) || isLidJid(jid)) return jid;
   const at = jid.indexOf('@');
   return at >= 0 ? jid.slice(0, at) : jid;
 }
 
 function jidFromPeerKey(peerKey: string): string {
-  if (peerKey.endsWith('@g.us') || peerKey.endsWith('@s.whatsapp.net')) {
+  if (
+    peerKey.endsWith('@g.us') ||
+    peerKey.endsWith('@s.whatsapp.net') ||
+    peerKey.endsWith('@lid')
+  ) {
     return peerKey;
   }
   const digits = normalizePhone(peerKey);
@@ -211,12 +216,13 @@ export class WhatsappSessionService {
    * Soft-connect: a sessão WAHA é criada e o QR escaneado direto no painel
    * do WAHA (https://<waha-host>/dashboard). Aqui só lemos o estado atual e
    * sincronizamos o DB local. Se a sessão ainda não existir no WAHA, o status
-   * vira DISCONNECTED com instrução pra abrir o painel.
+   * vira DISCONNECTED com instrução pra abrir o painel. Quando WORKING,
+   * dispara um sync de contatos em background pra resolver LIDs.
    */
   async connect(companyId: string): Promise<WhatsappInstanceEntity> {
     const inst = await this.getOrCreateInstance(companyId);
     const sessionName = this.wahaSessionFor(inst);
-    return this.refreshStatus(companyId).catch(async () => {
+    const result = await this.refreshStatus(companyId).catch(async () => {
       const updated = await this.prisma.whatsappInstance.update({
         where: { id: inst.id },
         data: {
@@ -227,6 +233,103 @@ export class WhatsappSessionService {
       });
       return toEntity(updated);
     });
+    if (result.status === WhatsappInstanceStatus.CONNECTED) {
+      this.syncContactsFromWaha(companyId).catch((err) =>
+        this.logger.warn(
+          `syncContactsFromWaha (background) falhou: ${err instanceof Error ? err.message : err}`,
+        ),
+      );
+    }
+    return result;
+  }
+
+  /**
+   * Busca a lista completa de contatos resolvidos no WAHA e faz upsert na
+   * tabela WhatsappContact. Cada contato traz (quando disponível) o telefone
+   * real mesmo pra entradas LID, desde que esteja salvo na agenda do aparelho
+   * conectado ao WAHA. É o mesmo dado que o painel do WAHA exibe na lista de
+   * chats.
+   */
+  async syncContactsFromWaha(companyId: string): Promise<number> {
+    const inst = await this.getOrCreateInstance(companyId);
+    if (inst.status !== WhatsappInstanceStatus.CONNECTED) {
+      throw new BadRequestException('WhatsApp não está conectado.');
+    }
+    const sessionName = this.wahaSessionFor(inst);
+    const contacts = await this.waha.getContacts(sessionName);
+    let upserted = 0;
+    for (const c of contacts) {
+      const jid = c.id?.trim();
+      if (!jid) continue;
+      const number = c.number?.replace(/\D+/g, '') || null;
+      const name = c.name ?? null;
+      const pushName = c.pushname ?? c.shortName ?? null;
+      const isMyContact = !!c.isMyContact;
+      const isGroup = !!c.isGroup || jid.endsWith('@g.us');
+      await this.prisma.whatsappContact.upsert({
+        where: { companyId_jid: { companyId, jid } },
+        create: {
+          companyId,
+          jid,
+          number,
+          name,
+          pushName,
+          isMyContact,
+          isGroup,
+        },
+        update: {
+          number,
+          name,
+          pushName,
+          isMyContact,
+          isGroup,
+          syncedAt: new Date(),
+        },
+      });
+      upserted++;
+    }
+    this.logger.log(
+      `syncContactsFromWaha: ${upserted} contato(s) sincronizado(s) (${sessionName})`,
+    );
+    return upserted;
+  }
+
+  /**
+   * Resolve um JID (incluindo @lid) pra { jid, phone, name }. Tenta:
+   *  1) cache WhatsappContact pelo JID;
+   *  2) cache pelos dígitos puros (caso o WAHA tenha gravado com @c.us em vez de @s.whatsapp.net);
+   *  3) fallback null pros campos não conhecidos.
+   * Telefone real só existe se o contato estiver salvo na agenda do aparelho.
+   */
+  private async resolveContact(
+    companyId: string,
+    jid: string,
+  ): Promise<{ jid: string; phone: string | null; name: string | null }> {
+    if (!jid) return { jid, phone: null, name: null };
+    const direct = await this.prisma.whatsappContact.findUnique({
+      where: { companyId_jid: { companyId, jid } },
+    });
+    if (direct) {
+      return {
+        jid,
+        phone: direct.number ?? null,
+        name: direct.name ?? direct.pushName ?? null,
+      };
+    }
+    if (isLidJid(jid)) {
+      const lidDigits = jid.replace(/@lid$/, '');
+      const byDigits = await this.prisma.whatsappContact.findFirst({
+        where: { companyId, OR: [{ number: lidDigits }, { jid: lidDigits }] },
+      });
+      if (byDigits) {
+        return {
+          jid,
+          phone: byDigits.number ?? null,
+          name: byDigits.name ?? byDigits.pushName ?? null,
+        };
+      }
+    }
+    return { jid, phone: null, name: null };
   }
 
   async reconfigureWebhook(
@@ -445,7 +548,23 @@ export class WhatsappSessionService {
     if (!isJid && target.length < 10) {
       throw new BadRequestException('Telefone inválido.');
     }
-    const phone = target;
+    let phone = target;
+
+    // Se for LID, tenta resolver pra telefone real via cache de contatos. WhatsApp
+    // costuma rejeitar envio direto pra @lid; a resolução vem do contato salvo
+    // na agenda do aparelho conectado ao WAHA.
+    if (isLidJid(to)) {
+      const resolved = await this.resolveContact(companyId, to);
+      if (resolved.phone && resolved.phone.length >= 10) {
+        phone = `${resolved.phone}@s.whatsapp.net`;
+        this.logger.log(`sendText: LID ${to} resolvido pra ${phone}`);
+      } else {
+        this.logger.warn(
+          `sendText: LID ${to} sem telefone resolvido — tentando enviar como @lid mesmo (pode falhar).`,
+        );
+      }
+    }
+
     const sessionName = this.wahaSessionFor(inst);
     this.logger.log(
       `sendText: ${sessionName} → ${phone} (${body.length} chars)`,
@@ -567,7 +686,26 @@ export class WhatsappSessionService {
       }
     }
 
-    return Array.from(groups.values()).sort((a, b) => {
+    // Enriquecimento via cache de contatos (resolve LID → nome/telefone reais
+    // que o WAHA já tem na agenda).
+    const peers = Array.from(groups.values());
+    const jidsToResolve = peers
+      .map((p) => (p.isHiddenNumber || p.isGroup ? p.peerNumber : null))
+      .filter((j): j is string => !!j);
+    if (jidsToResolve.length > 0) {
+      const cached = await this.prisma.whatsappContact.findMany({
+        where: { companyId, jid: { in: jidsToResolve } },
+      });
+      const byJid = new Map(cached.map((c) => [c.jid, c] as const));
+      for (const p of peers) {
+        const c = byJid.get(p.peerNumber);
+        if (c) {
+          p.peerName = c.name ?? c.pushName ?? p.peerName;
+        }
+      }
+    }
+
+    return peers.sort((a, b) => {
       const at = a.lastMessageAt?.getTime() ?? 0;
       const bt = b.lastMessageAt?.getTime() ?? 0;
       return bt - at;
@@ -581,6 +719,25 @@ export class WhatsappSessionService {
         OR: [
           { toAddress: peerNumber },
           { fromAddress: peerNumber },
+          {
+            metadataJson: {
+              path: ['remoteJid'],
+              equals: peerNumber,
+            },
+          },
+        ],
+      };
+    }
+    if (isLidJid(peerNumber)) {
+      // LID (número oculto): casa pelo JID completo via remoteJid e também
+      // pelos dígitos do LID em to/from (registros antigos sem @lid no key).
+      const lidDigits = peerNumber.replace(/@lid$/, '');
+      return {
+        OR: [
+          { toAddress: peerNumber },
+          { fromAddress: peerNumber },
+          { toAddress: lidDigits },
+          { fromAddress: lidDigits },
           {
             metadataJson: {
               path: ['remoteJid'],
@@ -719,7 +876,12 @@ export class WhatsappSessionService {
       }
     }
 
+    // Resolve via cache de contatos do WAHA — traz nome da agenda e (em LIDs)
+    // o telefone real quando disponível. Igual o painel do WAHA exibe.
+    const resolved = await this.resolveContact(companyId, peerNumber);
+
     const displayName =
+      resolved.name ??
       verifiedName ??
       (baseMeta.pushName as string | undefined) ??
       (baseMeta.subject as string | undefined) ??
@@ -730,9 +892,11 @@ export class WhatsappSessionService {
     const customerId = last?.customerId ?? first?.customerId ?? null;
     const customerName =
       last?.customer?.name ?? first?.customer?.name ?? null;
-    const phoneDigits = isGroup ? '' : normalizePhone(peerNumber);
-    const phoneFormatted = isGroup ? null : phoneDigits;
-    const waLink = isGroup ? '' : `https://wa.me/${phoneDigits}`;
+    const realPhoneDigits =
+      resolved.phone ?? (isGroup || isLidJid(peerNumber) ? null : normalizePhone(peerNumber));
+    const phoneFormatted = isGroup ? null : realPhoneDigits;
+    const waLink =
+      isGroup || !realPhoneDigits ? '' : `https://wa.me/${realPhoneDigits}`;
 
     return {
       peerNumber,

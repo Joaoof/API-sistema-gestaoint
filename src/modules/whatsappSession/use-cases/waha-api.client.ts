@@ -40,6 +40,19 @@ export interface WahaContactAvatar {
   value?: string;
 }
 
+export interface WahaContact {
+  id?: string;
+  number?: string;
+  name?: string;
+  pushname?: string;
+  shortName?: string;
+  isMe?: boolean;
+  isUser?: boolean;
+  isGroup?: boolean;
+  isWAContact?: boolean;
+  isMyContact?: boolean;
+}
+
 @Injectable()
 export class WahaApiClient {
   private readonly logger = new Logger(WahaApiClient.name);
@@ -207,6 +220,27 @@ export class WahaApiClient {
   }
 
   // ---------- Contacts ----------
+
+  /**
+   * Lista todos os contatos resolvidos pela sessão WAHA — equivale ao que o
+   * dashboard do WAHA mostra na tela de chats. Aceita LID com telefone real
+   * quando o contato está salvo no aparelho conectado.
+   */
+  async getContacts(sessionName: string): Promise<WahaContact[]> {
+    const qs = new URLSearchParams({ session: sessionName });
+    try {
+      const result = await this.request<WahaContact[] | { contacts?: WahaContact[] }>(
+        'GET',
+        `/api/contacts/all?${qs}`,
+      );
+      return Array.isArray(result) ? result : (result?.contacts ?? []);
+    } catch (err) {
+      this.logger.warn(
+        `getContacts falhou: ${err instanceof Error ? err.message : err}`,
+      );
+      return [];
+    }
+  }
 
   async getContactAvatar(
     sessionName: string,

@@ -131,6 +131,14 @@ export class WhatsappSessionResolver {
   }
 
   @Mutation(() => Int)
+  async syncWhatsappContacts(
+    @CurrentUser() user: AuthUser,
+  ): Promise<number> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.syncContactsFromWaha(companyId);
+  }
+
+  @Mutation(() => Int)
   async syncWhatsappMessagesForPeer(
     @CurrentUser() user: AuthUser,
     @Args('peerNumber') peerNumber: string,
