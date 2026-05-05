@@ -56,7 +56,7 @@ class WhatsappMediaInput {
 @ObjectType()
 class WhatsappPresenceResult {
   @Field(() => String, { nullable: true }) presence?: string | null;
-  @Field({ nullable: true }) lastSeen?: Date | null;
+  @Field(() => GraphQLISODateTime, { nullable: true }) lastSeen?: Date | null;
 }
 
 @ObjectType()
