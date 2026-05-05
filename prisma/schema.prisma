@@ -1561,5 +1561,6 @@ model WhatsappContact {
   company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([companyId, jid])
+  @@index([companyId])
   @@index([companyId, number])
 }

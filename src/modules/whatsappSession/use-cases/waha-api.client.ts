@@ -225,21 +225,39 @@ export class WahaApiClient {
    * Lista todos os contatos resolvidos pela sessão WAHA — equivale ao que o
    * dashboard do WAHA mostra na tela de chats. Aceita LID com telefone real
    * quando o contato está salvo no aparelho conectado.
+   *
+   * Tenta dois formatos de URL: path-prefix (`/api/{session}/contacts/all`,
+   * versões mais novas do WAHA Plus) e query-param (`/api/contacts/all?session=…`,
+   * formato legado). Cai pro segundo se o primeiro retornar 404.
    */
   async getContacts(sessionName: string): Promise<WahaContact[]> {
-    const qs = new URLSearchParams({ session: sessionName });
-    try {
-      const result = await this.request<WahaContact[] | { contacts?: WahaContact[] }>(
-        'GET',
-        `/api/contacts/all?${qs}`,
-      );
-      return Array.isArray(result) ? result : (result?.contacts ?? []);
-    } catch (err) {
-      this.logger.warn(
-        `getContacts falhou: ${err instanceof Error ? err.message : err}`,
-      );
-      return [];
+    const candidates = [
+      `/api/${encodeURIComponent(sessionName)}/contacts/all`,
+      `/api/contacts/all?${new URLSearchParams({ session: sessionName })}`,
+    ];
+    for (const path of candidates) {
+      try {
+        const result = await this.request<WahaContact[] | { contacts?: WahaContact[] }>(
+          'GET',
+          path,
+        );
+        const list = Array.isArray(result) ? result : (result?.contacts ?? []);
+        this.logger.log(
+          `getContacts: ${list.length} contato(s) via ${path}`,
+        );
+        return list;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        // 404 → tenta o próximo formato. Outros erros: idem, mas loga warn.
+        if (!message.includes('404')) {
+          this.logger.warn(`getContacts ${path} falhou: ${message}`);
+        }
+      }
     }
+    this.logger.warn(
+      `getContacts: nenhum endpoint /contacts/all respondeu (sessão ${sessionName})`,
+    );
+    return [];
   }
 
   async getContactAvatar(

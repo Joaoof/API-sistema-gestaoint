@@ -15,6 +15,5 @@ CREATE TABLE "WhatsappContact" (
 );
 
 CREATE UNIQUE INDEX "WhatsappContact_companyId_jid_key" ON "WhatsappContact"("companyId", "jid");
+CREATE INDEX "WhatsappContact_companyId_idx" ON "WhatsappContact"("companyId");
 CREATE INDEX "WhatsappContact_companyId_number_idx" ON "WhatsappContact"("companyId", "number");
-
-ALTER TABLE "WhatsappContact" ADD CONSTRAINT "WhatsappContact_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "Company"("id") ON DELETE CASCADE ON UPDATE CASCADE;
