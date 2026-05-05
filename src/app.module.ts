@@ -36,6 +36,8 @@ import { FinancialAccountModule } from './modules/financialAccount/financial-acc
 import { NotificationModule } from './modules/notification/notification.module';
 import { NotificationTemplateModule } from './modules/notificationTemplate/notification-template.module';
 import { MessageLogModule } from './modules/messageLog/message-log.module';
+import { OpportunityModule } from './modules/opportunity/opportunity.module';
+import { ContractModule } from './modules/contract/contract.module';
 
 @Module({
   imports: [
@@ -94,6 +96,8 @@ import { MessageLogModule } from './modules/messageLog/message-log.module';
     NotificationModule,
     NotificationTemplateModule,
     MessageLogModule,
+    OpportunityModule,
+    ContractModule,
   ],
   controllers: [AppController],
   providers: [
