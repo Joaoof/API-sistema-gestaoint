@@ -225,6 +225,115 @@ export class WhatsappSessionService {
     return JSON.stringify(result, null, 2);
   }
 
+  async syncMessagesForPeer(
+    companyId: string,
+    peerNumber: string,
+    limit = 200,
+  ): Promise<number> {
+    const inst = await this.getOrCreateInstance(companyId);
+    if (inst.status !== WhatsappInstanceStatus.CONNECTED) {
+      throw new BadRequestException('WhatsApp não está conectado.');
+    }
+    const phone = normalizePhone(peerNumber);
+    if (phone.length < 10) {
+      throw new BadRequestException('Telefone inválido.');
+    }
+    const remoteJid = `${phone}@s.whatsapp.net`;
+
+    let raw: unknown;
+    try {
+      raw = await this.evolution.findMessages(inst.instanceName, remoteJid, limit);
+    } catch (err) {
+      this.logger.warn(
+        `findMessages falhou: ${err instanceof Error ? err.message : err}`,
+      );
+      return 0;
+    }
+
+    // Evolution v2 retorna várias formas: { messages: { records: [] } }, { messages: [] }, ou array direto
+    const flatten = (input: unknown): Record<string, unknown>[] => {
+      if (Array.isArray(input)) return input as Record<string, unknown>[];
+      if (input && typeof input === 'object') {
+        const obj = input as Record<string, unknown>;
+        if (Array.isArray(obj.messages)) {
+          return obj.messages as Record<string, unknown>[];
+        }
+        if (
+          obj.messages &&
+          typeof obj.messages === 'object' &&
+          Array.isArray((obj.messages as Record<string, unknown>).records)
+        ) {
+          return (obj.messages as Record<string, unknown>).records as Record<
+            string,
+            unknown
+          >[];
+        }
+        if (Array.isArray(obj.records)) {
+          return obj.records as Record<string, unknown>[];
+        }
+      }
+      return [];
+    };
+
+    const items = flatten(raw);
+    let imported = 0;
+
+    for (const item of items) {
+      const key = (item.key ?? {}) as Record<string, unknown>;
+      const externalId = (key.id as string | undefined) ?? null;
+      const fromMe = !!key.fromMe;
+      if (externalId) {
+        const existing = await this.prisma.messageLog.findFirst({
+          where: { externalId, companyId },
+          select: { id: true },
+        });
+        if (existing) continue;
+      }
+
+      const messageObj = (item.message ?? {}) as Record<string, unknown>;
+      const text =
+        (messageObj.conversation as string | undefined) ??
+        ((messageObj.extendedTextMessage as
+          | Record<string, unknown>
+          | undefined)?.text as string | undefined) ??
+        (item.body as string | undefined) ??
+        '';
+      if (!text) continue;
+
+      const ts = item.messageTimestamp;
+      const createdAt =
+        typeof ts === 'number'
+          ? new Date(ts * 1000)
+          : typeof ts === 'string' && /^\d+$/.test(ts)
+            ? new Date(Number(ts) * 1000)
+            : new Date();
+
+      const pushName = (item.pushName as string | undefined) ?? null;
+
+      await this.prisma.messageLog.create({
+        data: {
+          companyId,
+          channel: NotificationChannel.WHATSAPP,
+          direction: fromMe ? 'OUTBOUND' : 'INBOUND',
+          toAddress: fromMe ? phone : '',
+          fromAddress: fromMe ? null : phone,
+          body: text,
+          status: fromMe ? MessageStatus.SENT : MessageStatus.DELIVERED,
+          externalId,
+          metadataJson: { pushName, remoteJid, source: 'history-sync' },
+          createdAt,
+          ...(fromMe ? { sentAt: createdAt } : { deliveredAt: createdAt }),
+        },
+      });
+      imported++;
+    }
+
+    this.logger.log(
+      `syncMessagesForPeer: ${imported} mensagem(ns) importadas de ${phone}`,
+    );
+    return imported;
+  }
+
   async syncFromEvolution(companyId: string): Promise<number> {
     const inst = await this.getOrCreateInstance(companyId);
     if (inst.status !== WhatsappInstanceStatus.CONNECTED) {

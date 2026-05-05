@@ -119,4 +119,18 @@ export class WhatsappSessionResolver {
     const companyId = await this.tenancy.resolveCompanyId(user);
     return this.service.syncFromEvolution(companyId);
   }
+
+  @Mutation(() => Int)
+  async syncWhatsappMessagesForPeer(
+    @CurrentUser() user: AuthUser,
+    @Args('peerNumber') peerNumber: string,
+    @Args('limit', { type: () => Int, nullable: true }) limit?: number,
+  ): Promise<number> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.syncMessagesForPeer(
+      companyId,
+      peerNumber,
+      limit ?? 200,
+    );
+  }
 }

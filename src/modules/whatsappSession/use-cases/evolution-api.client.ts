@@ -203,6 +203,52 @@ export class EvolutionApiClient {
     }
   }
 
+  /**
+   * Busca mensagens de uma conversa específica.
+   * Tenta v2 (where + body) e v1 (query string).
+   */
+  async findMessages(
+    instanceName: string,
+    remoteJid: string,
+    limit = 200,
+  ): Promise<unknown> {
+    const path = `/chat/findMessages/${encodeURIComponent(instanceName)}`;
+    const variants: Array<{ shape: string; body: Record<string, unknown> }> = [
+      // Evolution v2 — where com remoteJid e limite
+      {
+        shape: 'v2',
+        body: {
+          where: { key: { remoteJid } },
+          limit,
+        },
+      },
+      // Evolution v2 alternativo (alguns forks usam página)
+      {
+        shape: 'v2-paged',
+        body: {
+          where: { key: { remoteJid } },
+          page: 1,
+          offset: limit,
+        },
+      },
+    ];
+    let lastErr: unknown = null;
+    for (const v of variants) {
+      try {
+        return await this.request<unknown>('POST', path, v.body);
+      } catch (err) {
+        lastErr = err;
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes('401') || msg.includes('403')) throw err;
+      }
+    }
+    throw new Error(
+      `findMessages falhou: ${
+        lastErr instanceof Error ? lastErr.message : String(lastErr)
+      }`,
+    );
+  }
+
   async fetchInstances(instanceName: string): Promise<EvolutionInstance[]> {
     return this.request<EvolutionInstance[]>(
       'GET',
