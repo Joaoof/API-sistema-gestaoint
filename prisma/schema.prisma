@@ -1567,6 +1567,38 @@ model WhatsappContact {
   @@index([companyId, number])
 }
 
+model WhatsappChatbotRule {
+  id                  String   @id @default(cuid())
+  companyId           String
+  name                String
+  trigger             String
+  pattern             String?
+  responseBody        String
+  priority            Int      @default(100)
+  enabled             Boolean  @default(true)
+  applyTags           String[]
+  businessHoursOnly   Boolean  @default(false)
+  businessHoursStart  String?
+  businessHoursEnd    String?
+  cooldownMinutes     Int      @default(60)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([companyId, enabled, priority])
+}
+
+model WhatsappChatbotLog {
+  id          String   @id @default(cuid())
+  companyId   String
+  ruleId      String
+  peerNumber  String
+  triggerText String?
+  firedAt     DateTime @default(now())
+
+  @@index([companyId, peerNumber, firedAt])
+  @@index([ruleId])
+}
+
 model WhatsappReminder {
   id          String    @id @default(cuid())
   companyId   String

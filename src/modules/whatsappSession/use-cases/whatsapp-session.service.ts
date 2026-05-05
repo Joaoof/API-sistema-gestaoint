@@ -19,6 +19,7 @@ import {
   WhatsappMessageEntity,
 } from '../entities/whatsapp-session.entity';
 import { extractExternalId, WahaApiClient } from './waha-api.client';
+import { WhatsappChatbotService } from './whatsapp-chatbot.service';
 import {
   WhatsappPubSubService,
   WHATSAPP_CONVERSATION_UPDATED,
@@ -171,6 +172,7 @@ export class WhatsappSessionService {
     private readonly prisma: PrismaService,
     private readonly waha: WahaApiClient,
     private readonly pubsub: WhatsappPubSubService,
+    private readonly chatbot: WhatsappChatbotService,
   ) {}
 
   /**
@@ -1714,6 +1716,20 @@ export class WhatsappSessionService {
         this.pubsub.publish(WHATSAPP_MESSAGE_RECEIVED, {
           whatsappMessageReceived: { ...entity, companyId: inst.companyId },
         });
+
+        // Chatbot: avalia regras só pra mensagens INBOUND com texto
+        if (!fromMe && text) {
+          this.runChatbotForIncoming(
+            inst.companyId,
+            peer,
+            text,
+            inst.instanceName,
+          ).catch((err) =>
+            this.logger.warn(
+              `chatbot run falhou: ${err instanceof Error ? err.message : err}`,
+            ),
+          );
+        }
       }
       return;
     }
@@ -2858,6 +2874,56 @@ export class WhatsappSessionService {
   // ===========================================================
   // Helpers
   // ===========================================================
+
+  /**
+   * Avalia o chatbot pro peer. Se há regra que matcha, envia a resposta como
+   * outbound e loga o disparo. `instanceName` é usado pra wahaSessionFor.
+   * Roda em background — falhas não interrompem o webhook.
+   */
+  private async runChatbotForIncoming(
+    companyId: string,
+    peer: string,
+    text: string,
+    instanceName: string,
+  ): Promise<void> {
+    const previousCount = await this.prisma.messageLog.count({
+      where: {
+        companyId,
+        channel: NotificationChannel.WHATSAPP,
+        ...this.buildPeerWhere(peer),
+      },
+    });
+    const isFirstMessage = previousCount <= 1; // a recém-criada conta como 1
+
+    const match = await this.chatbot.findMatchingRule({
+      companyId,
+      peerNumber: peer,
+      text,
+      isFirstMessage,
+    });
+    if (!match) return;
+
+    this.logger.log(
+      `Chatbot match: peer=${peer} regra=${match.rule.id} → respondendo`,
+    );
+    try {
+      await this.sendText(companyId, peer, match.rule.responseBody, null);
+      await this.chatbot.logFire(companyId, match.rule.id, peer, text);
+
+      // Aplica tags da regra ao contato
+      if (match.rule.applyTags.length > 0) {
+        await this.updateContactCrm(companyId, peer, {
+          tags: match.rule.applyTags,
+        }).catch(() => undefined);
+      }
+    } catch (err) {
+      this.logger.warn(
+        `Chatbot falhou ao enviar resposta: ${err instanceof Error ? err.message : err}`,
+      );
+    }
+    // instanceName é mantido na assinatura pra futuros ajustes (rate limit por sessão).
+    void instanceName;
+  }
 
   private async requireConnected(companyId: string): Promise<RawInstance> {
     const inst = await this.prisma.whatsappInstance.findUnique({

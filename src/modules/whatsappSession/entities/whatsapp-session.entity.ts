@@ -128,6 +128,27 @@ export class WhatsappActivityEvent {
 }
 
 @ObjectType()
+export class WhatsappChatbotRuleEntity {
+  @Field(() => ID) id!: string;
+  @Field() name!: string;
+  @Field({
+    description: 'keyword | regex | first_message | out_of_hours',
+  })
+  trigger!: string;
+  @Field(() => String, { nullable: true }) pattern?: string | null;
+  @Field() responseBody!: string;
+  @Field(() => Int) priority!: number;
+  @Field() enabled!: boolean;
+  @Field(() => [String]) applyTags!: string[];
+  @Field() businessHoursOnly!: boolean;
+  @Field(() => String, { nullable: true }) businessHoursStart?: string | null;
+  @Field(() => String, { nullable: true }) businessHoursEnd?: string | null;
+  @Field(() => Int) cooldownMinutes!: number;
+  @Field(() => GraphQLISODateTime) createdAt!: Date;
+  @Field(() => GraphQLISODateTime) updatedAt!: Date;
+}
+
+@ObjectType()
 export class WhatsappReminderEntity {
   @Field(() => ID) id!: string;
   @Field() peerNumber!: string;

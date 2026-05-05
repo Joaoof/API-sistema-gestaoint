@@ -18,6 +18,7 @@ import { TenancyService } from '../construction/shared/tenancy.service';
 import { AuthUser } from '../construction/shared/auth-user';
 import {
   WhatsappActivityEvent,
+  WhatsappChatbotRuleEntity,
   WhatsappContactEntity,
   WhatsappConversationEntity,
   WhatsappInstanceEntity,
@@ -25,6 +26,7 @@ import {
   WhatsappMessageEntity,
   WhatsappReminderEntity,
 } from './entities/whatsapp-session.entity';
+import { WhatsappChatbotService } from './use-cases/whatsapp-chatbot.service';
 import { WhatsappSessionService } from './use-cases/whatsapp-session.service';
 import {
   WhatsappPubSubService,
@@ -105,6 +107,37 @@ class WhatsappPresenceUpdate {
 }
 
 @InputType()
+class WhatsappChatbotRuleInput {
+  @Field() name!: string;
+  @Field({ description: 'keyword | regex | first_message | out_of_hours' })
+  trigger!: string;
+  @Field(() => String, { nullable: true }) pattern?: string | null;
+  @Field() responseBody!: string;
+  @Field(() => Int, { nullable: true }) priority?: number;
+  @Field(() => Boolean, { nullable: true }) enabled?: boolean;
+  @Field(() => [String], { nullable: true }) applyTags?: string[];
+  @Field(() => Boolean, { nullable: true }) businessHoursOnly?: boolean;
+  @Field(() => String, { nullable: true }) businessHoursStart?: string | null;
+  @Field(() => String, { nullable: true }) businessHoursEnd?: string | null;
+  @Field(() => Int, { nullable: true }) cooldownMinutes?: number;
+}
+
+@InputType()
+class WhatsappChatbotRulePatchInput {
+  @Field({ nullable: true }) name?: string;
+  @Field({ nullable: true }) trigger?: string;
+  @Field(() => String, { nullable: true }) pattern?: string | null;
+  @Field({ nullable: true }) responseBody?: string;
+  @Field(() => Int, { nullable: true }) priority?: number;
+  @Field(() => Boolean, { nullable: true }) enabled?: boolean;
+  @Field(() => [String], { nullable: true }) applyTags?: string[];
+  @Field(() => Boolean, { nullable: true }) businessHoursOnly?: boolean;
+  @Field(() => String, { nullable: true }) businessHoursStart?: string | null;
+  @Field(() => String, { nullable: true }) businessHoursEnd?: string | null;
+  @Field(() => Int, { nullable: true }) cooldownMinutes?: number;
+}
+
+@InputType()
 class WhatsappCrmInput {
   @Field(() => [String], { nullable: true }) tags?: string[];
   @Field(() => String, { nullable: true }) internalNotes?: string | null;
@@ -125,6 +158,7 @@ export class WhatsappSessionResolver {
     private readonly tenancy: TenancyService,
     private readonly pubsub: WhatsappPubSubService,
     private readonly reminders: WhatsappReminderService,
+    private readonly chatbot: WhatsappChatbotService,
   ) {}
 
   @Query(() => WhatsappInstanceEntity)
@@ -595,6 +629,68 @@ export class WhatsappSessionResolver {
   ): Promise<boolean> {
     const companyId = await this.tenancy.resolveCompanyId(user);
     return this.reminders.remove(companyId, id);
+  }
+
+  // ============ Phase 8: Chatbot ============
+
+  @Query(() => [WhatsappChatbotRuleEntity])
+  async whatsappChatbotRules(
+    @CurrentUser() user: AuthUser,
+  ): Promise<WhatsappChatbotRuleEntity[]> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.chatbot.list(companyId) as Promise<WhatsappChatbotRuleEntity[]>;
+  }
+
+  @Mutation(() => WhatsappChatbotRuleEntity)
+  async createWhatsappChatbotRule(
+    @CurrentUser() user: AuthUser,
+    @Args('input') input: WhatsappChatbotRuleInput,
+  ): Promise<WhatsappChatbotRuleEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.chatbot.create(companyId, {
+      name: input.name,
+      trigger: input.trigger as
+        | 'keyword'
+        | 'regex'
+        | 'first_message'
+        | 'out_of_hours',
+      pattern: input.pattern,
+      responseBody: input.responseBody,
+      priority: input.priority,
+      enabled: input.enabled,
+      applyTags: input.applyTags,
+      businessHoursOnly: input.businessHoursOnly,
+      businessHoursStart: input.businessHoursStart,
+      businessHoursEnd: input.businessHoursEnd,
+      cooldownMinutes: input.cooldownMinutes,
+    }) as Promise<WhatsappChatbotRuleEntity>;
+  }
+
+  @Mutation(() => WhatsappChatbotRuleEntity)
+  async updateWhatsappChatbotRule(
+    @CurrentUser() user: AuthUser,
+    @Args('id') id: string,
+    @Args('patch') patch: WhatsappChatbotRulePatchInput,
+  ): Promise<WhatsappChatbotRuleEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.chatbot.update(companyId, id, {
+      ...patch,
+      trigger: patch.trigger as
+        | 'keyword'
+        | 'regex'
+        | 'first_message'
+        | 'out_of_hours'
+        | undefined,
+    }) as Promise<WhatsappChatbotRuleEntity>;
+  }
+
+  @Mutation(() => Boolean)
+  async deleteWhatsappChatbotRule(
+    @CurrentUser() user: AuthUser,
+    @Args('id') id: string,
+  ): Promise<boolean> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.chatbot.remove(companyId, id);
   }
 
   // ============ Subscriptions (tempo real) ============
