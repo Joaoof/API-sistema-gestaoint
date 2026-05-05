@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '../../../prisma/prisma.module';
 import { WahaApiClient } from './use-cases/waha-api.client';
 import { WhatsappPubSubService } from './use-cases/whatsapp-pubsub';
+import { WhatsappReminderService } from './use-cases/whatsapp-reminder.service';
 import { WhatsappSessionService } from './use-cases/whatsapp-session.service';
 import { WhatsappSessionResolver } from './whatsapp-session.resolver';
 import { WhatsappWebhookController } from './whatsapp-webhook.controller';
@@ -15,6 +16,7 @@ import { WhatsappWebhookController } from './whatsapp-webhook.controller';
     WhatsappSessionService,
     WhatsappSessionResolver,
     WhatsappPubSubService,
+    WhatsappReminderService,
   ],
   exports: [WhatsappSessionService, WhatsappPubSubService],
 })

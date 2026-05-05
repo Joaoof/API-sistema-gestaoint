@@ -14,8 +14,29 @@ export interface WahaSession {
 }
 
 export interface WahaSendResult {
-  id?: string;
+  id?:
+    | string
+    | {
+        fromMe?: boolean;
+        remote?: string;
+        id?: string;
+        _serialized?: string;
+      };
   timestamp?: number;
+}
+
+/**
+ * WAHA WEBJS retorna `result.id` como objeto pra mensagens enviadas a LIDs
+ * (`{fromMe, remote, id, _serialized}`); pra DMs comuns devolve string.
+ * Normaliza pros dois casos. O id usado pra ack/edit/delete é o `.id` interno.
+ */
+export function extractExternalId(
+  result: WahaSendResult | null | undefined,
+): string | null {
+  const raw = result?.id;
+  if (!raw) return null;
+  if (typeof raw === 'string') return raw;
+  return raw.id ?? raw._serialized ?? null;
 }
 
 export interface WahaMessage {

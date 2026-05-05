@@ -67,6 +67,87 @@ export class WhatsappContactEntity {
   @Field(() => GraphQLISODateTime, { nullable: true })
   lastMessageAt?: Date | null;
   @Field() waLink!: string;
+
+  // ===== Métricas avançadas =====
+  @Field(() => Int, { description: 'Mensagens últimos 7 dias' })
+  messages7d!: number;
+  @Field(() => Int, { description: 'Mensagens últimos 30 dias' })
+  messages30d!: number;
+  @Field(() => Int, { description: 'Dias desde o último contato' })
+  daysSinceLastMessage!: number;
+  @Field(() => Int, {
+    description: 'Tempo médio de resposta em minutos (mediana das últimas 50 trocas)',
+    nullable: true,
+  })
+  avgResponseMinutes?: number | null;
+  @Field(() => Int, {
+    description: 'Mensagens enviadas sem retorno (sequência atual)',
+  })
+  unansweredOutbound!: number;
+  @Field(() => Int, {
+    description: 'Quantidade de anexos enviados/recebidos',
+  })
+  mediaCount!: number;
+  @Field(() => Int, {
+    description: 'Quantidade de chamadas (recebidas/feitas)',
+  })
+  callCount!: number;
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  picFetchedAt?: Date | null;
+  @Field(() => Boolean, {
+    description: 'Saudação automática deve ser oferecida (sem mensagens últimas 24h)',
+  })
+  shouldGreet!: boolean;
+
+  // ===== Tags / labels / notas (interno do CRM) =====
+  @Field(() => [String]) tags!: string[];
+  @Field(() => String, { nullable: true })
+  internalNotes?: string | null;
+  @Field(() => String, {
+    nullable: true,
+    description: 'open | pending | resolved | snoozed',
+  })
+  conversationStatus?: string | null;
+  @Field(() => String, { nullable: true })
+  assignedUserId?: string | null;
+  @Field(() => String, { nullable: true })
+  assignedUserName?: string | null;
+}
+
+@ObjectType()
+export class WhatsappActivityEvent {
+  @Field() id!: string;
+  @Field({
+    description: 'message | call | reaction | revoked | edited | linked | unlinked | block | tag | note',
+  })
+  type!: string;
+  @Field(() => GraphQLISODateTime) at!: Date;
+  @Field(() => String, { nullable: true }) description?: string | null;
+  @Field(() => String, { nullable: true }) actor?: string | null;
+  @Field(() => String, { nullable: true }) icon?: string | null;
+}
+
+@ObjectType()
+export class WhatsappReminderEntity {
+  @Field(() => ID) id!: string;
+  @Field() peerNumber!: string;
+  @Field() title!: string;
+  @Field(() => String, { nullable: true }) description?: string | null;
+  @Field(() => String, { nullable: true }) tag?: string | null;
+  @Field(() => GraphQLISODateTime) dueAt!: Date;
+  @Field(() => GraphQLISODateTime, { nullable: true }) doneAt?: Date | null;
+  @Field(() => String, { nullable: true }) createdBy?: string | null;
+  @Field(() => GraphQLISODateTime) createdAt!: Date;
+}
+
+@ObjectType()
+export class WhatsappMediaSummary {
+  @Field(() => Int) images!: number;
+  @Field(() => Int) videos!: number;
+  @Field(() => Int) audios!: number;
+  @Field(() => Int) documents!: number;
+  @Field(() => Int) stickers!: number;
+  @Field(() => Int) locations!: number;
 }
 
 @ObjectType()

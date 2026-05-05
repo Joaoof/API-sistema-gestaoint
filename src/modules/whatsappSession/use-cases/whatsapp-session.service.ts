@@ -18,7 +18,7 @@ import {
   WhatsappInstanceEntity,
   WhatsappMessageEntity,
 } from '../entities/whatsapp-session.entity';
-import { WahaApiClient } from './waha-api.client';
+import { extractExternalId, WahaApiClient } from './waha-api.client';
 import {
   WhatsappPubSubService,
   WHATSAPP_CONVERSATION_UPDATED,
@@ -715,7 +715,7 @@ export class WhatsappSessionService {
               mentions: options.mentions,
             })
           : await this.waha.sendText(sessionName, chatId, body);
-      const externalId = result.id ?? null;
+      const externalId = extractExternalId(result);
       const updated = await this.prisma.messageLog.update({
         where: { id: log.id },
         data: {
@@ -1022,26 +1022,120 @@ export class WhatsappSessionService {
       channel: NotificationChannel.WHATSAPP,
       ...this.buildPeerWhere(peerNumber),
     };
-    const [first, last, total, inbound, outbound] =
-      await this.prisma.$transaction([
-        this.prisma.messageLog.findFirst({
-          where,
-          orderBy: { createdAt: 'asc' },
-          include: { customer: { select: { id: true, name: true } } },
-        }),
-        this.prisma.messageLog.findFirst({
-          where,
-          orderBy: { createdAt: 'desc' },
-          include: { customer: { select: { id: true, name: true } } },
-        }),
-        this.prisma.messageLog.count({ where }),
-        this.prisma.messageLog.count({
-          where: { ...where, direction: 'INBOUND' },
-        }),
-        this.prisma.messageLog.count({
-          where: { ...where, direction: 'OUTBOUND' },
-        }),
-      ]);
+    const now = new Date();
+    const ts7d = new Date(now.getTime() - 7 * 86400000);
+    const ts30d = new Date(now.getTime() - 30 * 86400000);
+    const ts24h = new Date(now.getTime() - 24 * 3600000);
+
+    const [
+      first,
+      last,
+      total,
+      inbound,
+      outbound,
+      msg7d,
+      msg30d,
+      recent50,
+      last24h,
+    ] = await this.prisma.$transaction([
+      this.prisma.messageLog.findFirst({
+        where,
+        orderBy: { createdAt: 'asc' },
+        include: { customer: { select: { id: true, name: true } } },
+      }),
+      this.prisma.messageLog.findFirst({
+        where,
+        orderBy: { createdAt: 'desc' },
+        include: { customer: { select: { id: true, name: true } } },
+      }),
+      this.prisma.messageLog.count({ where }),
+      this.prisma.messageLog.count({
+        where: { ...where, direction: 'INBOUND' },
+      }),
+      this.prisma.messageLog.count({
+        where: { ...where, direction: 'OUTBOUND' },
+      }),
+      this.prisma.messageLog.count({
+        where: { ...where, createdAt: { gte: ts7d } },
+      }),
+      this.prisma.messageLog.count({
+        where: { ...where, createdAt: { gte: ts30d } },
+      }),
+      this.prisma.messageLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+        select: { direction: true, createdAt: true, metadataJson: true },
+      }),
+      this.prisma.messageLog.count({
+        where: { ...where, createdAt: { gte: ts24h } },
+      }),
+    ]);
+
+    // Tempo médio de resposta: pares (INBOUND → OUTBOUND) próximos no tempo
+    const responseTimes: number[] = [];
+    let unansweredOutbound = 0;
+    let mediaCount = 0;
+    let callCount = 0;
+    for (let i = 0; i < recent50.length; i++) {
+      const m = recent50[i];
+      const meta = (m.metadataJson ?? {}) as Record<string, unknown>;
+      if (meta.mediaType) mediaCount++;
+      if (meta.kind === 'call') callCount++;
+    }
+    // ordem cronológica ascendente pra cálculo
+    const chrono = [...recent50].reverse();
+    let lastInbound: Date | null = null;
+    let consecutiveOutbound = 0;
+    for (const m of chrono) {
+      if (m.direction === 'INBOUND') {
+        lastInbound = m.createdAt;
+        consecutiveOutbound = 0;
+      } else if (m.direction === 'OUTBOUND') {
+        if (lastInbound) {
+          const diffMin = Math.round(
+            (m.createdAt.getTime() - lastInbound.getTime()) / 60000,
+          );
+          if (diffMin >= 0 && diffMin <= 7 * 24 * 60)
+            responseTimes.push(diffMin);
+          lastInbound = null;
+        }
+        consecutiveOutbound++;
+      }
+    }
+    unansweredOutbound = consecutiveOutbound;
+
+    // mediana
+    let avgResponseMinutes: number | null = null;
+    if (responseTimes.length > 0) {
+      const sorted = [...responseTimes].sort((a, b) => a - b);
+      avgResponseMinutes = sorted[Math.floor(sorted.length / 2)];
+    }
+
+    const lastMessageAtCalc = last?.createdAt ?? null;
+    const daysSinceLastMessage = lastMessageAtCalc
+      ? Math.floor((now.getTime() - lastMessageAtCalc.getTime()) / 86400000)
+      : 0;
+    const shouldGreet = last24h === 0 && total > 0;
+
+    // Cache CRM (tags/notes/status/assignment) — guardamos no metadata da
+    // mensagem mais recente. Persistir em coluna dedicada seria melhor mas
+    // foge do escopo dessa migration.
+    const crmCache =
+      (((last?.metadataJson ?? {}) as Record<string, unknown>).crmCache as
+        | Record<string, unknown>
+        | undefined) ?? {};
+    const tags = ((crmCache.tags as string[] | undefined) ?? []).filter(
+      (t) => !!t,
+    );
+    const internalNotes =
+      (crmCache.internalNotes as string | undefined) ?? null;
+    const conversationStatus =
+      (crmCache.conversationStatus as string | undefined) ?? 'open';
+    const assignedUserId =
+      (crmCache.assignedUserId as string | undefined) ?? null;
+    const assignedUserName =
+      (crmCache.assignedUserName as string | undefined) ?? null;
 
     const isGroup = isGroupJid(peerNumber);
     const baseMeta = (last?.metadataJson ??
@@ -1161,10 +1255,160 @@ export class WhatsappSessionService {
       totalMessages: total,
       inboundCount: inbound,
       outboundCount: outbound,
+      messages7d: msg7d,
+      messages30d: msg30d,
+      daysSinceLastMessage,
+      avgResponseMinutes,
+      unansweredOutbound,
+      mediaCount,
+      callCount,
+      picFetchedAt: cachedContact?.picFetchedAt ?? null,
+      shouldGreet,
+      tags,
+      internalNotes,
+      conversationStatus,
+      assignedUserId,
+      assignedUserName,
       firstMessageAt: first?.createdAt ?? null,
       lastMessageAt: last?.createdAt ?? null,
       waLink,
     };
+  }
+
+  /**
+   * Cria Customer a partir do contato WhatsApp e linka todas as mensagens.
+   * Dedupe por sufixo de telefone (últimos 9 dígitos).
+   */
+  async createCustomerFromWhatsappContact(
+    companyId: string,
+    peerNumber: string,
+    overrides?: { name?: string; document?: string; email?: string },
+  ): Promise<{ customerId: string; linkedMessages: number }> {
+    const contact = await this.getContact(companyId, peerNumber);
+    const phone = contact.phoneFormatted ?? null;
+    const name = overrides?.name?.trim() || contact.displayName;
+    if (!name) {
+      throw new BadRequestException('Sem nome para o cliente — informe um nome.');
+    }
+
+    let customer = phone
+      ? await this.prisma.customer.findFirst({
+          where: { phone: { contains: phone.slice(-9) } },
+        })
+      : null;
+    if (!customer) {
+      customer = await this.prisma.customer.create({
+        data: {
+          name,
+          phone,
+          email: overrides?.email?.trim() || null,
+          document: overrides?.document?.trim() || null,
+        },
+      });
+    }
+
+    const linked = await this.prisma.messageLog.updateMany({
+      where: {
+        companyId,
+        channel: NotificationChannel.WHATSAPP,
+        ...this.buildPeerWhere(peerNumber),
+      },
+      data: { customerId: customer.id },
+    });
+    return { customerId: customer.id, linkedMessages: linked.count };
+  }
+
+  /**
+   * Lista contatos do WhatsApp com agregação de stats e link com Customer.
+   * Usado pela sidebar "Contatos WhatsApp" no front.
+   */
+  async listWhatsappContacts(
+    companyId: string,
+  ): Promise<
+    Array<{
+      jid: string;
+      number: string | null;
+      name: string | null;
+      profilePicUrl: string | null;
+      isGroup: boolean;
+      messageCount: number;
+      customerId: string | null;
+      customerName: string | null;
+      lastInteractionAt: Date | null;
+    }>
+  > {
+    const contacts = await this.prisma.whatsappContact.findMany({
+      where: { companyId },
+      orderBy: { syncedAt: 'desc' },
+      take: 1000,
+    });
+    if (contacts.length === 0) return [];
+
+    const stats = await this.prisma.messageLog.groupBy({
+      by: ['toAddress'],
+      where: { companyId, channel: NotificationChannel.WHATSAPP },
+      _count: { id: true },
+      _max: { createdAt: true },
+    });
+    const statsByPeer = new Map<string, { count: number; last: Date | null }>();
+    for (const s of stats) {
+      const existing = statsByPeer.get(s.toAddress) ?? {
+        count: 0,
+        last: null as Date | null,
+      };
+      existing.count += s._count.id;
+      if (
+        s._max.createdAt &&
+        (!existing.last || s._max.createdAt > existing.last)
+      ) {
+        existing.last = s._max.createdAt;
+      }
+      statsByPeer.set(s.toAddress, existing);
+    }
+
+    const recent = await this.prisma.messageLog.findMany({
+      where: {
+        companyId,
+        channel: NotificationChannel.WHATSAPP,
+        customerId: { not: null },
+      },
+      select: {
+        toAddress: true,
+        customerId: true,
+        customer: { select: { name: true } },
+      },
+      take: 5000,
+    });
+    const customerByPeer = new Map<
+      string,
+      { customerId: string; customerName: string | null }
+    >();
+    for (const r of recent) {
+      const peer = peerKeyFromJid(r.toAddress);
+      if (!customerByPeer.has(peer) && r.customerId) {
+        customerByPeer.set(peer, {
+          customerId: r.customerId,
+          customerName: r.customer?.name ?? null,
+        });
+      }
+    }
+
+    return contacts.map((c) => {
+      const peer = peerKeyFromJid(c.jid);
+      const stat = statsByPeer.get(peer) ?? statsByPeer.get(c.jid);
+      const cust = customerByPeer.get(peer);
+      return {
+        jid: c.jid,
+        number: c.number,
+        name: c.name ?? c.pushName,
+        profilePicUrl: c.profilePicUrl,
+        isGroup: c.isGroup,
+        messageCount: stat?.count ?? 0,
+        customerId: cust?.customerId ?? null,
+        customerName: cust?.customerName ?? null,
+        lastInteractionAt: stat?.last ?? null,
+      };
+    });
   }
 
   async linkCustomerToWhatsappContact(
@@ -1953,7 +2197,7 @@ export class WhatsappSessionService {
       },
     });
     try {
-      let result: { id?: string; timestamp?: number };
+      let result: import('./waha-api.client').WahaSendResult;
       if (kind === 'image') {
         result = await this.waha.sendImage(
           session,
@@ -1990,7 +2234,7 @@ export class WhatsappSessionService {
         where: { id: log.id },
         data: {
           status: MessageStatus.SENT,
-          externalId: result.id ?? null,
+          externalId: extractExternalId(result),
           sentAt: new Date(),
         },
       });
@@ -2050,7 +2294,7 @@ export class WhatsappSessionService {
         where: { id: log.id },
         data: {
           status: MessageStatus.SENT,
-          externalId: res.id ?? null,
+          externalId: extractExternalId(res),
           sentAt: new Date(),
         },
       });
@@ -2224,6 +2468,185 @@ export class WhatsappSessionService {
         },
       ];
     });
+  }
+
+  // ===========================================================
+  // Phase 6 — Timeline / Media summary / CRM cache (tags, notas, status)
+  // ===========================================================
+
+  async getActivityTimeline(
+    companyId: string,
+    peerNumber: string,
+    limit = 30,
+  ): Promise<
+    Array<{
+      id: string;
+      type: string;
+      at: Date;
+      description: string | null;
+      actor: string | null;
+      icon: string | null;
+    }>
+  > {
+    const where = {
+      companyId,
+      channel: NotificationChannel.WHATSAPP,
+      ...this.buildPeerWhere(peerNumber),
+    };
+    const messages = await this.prisma.messageLog.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      include: { customer: { select: { name: true } } },
+    });
+    return messages.map((m) => {
+      const meta = (m.metadataJson ?? {}) as Record<string, unknown>;
+      let type = 'message';
+      let icon = m.direction === 'OUTBOUND' ? 'send' : 'inbox';
+      let description: string | null =
+        m.body.slice(0, 80) + (m.body.length > 80 ? '…' : '');
+
+      if (meta.kind === 'call') {
+        type = 'call';
+        icon = meta.callType === 'video' ? 'video' : 'phone';
+        description =
+          meta.callType === 'video' ? 'Chamada de vídeo' : 'Chamada de voz';
+      } else if (meta.isRevoked) {
+        type = 'revoked';
+        icon = 'trash';
+        description = 'Mensagem apagada';
+      } else if (meta.isEdited) {
+        type = 'edited';
+        icon = 'edit';
+        description = 'Mensagem editada';
+      } else if (meta.mediaType) {
+        type = 'media';
+        icon = String(meta.mediaType);
+      } else if (meta.kind === 'forward') {
+        type = 'forward';
+        icon = 'share';
+      }
+
+      const actor = m.fromAddress
+        ? ((meta.pushName as string | undefined) ??
+          (m.customer?.name as string | undefined) ??
+          (m.direction === 'OUTBOUND' ? 'Você' : 'Contato'))
+        : 'Você';
+
+      return {
+        id: m.id,
+        type,
+        at: m.createdAt,
+        description,
+        actor,
+        icon,
+      };
+    });
+  }
+
+  async getMediaSummary(
+    companyId: string,
+    peerNumber: string,
+  ): Promise<{
+    images: number;
+    videos: number;
+    audios: number;
+    documents: number;
+    stickers: number;
+    locations: number;
+  }> {
+    const where = {
+      companyId,
+      channel: NotificationChannel.WHATSAPP,
+      ...this.buildPeerWhere(peerNumber),
+    };
+    const messages = await this.prisma.messageLog.findMany({
+      where,
+      select: { metadataJson: true },
+      take: 5000,
+    });
+    const summary = {
+      images: 0,
+      videos: 0,
+      audios: 0,
+      documents: 0,
+      stickers: 0,
+      locations: 0,
+    };
+    for (const m of messages) {
+      const meta = (m.metadataJson ?? {}) as Record<string, unknown>;
+      const mt = meta.mediaType as string | undefined;
+      if (!mt) continue;
+      if (mt === 'image') summary.images++;
+      else if (mt === 'video') summary.videos++;
+      else if (mt === 'audio' || mt === 'ptt') summary.audios++;
+      else if (mt === 'document') summary.documents++;
+      else if (mt === 'sticker') summary.stickers++;
+      else if (mt === 'location') summary.locations++;
+    }
+    return summary;
+  }
+
+  /**
+   * Atualiza o cache CRM (tags / notas / status / responsável) no metadata da
+   * mensagem mais recente do peer. Não cria coluna dedicada por enquanto pra
+   * minimizar mudanças de schema; trade-off: a query reaproveita o cache do
+   * `last` no `getContact`.
+   */
+  async updateContactCrm(
+    companyId: string,
+    peerNumber: string,
+    patch: {
+      tags?: string[];
+      internalNotes?: string | null;
+      conversationStatus?: string | null;
+      assignedUserId?: string | null;
+      assignedUserName?: string | null;
+    },
+  ): Promise<boolean> {
+    const last = await this.prisma.messageLog.findFirst({
+      where: {
+        companyId,
+        channel: NotificationChannel.WHATSAPP,
+        ...this.buildPeerWhere(peerNumber),
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!last) {
+      throw new BadRequestException(
+        'Nenhuma mensagem ainda — abra a conversa antes de editar atributos CRM.',
+      );
+    }
+    const baseMeta = (last.metadataJson ?? {}) as Record<string, unknown>;
+    const crmCache =
+      (baseMeta.crmCache as Record<string, unknown> | undefined) ?? {};
+    const merged = {
+      ...crmCache,
+      ...(patch.tags !== undefined ? { tags: patch.tags } : {}),
+      ...(patch.internalNotes !== undefined
+        ? { internalNotes: patch.internalNotes }
+        : {}),
+      ...(patch.conversationStatus !== undefined
+        ? { conversationStatus: patch.conversationStatus }
+        : {}),
+      ...(patch.assignedUserId !== undefined
+        ? { assignedUserId: patch.assignedUserId }
+        : {}),
+      ...(patch.assignedUserName !== undefined
+        ? { assignedUserName: patch.assignedUserName }
+        : {}),
+      updatedAt: Date.now(),
+    };
+    await this.prisma.messageLog.update({
+      where: { id: last.id },
+      data: {
+        metadataJson: {
+          ...baseMeta,
+          crmCache: merged,
+        } as Prisma.InputJsonValue,
+      },
+    });
+    return true;
   }
 
   // ===========================================================
@@ -2403,7 +2826,7 @@ export class WhatsappSessionService {
         toAddress: targetChat,
         body: log.body,
         status: MessageStatus.SENT,
-        externalId: result.id ?? null,
+        externalId: extractExternalId(result),
         sentAt: new Date(),
         metadataJson: {
           kind: 'forward',

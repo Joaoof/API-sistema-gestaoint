@@ -17,10 +17,13 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { TenancyService } from '../construction/shared/tenancy.service';
 import { AuthUser } from '../construction/shared/auth-user';
 import {
+  WhatsappActivityEvent,
   WhatsappContactEntity,
   WhatsappConversationEntity,
   WhatsappInstanceEntity,
+  WhatsappMediaSummary,
   WhatsappMessageEntity,
+  WhatsappReminderEntity,
 } from './entities/whatsapp-session.entity';
 import { WhatsappSessionService } from './use-cases/whatsapp-session.service';
 import {
@@ -28,7 +31,9 @@ import {
   WHATSAPP_MESSAGE_RECEIVED,
   WHATSAPP_MESSAGE_UPDATED,
   WHATSAPP_PRESENCE_CHANGED,
+  WHATSAPP_REMINDER_DUE,
 } from './use-cases/whatsapp-pubsub';
+import { WhatsappReminderService } from './use-cases/whatsapp-reminder.service';
 
 @ObjectType()
 class WebhookConfigResult {
@@ -73,10 +78,43 @@ class WhatsappGroupParticipant {
 }
 
 @ObjectType()
+class WhatsappContactCard {
+  @Field() jid!: string;
+  @Field(() => String, { nullable: true }) number?: string | null;
+  @Field(() => String, { nullable: true }) name?: string | null;
+  @Field(() => String, { nullable: true }) profilePicUrl?: string | null;
+  @Field() isGroup!: boolean;
+  @Field(() => Int) messageCount!: number;
+  @Field(() => String, { nullable: true }) customerId?: string | null;
+  @Field(() => String, { nullable: true }) customerName?: string | null;
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  lastInteractionAt?: Date | null;
+}
+
+@ObjectType()
+class CreateCustomerFromWaResult {
+  @Field() customerId!: string;
+  @Field(() => Int) linkedMessages!: number;
+}
+
+@ObjectType()
 class WhatsappPresenceUpdate {
   @Field() peerNumber!: string;
   @Field(() => String, { nullable: true }) presence?: string | null;
   @Field(() => GraphQLISODateTime, { nullable: true }) lastSeen?: Date | null;
+}
+
+@InputType()
+class WhatsappCrmInput {
+  @Field(() => [String], { nullable: true }) tags?: string[];
+  @Field(() => String, { nullable: true }) internalNotes?: string | null;
+  @Field(() => String, {
+    nullable: true,
+    description: 'open | pending | resolved | snoozed',
+  })
+  conversationStatus?: string | null;
+  @Field(() => String, { nullable: true }) assignedUserId?: string | null;
+  @Field(() => String, { nullable: true }) assignedUserName?: string | null;
 }
 
 @Resolver(() => WhatsappInstanceEntity)
@@ -86,6 +124,7 @@ export class WhatsappSessionResolver {
     private readonly service: WhatsappSessionService,
     private readonly tenancy: TenancyService,
     private readonly pubsub: WhatsappPubSubService,
+    private readonly reminders: WhatsappReminderService,
   ) {}
 
   @Query(() => WhatsappInstanceEntity)
@@ -448,6 +487,116 @@ export class WhatsappSessionResolver {
     return this.service.archiveWhatsappChat(companyId, peerNumber, archive);
   }
 
+  // ============ Phase 6: Timeline / Media summary / CRM ============
+
+  @Query(() => [WhatsappActivityEvent])
+  async whatsappActivityTimeline(
+    @CurrentUser() user: AuthUser,
+    @Args('peerNumber') peerNumber: string,
+    @Args('limit', { type: () => Int, nullable: true }) limit?: number,
+  ): Promise<WhatsappActivityEvent[]> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.getActivityTimeline(companyId, peerNumber, limit ?? 30);
+  }
+
+  @Query(() => WhatsappMediaSummary)
+  async whatsappMediaSummary(
+    @CurrentUser() user: AuthUser,
+    @Args('peerNumber') peerNumber: string,
+  ): Promise<WhatsappMediaSummary> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.getMediaSummary(companyId, peerNumber);
+  }
+
+  @Mutation(() => Boolean)
+  async updateWhatsappContactCrm(
+    @CurrentUser() user: AuthUser,
+    @Args('peerNumber') peerNumber: string,
+    @Args('patch') patch: WhatsappCrmInput,
+  ): Promise<boolean> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.updateContactCrm(companyId, peerNumber, patch);
+  }
+
+  // ============ Phase 7: Contacts list / Create customer / Reminders ============
+
+  @Query(() => [WhatsappContactCard])
+  async whatsappContactsList(
+    @CurrentUser() user: AuthUser,
+  ): Promise<WhatsappContactCard[]> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.listWhatsappContacts(companyId);
+  }
+
+  @Mutation(() => CreateCustomerFromWaResult)
+  async createCustomerFromWhatsappContact(
+    @CurrentUser() user: AuthUser,
+    @Args('peerNumber') peerNumber: string,
+    @Args('name', { nullable: true }) name?: string,
+    @Args('document', { nullable: true }) document?: string,
+    @Args('email', { nullable: true }) email?: string,
+  ): Promise<CreateCustomerFromWaResult> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.createCustomerFromWhatsappContact(companyId, peerNumber, {
+      name,
+      document,
+      email,
+    });
+  }
+
+  @Query(() => [WhatsappReminderEntity])
+  async whatsappReminders(
+    @CurrentUser() user: AuthUser,
+    @Args('peerNumber', { nullable: true }) peerNumber?: string,
+    @Args('tag', { nullable: true }) tag?: string,
+    @Args('pending', { nullable: true }) pending?: boolean,
+  ): Promise<WhatsappReminderEntity[]> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.reminders.list(companyId, { peerNumber, tag, pending }) as Promise<
+      WhatsappReminderEntity[]
+    >;
+  }
+
+  @Mutation(() => WhatsappReminderEntity)
+  async createWhatsappReminder(
+    @CurrentUser() user: AuthUser,
+    @Args('peerNumber') peerNumber: string,
+    @Args('title') title: string,
+    @Args('dueAt') dueAt: Date,
+    @Args('description', { nullable: true }) description?: string,
+    @Args('tag', { nullable: true }) tag?: string,
+  ): Promise<WhatsappReminderEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.reminders.create(companyId, {
+      peerNumber,
+      title,
+      description,
+      tag,
+      dueAt,
+      createdBy: user.id ?? user.sub ?? null,
+    }) as Promise<WhatsappReminderEntity>;
+  }
+
+  @Mutation(() => Boolean)
+  async markWhatsappReminderDone(
+    @CurrentUser() user: AuthUser,
+    @Args('id') id: string,
+    @Args('done') done: boolean,
+  ): Promise<boolean> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    await this.reminders.markDone(companyId, id, done);
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  async deleteWhatsappReminder(
+    @CurrentUser() user: AuthUser,
+    @Args('id') id: string,
+  ): Promise<boolean> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.reminders.remove(companyId, id);
+  }
+
   // ============ Subscriptions (tempo real) ============
 
   @Subscription(() => WhatsappMessageEntity, {
@@ -484,5 +633,19 @@ export class WhatsappSessionResolver {
     @Args('peerNumber', { nullable: true }) _peerNumber?: string,
   ) {
     return this.pubsub.asyncIterator(WHATSAPP_PRESENCE_CHANGED);
+  }
+
+  @Subscription(() => WhatsappReminderEntity, {
+    name: 'whatsappReminderDue',
+    filter: (
+      payload: { whatsappReminderDue: { companyId: string } },
+      _vars: unknown,
+      ctx: { user?: { companyId?: string } },
+    ) =>
+      !ctx?.user?.companyId ||
+      ctx.user.companyId === payload.whatsappReminderDue.companyId,
+  })
+  whatsappReminderDue() {
+    return this.pubsub.asyncIterator(WHATSAPP_REMINDER_DUE);
   }
 }
