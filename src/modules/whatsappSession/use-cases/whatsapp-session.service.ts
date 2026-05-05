@@ -212,15 +212,17 @@ export class WhatsappSessionService {
     const sessionName = this.wahaSessionFor(inst);
     const webhookUrl = this.waha.buildWebhookUrl(sessionName);
 
-    // Garante que a sessão existe no WAHA; se não, cria
+    // 1. Garantir que a sessão exista no WAHA. Em alguns estados ela precisa
+    //    ser recriada/reiniciada antes de fornecer QR.
+    let needsCreate = false;
+    let needsStart = false;
     try {
       const session = await this.waha.getSession(sessionName);
-      // Se parada, recria para resetar estado
-      if (session.status === 'STOPPED' || session.status === 'FAILED') {
-        await this.waha.deleteSession(sessionName).catch(() => null);
-        await this.waha.createSession(sessionName, webhookUrl);
+      const st = session.status ?? '';
+      if (st === 'STOPPED' || st === 'FAILED') {
+        // tenta dar start; se não rolar, recria
+        needsStart = true;
       }
-      // Se já tem webhook URL diferente, atualiza
       if (webhookUrl) {
         await this.waha
           .updateSessionWebhook(sessionName, webhookUrl)
@@ -233,29 +235,80 @@ export class WhatsappSessionService {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       if (message.includes('404') || message.toLowerCase().includes('not found')) {
-        await this.waha.createSession(sessionName, webhookUrl);
+        needsCreate = true;
       } else {
         throw err;
       }
     }
 
-    // Pede QR
-    let qrDataUrl: string | null = null;
-    try {
-      const qr = await this.waha.getQr(sessionName);
-      const raw = qr.value ?? null;
-      if (raw) {
-        qrDataUrl = raw.startsWith('data:') ? raw : `data:image/png;base64,${raw}`;
+    if (needsCreate) {
+      try {
+        await this.waha.createSession(sessionName, webhookUrl);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.error(`createSession falhou: ${message}`);
+        throw err;
       }
-    } catch (err) {
+    } else if (needsStart) {
+      try {
+        await this.waha.startSession(sessionName);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.warn(
+          `startSession falhou (${message}); tentando recriar a sessão`,
+        );
+        await this.waha.deleteSession(sessionName).catch(() => null);
+        await this.waha.createSession(sessionName, webhookUrl);
+      }
+    }
+
+    // 2. Polling: aguarda WAHA chegar em SCAN_QR_CODE (ou WORKING) e busca o QR
+    //    Tenta ~12s no total (24 × 500ms) — suficiente em redes normais.
+    let qrDataUrl: string | null = null;
+    let finalStatus: string = '';
+    for (let i = 0; i < 24; i++) {
+      try {
+        const s = await this.waha.getSession(sessionName);
+        finalStatus = s.status ?? '';
+
+        if (finalStatus === 'WORKING') break;
+
+        if (finalStatus === 'SCAN_QR_CODE') {
+          try {
+            const qr = await this.waha.getQr(sessionName);
+            const raw = qr.value ?? null;
+            if (raw) {
+              qrDataUrl = raw.startsWith('data:')
+                ? raw
+                : `data:image/png;base64,${raw}`;
+              break;
+            }
+          } catch (err) {
+            this.logger.debug(
+              `getQr ainda não pronto: ${err instanceof Error ? err.message : err}`,
+            );
+          }
+        }
+      } catch (err) {
+        this.logger.debug(
+          `polling getSession: ${err instanceof Error ? err.message : err}`,
+        );
+      }
+      await new Promise((r) => setTimeout(r, 500));
+    }
+
+    if (!qrDataUrl && finalStatus !== 'WORKING') {
       this.logger.warn(
-        `connect QR falhou: ${err instanceof Error ? err.message : err}`,
+        `connect terminou sem QR. Último estado WAHA: "${finalStatus || 'desconhecido'}". Tente novamente em alguns segundos.`,
       );
     }
 
-    const status = qrDataUrl
-      ? WhatsappInstanceStatus.QR_PENDING
-      : WhatsappInstanceStatus.CONNECTING;
+    const status =
+      finalStatus === 'WORKING'
+        ? WhatsappInstanceStatus.CONNECTED
+        : qrDataUrl
+          ? WhatsappInstanceStatus.QR_PENDING
+          : WhatsappInstanceStatus.CONNECTING;
 
     const updated = await this.prisma.whatsappInstance.update({
       where: { id: inst.id },

@@ -169,8 +169,13 @@ export class WahaApiClient {
         : [];
     return this.request<WahaSession>('POST', '/api/sessions', {
       name,
+      start: true,
       config: { webhooks },
     });
+  }
+
+  async startSession(name: string): Promise<void> {
+    await this.request<unknown>('POST', `/api/sessions/${encodeURIComponent(name)}/start`);
   }
 
   async updateSessionWebhook(name: string, webhookUrl: string): Promise<WahaSession> {
