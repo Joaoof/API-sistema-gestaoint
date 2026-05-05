@@ -611,39 +611,81 @@ export class WhatsappSessionService {
     }
   }
 
+  /**
+   * Lista de conversas equivalente à do painel do WAHA: usa /chats como fonte
+   * primária (todos os chats ativos do WhatsApp), enriquece com nome/telefone
+   * do cache WhatsappContact e mescla estatísticas (não-lidas, total, último
+   * texto) do MessageLog local. Se WAHA estiver indisponível ou desconectado,
+   * cai pro modo legacy (agrupamento por MessageLog).
+   */
   async listConversations(
     companyId: string,
   ): Promise<WhatsappConversationEntity[]> {
+    const inst = await this.getOrCreateInstance(companyId);
+
+    type Conv = {
+      peerNumber: string;
+      peerName: string | null;
+      customerId: string | null;
+      lastMessage: string | null;
+      lastMessageAt: Date | null;
+      unreadCount: number;
+      totalMessages: number;
+      isGroup: boolean;
+      isHiddenNumber: boolean;
+    };
+    const groups = new Map<string, Conv>();
+
+    // 1. Fonte primária: chats vivos do WAHA (mesmo dado que o painel mostra)
+    if (inst.status === WhatsappInstanceStatus.CONNECTED) {
+      try {
+        const liveChats = await this.waha.getChats(this.wahaSessionFor(inst));
+        for (const chat of liveChats) {
+          const remoteJid = chat.id;
+          if (!remoteJid) continue;
+          if (isBroadcastJid(remoteJid) || isNewsletterJid(remoteJid)) continue;
+
+          const isGroup = !!chat.isGroup || isGroupJid(remoteJid);
+          const isHiddenNumber = isLidJid(remoteJid);
+          const peer = peerKeyFromJid(remoteJid) || remoteJid;
+          const lastMessageAt =
+            typeof chat.timestamp === 'number'
+              ? new Date(chat.timestamp * 1000)
+              : null;
+
+          groups.set(peer, {
+            peerNumber: peer,
+            peerName: chat.name ?? null,
+            customerId: null,
+            lastMessage: null,
+            lastMessageAt,
+            unreadCount: 0,
+            totalMessages: 0,
+            isGroup,
+            isHiddenNumber,
+          });
+        }
+      } catch (err) {
+        this.logger.warn(
+          `listConversations: getChats falhou, usando histórico local — ${
+            err instanceof Error ? err.message : err
+          }`,
+        );
+      }
+    }
+
+    // 2. Camada de histórico/estatísticas do MessageLog. Funciona como fallback
+    //    (quando o WAHA não respondeu nada) e como fonte de unread/total/lastBody
+    //    quando o WAHA respondeu.
     const messages = await this.prisma.messageLog.findMany({
-      where: {
-        companyId,
-        channel: NotificationChannel.WHATSAPP,
-      },
+      where: { companyId, channel: NotificationChannel.WHATSAPP },
       orderBy: { createdAt: 'desc' },
-      include: {
-        customer: { select: { id: true, name: true } },
-      },
+      include: { customer: { select: { id: true, name: true } } },
       take: 2000,
     });
 
-    const groups = new Map<
-      string,
-      {
-        peerNumber: string;
-        peerName: string | null;
-        customerId: string | null;
-        lastMessage: string | null;
-        lastMessageAt: Date | null;
-        unreadCount: number;
-        totalMessages: number;
-        isGroup: boolean;
-        isHiddenNumber: boolean;
-      }
-    >();
-
     for (const m of messages) {
       const meta = (m.metadataJson ?? {}) as Record<string, unknown>;
-      // Prioriza remoteJid do metadata (preserva @g.us); senão usa toAddress/fromAddress
       const remoteJid =
         (meta.remoteJid as string | undefined) ??
         (m.direction === 'OUTBOUND'
@@ -658,6 +700,8 @@ export class WhatsappSessionService {
         (meta.groupSubject as string | undefined) ??
         (meta.subject as string | undefined) ??
         (meta.pushName as string | undefined);
+      const isUnread =
+        m.direction === 'INBOUND' && m.status !== MessageStatus.READ;
 
       const existing = groups.get(peer);
       if (!existing) {
@@ -667,39 +711,45 @@ export class WhatsappSessionService {
           customerId: m.customerId ?? null,
           lastMessage: m.body,
           lastMessageAt: m.createdAt,
-          unreadCount:
-            m.direction === 'INBOUND' && m.status !== MessageStatus.READ
-              ? 1
-              : 0,
+          unreadCount: isUnread ? 1 : 0,
           totalMessages: 1,
           isGroup,
           isHiddenNumber,
         });
       } else {
         existing.totalMessages += 1;
-        if (m.direction === 'INBOUND' && m.status !== MessageStatus.READ) {
-          existing.unreadCount += 1;
+        if (isUnread) existing.unreadCount += 1;
+        // Customer e pushName preenchem se ainda vazio
+        if (!existing.customerId && m.customerId) {
+          existing.customerId = m.customerId;
         }
         if (!existing.peerName && (pushName || m.customer?.name)) {
           existing.peerName = pushName ?? m.customer?.name ?? null;
         }
+        // Se MessageLog é mais recente que o lastMessageAt vindo do WAHA, usa ele
+        const mAt = m.createdAt.getTime();
+        const eAt = existing.lastMessageAt?.getTime() ?? 0;
+        if (mAt >= eAt || !existing.lastMessage) {
+          existing.lastMessage = m.body;
+          existing.lastMessageAt = m.createdAt;
+        }
       }
     }
 
-    // Enriquecimento via cache de contatos (resolve LID → nome/telefone reais
-    // que o WAHA já tem na agenda).
+    // 3. Enriquece nomes/telefones via cache de contatos do WAHA (resolve LIDs
+    //    e contatos salvos na agenda do aparelho).
     const peers = Array.from(groups.values());
-    const jidsToResolve = peers
-      .map((p) => (p.isHiddenNumber || p.isGroup ? p.peerNumber : null))
-      .filter((j): j is string => !!j);
-    if (jidsToResolve.length > 0) {
+    if (peers.length > 0) {
       const cached = await this.prisma.whatsappContact.findMany({
-        where: { companyId, jid: { in: jidsToResolve } },
+        where: {
+          companyId,
+          jid: { in: peers.map((p) => p.peerNumber) },
+        },
       });
       const byJid = new Map(cached.map((c) => [c.jid, c] as const));
       for (const p of peers) {
         const c = byJid.get(p.peerNumber);
-        if (c) {
+        if (c && (c.name || c.pushName)) {
           p.peerName = c.name ?? c.pushName ?? p.peerName;
         }
       }
