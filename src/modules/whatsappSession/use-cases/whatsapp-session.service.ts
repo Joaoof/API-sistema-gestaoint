@@ -48,8 +48,27 @@ function normalizePhone(raw: string): string {
   return raw.replace(/\D+/g, '');
 }
 
-function jidFromPhone(phone: string): string {
-  const digits = normalizePhone(phone);
+function isGroupJid(jid: string | null | undefined): boolean {
+  return !!jid && jid.endsWith('@g.us');
+}
+
+/**
+ * Para individuais → retorna telefone (só dígitos).
+ * Para grupos → retorna o JID completo (`xxxx-yyy@g.us`) como "peerNumber".
+ * Isso preserva a distinção e permite reconstruir o JID ao enviar.
+ */
+function peerKeyFromJid(jid: string | null | undefined): string {
+  if (!jid) return '';
+  if (isGroupJid(jid)) return jid;
+  const at = jid.indexOf('@');
+  return at >= 0 ? jid.slice(0, at) : jid;
+}
+
+function jidFromPeerKey(peerKey: string): string {
+  if (peerKey.endsWith('@g.us') || peerKey.endsWith('@s.whatsapp.net')) {
+    return peerKey;
+  }
+  const digits = normalizePhone(peerKey);
   return `${digits}@s.whatsapp.net`;
 }
 
@@ -62,14 +81,23 @@ function phoneFromJid(jid: string | null | undefined): string {
 function mapMessage(raw: RawMessage): WhatsappMessageEntity {
   const meta = (raw.metadataJson ?? {}) as Record<string, unknown>;
   const fromMe = raw.direction === 'OUTBOUND';
-  const peerNumber = fromMe ? raw.toAddress : (raw.fromAddress ?? raw.toAddress);
+  const peerKey = fromMe ? raw.toAddress : (raw.fromAddress ?? raw.toAddress);
+  const remoteJid = (meta.remoteJid as string | undefined) ?? peerKey;
   return {
     id: raw.id,
-    peerNumber: phoneFromJid(peerNumber) || peerNumber,
+    peerNumber: peerKeyFromJid(remoteJid) || peerKey,
     fromMe,
     body: raw.body,
     status: raw.status,
     externalId: raw.externalId,
+    participantNumber:
+      (meta.participant as string | undefined)
+        ? phoneFromJid(meta.participant as string)
+        : null,
+    participantName:
+      (meta.participantName as string | undefined) ??
+      (meta.pushName as string | undefined) ??
+      null,
     createdAt: raw.createdAt,
     sentAt: raw.sentAt,
     deliveredAt: raw.deliveredAt,
@@ -234,11 +262,12 @@ export class WhatsappSessionService {
     if (inst.status !== WhatsappInstanceStatus.CONNECTED) {
       throw new BadRequestException('WhatsApp não está conectado.');
     }
-    const phone = normalizePhone(peerNumber);
-    if (phone.length < 10) {
+    const isGroup = isGroupJid(peerNumber);
+    const phone = isGroup ? peerNumber : normalizePhone(peerNumber);
+    if (!isGroup && phone.length < 10) {
       throw new BadRequestException('Telefone inválido.');
     }
-    const remoteJid = `${phone}@s.whatsapp.net`;
+    const remoteJid = jidFromPeerKey(peerNumber);
 
     let raw: unknown;
     try {
@@ -310,17 +339,25 @@ export class WhatsappSessionService {
 
       const pushName = (item.pushName as string | undefined) ?? null;
 
+      const participant = (key.participant as string | undefined) ?? null;
       await this.prisma.messageLog.create({
         data: {
           companyId,
           channel: NotificationChannel.WHATSAPP,
           direction: fromMe ? 'OUTBOUND' : 'INBOUND',
-          toAddress: fromMe ? phone : '',
+          toAddress: fromMe ? phone : (isGroup ? phone : ''),
           fromAddress: fromMe ? null : phone,
           body: text,
           status: fromMe ? MessageStatus.SENT : MessageStatus.DELIVERED,
           externalId,
-          metadataJson: { pushName, remoteJid, source: 'history-sync' },
+          metadataJson: {
+            pushName,
+            remoteJid,
+            isGroup,
+            participant,
+            participantName: pushName,
+            source: 'history-sync',
+          },
           createdAt,
           ...(fromMe ? { sentAt: createdAt } : { deliveredAt: createdAt }),
         },
@@ -359,21 +396,20 @@ export class WhatsappSessionService {
       const remoteJid =
         (chat.id as string | undefined) ??
         (chat.remoteJid as string | undefined);
-      if (!remoteJid || remoteJid.endsWith('@g.us')) continue;
-      const phone = phoneFromJid(remoteJid);
-      if (!phone) continue;
+      if (!remoteJid) continue;
+      const isGroup = isGroupJid(remoteJid);
+      const peerKey = peerKeyFromJid(remoteJid);
+      if (!peerKey) continue;
       const pushName =
         (chat.name as string | undefined) ??
+        (chat.subject as string | undefined) ??
         (chat.pushName as string | undefined) ??
         null;
       const existing = await this.prisma.messageLog.findFirst({
         where: {
           companyId,
           channel: NotificationChannel.WHATSAPP,
-          OR: [
-            { fromAddress: { contains: phone } },
-            { toAddress: { contains: phone } },
-          ],
+          ...this.buildPeerWhere(peerKey),
         },
         select: { id: true },
       });
@@ -383,11 +419,13 @@ export class WhatsappSessionService {
           companyId,
           channel: NotificationChannel.WHATSAPP,
           direction: 'INBOUND',
-          toAddress: '',
-          fromAddress: phone,
-          body: '— conversa importada do WhatsApp —',
+          toAddress: isGroup ? remoteJid : '',
+          fromAddress: isGroup ? remoteJid : peerKey,
+          body: isGroup
+            ? '— grupo importado do WhatsApp —'
+            : '— conversa importada do WhatsApp —',
           status: MessageStatus.READ,
-          metadataJson: { pushName, source: 'sync', remoteJid },
+          metadataJson: { pushName, source: 'sync', remoteJid, isGroup },
         },
       });
       count++;
@@ -438,10 +476,12 @@ export class WhatsappSessionService {
       );
     }
 
-    const phone = normalizePhone(to);
-    if (phone.length < 10) {
+    // Se for JID de grupo, manda como está; senão sanitiza pra dígitos
+    const target = isGroupJid(to) ? to : normalizePhone(to);
+    if (!isGroupJid(to) && target.length < 10) {
       throw new BadRequestException('Telefone inválido.');
     }
+    const phone = target;
     this.logger.log(
       `sendText: ${inst.instanceName} → ${phone} (${body.length} chars)`,
     );
@@ -514,17 +554,27 @@ export class WhatsappSessionService {
         lastMessageAt: Date | null;
         unreadCount: number;
         totalMessages: number;
+        isGroup: boolean;
       }
     >();
 
     for (const m of messages) {
-      const peerJid =
-        m.direction === 'OUTBOUND' ? m.toAddress : (m.fromAddress ?? m.toAddress);
-      const peer = phoneFromJid(peerJid) || peerJid;
-      if (!peer) continue;
       const meta = (m.metadataJson ?? {}) as Record<string, unknown>;
+      // Prioriza remoteJid do metadata (preserva @g.us); senão usa toAddress/fromAddress
+      const remoteJid =
+        (meta.remoteJid as string | undefined) ??
+        (m.direction === 'OUTBOUND'
+          ? m.toAddress
+          : (m.fromAddress ?? m.toAddress));
+      const peer = peerKeyFromJid(remoteJid) || remoteJid;
+      if (!peer) continue;
+
+      const isGroup = isGroupJid(remoteJid);
       const pushName =
-        typeof meta.pushName === 'string' ? meta.pushName : undefined;
+        (meta.groupSubject as string | undefined) ??
+        (meta.subject as string | undefined) ??
+        (meta.pushName as string | undefined);
+
       const existing = groups.get(peer);
       if (!existing) {
         groups.set(peer, {
@@ -538,13 +588,11 @@ export class WhatsappSessionService {
               ? 1
               : 0,
           totalMessages: 1,
+          isGroup,
         });
       } else {
         existing.totalMessages += 1;
-        if (
-          m.direction === 'INBOUND' &&
-          m.status !== MessageStatus.READ
-        ) {
+        if (m.direction === 'INBOUND' && m.status !== MessageStatus.READ) {
           existing.unreadCount += 1;
         }
         if (!existing.peerName && (pushName || m.customer?.name)) {
@@ -560,20 +608,41 @@ export class WhatsappSessionService {
     });
   }
 
+  private buildPeerWhere(peerNumber: string): Prisma.MessageLogWhereInput {
+    if (isGroupJid(peerNumber)) {
+      // Grupo: filtra pelo metadata.remoteJid OU pelos campos to/from
+      return {
+        OR: [
+          { toAddress: peerNumber },
+          { fromAddress: peerNumber },
+          {
+            metadataJson: {
+              path: ['remoteJid'],
+              equals: peerNumber,
+            },
+          },
+        ],
+      };
+    }
+    const phone = normalizePhone(peerNumber);
+    return {
+      OR: [
+        { toAddress: { contains: phone } },
+        { fromAddress: { contains: phone } },
+      ],
+    };
+  }
+
   async listMessages(
     companyId: string,
     peerNumber: string,
     limit = 200,
   ): Promise<WhatsappMessageEntity[]> {
-    const phone = normalizePhone(peerNumber);
     const messages = await this.prisma.messageLog.findMany({
       where: {
         companyId,
         channel: NotificationChannel.WHATSAPP,
-        OR: [
-          { toAddress: { contains: phone } },
-          { fromAddress: { contains: phone } },
-        ],
+        ...this.buildPeerWhere(peerNumber),
       },
       orderBy: { createdAt: 'asc' },
       take: limit,
@@ -585,17 +654,13 @@ export class WhatsappSessionService {
     companyId: string,
     peerNumber: string,
   ): Promise<number> {
-    const phone = normalizePhone(peerNumber);
     const result = await this.prisma.messageLog.updateMany({
       where: {
         companyId,
         channel: NotificationChannel.WHATSAPP,
         direction: 'INBOUND',
         status: { not: MessageStatus.READ },
-        OR: [
-          { toAddress: { contains: phone } },
-          { fromAddress: { contains: phone } },
-        ],
+        ...this.buildPeerWhere(peerNumber),
       },
       data: { status: MessageStatus.READ, readAt: new Date() },
     });
@@ -669,12 +734,17 @@ export class WhatsappSessionService {
         const key = (item.key ?? {}) as Record<string, unknown>;
         const fromMe = !!key.fromMe;
         const remoteJid = (key.remoteJid as string | undefined) ?? '';
+        const participant = (key.participant as string | undefined) ?? null;
         const externalId = (key.id as string | undefined) ?? null;
         const messageObj = (item.message ?? {}) as Record<string, unknown>;
         const text =
           (messageObj.conversation as string | undefined) ??
           ((messageObj.extendedTextMessage as Record<string, unknown> | undefined)
             ?.text as string | undefined) ??
+          ((messageObj.imageMessage as Record<string, unknown> | undefined)
+            ?.caption as string | undefined) ??
+          ((messageObj.videoMessage as Record<string, unknown> | undefined)
+            ?.caption as string | undefined) ??
           '';
         if (!text) continue;
         if (externalId) {
@@ -684,7 +754,8 @@ export class WhatsappSessionService {
           });
           if (existing) continue;
         }
-        const peer = phoneFromJid(remoteJid);
+        const isGroup = isGroupJid(remoteJid);
+        const peer = peerKeyFromJid(remoteJid); // mantém @g.us em grupos
         const pushName = (item.pushName as string | undefined) ?? null;
         const ts = item.messageTimestamp;
         const createdAt =
@@ -699,12 +770,19 @@ export class WhatsappSessionService {
             companyId: inst.companyId,
             channel: NotificationChannel.WHATSAPP,
             direction: fromMe ? 'OUTBOUND' : 'INBOUND',
-            toAddress: fromMe ? peer : '',
+            toAddress: fromMe ? peer : (isGroup ? peer : ''),
             fromAddress: fromMe ? null : peer,
             body: text,
             status: fromMe ? MessageStatus.SENT : MessageStatus.DELIVERED,
             externalId,
-            metadataJson: { pushName, remoteJid, source: 'webhook' },
+            metadataJson: {
+              pushName,
+              remoteJid,
+              isGroup,
+              participant,
+              participantName: pushName,
+              source: 'webhook',
+            },
             createdAt,
             ...(fromMe ? { sentAt: createdAt } : { deliveredAt: createdAt }),
           },

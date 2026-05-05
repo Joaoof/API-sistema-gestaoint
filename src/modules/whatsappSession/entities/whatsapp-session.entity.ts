@@ -39,6 +39,7 @@ export class WhatsappConversationEntity {
   lastMessageAt?: Date | null;
   @Field(() => Int) unreadCount!: number;
   @Field(() => Int) totalMessages!: number;
+  @Field() isGroup!: boolean;
 }
 
 @ObjectType()
@@ -49,6 +50,10 @@ export class WhatsappMessageEntity {
   @Field() body!: string;
   @Field() status!: string;
   @Field(() => String, { nullable: true }) externalId?: string | null;
+  @Field(() => String, { nullable: true })
+  participantNumber?: string | null;
+  @Field(() => String, { nullable: true })
+  participantName?: string | null;
   @Field(() => GraphQLISODateTime) createdAt!: Date;
   @Field(() => GraphQLISODateTime, { nullable: true }) sentAt?: Date | null;
   @Field(() => GraphQLISODateTime, { nullable: true })
