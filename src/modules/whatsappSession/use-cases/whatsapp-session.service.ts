@@ -13,6 +13,7 @@ import {
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import {
+  WhatsappContactEntity,
   WhatsappConversationEntity,
   WhatsappInstanceEntity,
   WhatsappMessageEntity,
@@ -50,6 +51,18 @@ function normalizePhone(raw: string): string {
 
 function isGroupJid(jid: string | null | undefined): boolean {
   return !!jid && jid.endsWith('@g.us');
+}
+
+function isLidJid(jid: string | null | undefined): boolean {
+  return !!jid && jid.endsWith('@lid');
+}
+
+function isBroadcastJid(jid: string | null | undefined): boolean {
+  return !!jid && (jid.endsWith('@broadcast') || jid === 'status@broadcast');
+}
+
+function isNewsletterJid(jid: string | null | undefined): boolean {
+  return !!jid && jid.endsWith('@newsletter');
 }
 
 /**
@@ -392,19 +405,40 @@ export class WhatsappSessionService {
         : [];
 
     let count = 0;
+    let skippedLid = 0;
+    let skippedOther = 0;
     for (const chat of list) {
       const remoteJid =
         (chat.id as string | undefined) ??
         (chat.remoteJid as string | undefined);
       if (!remoteJid) continue;
+
+      // Pula tipos não-úteis para CRM
+      if (isLidJid(remoteJid)) {
+        skippedLid++;
+        continue; // contato sem telefone visível (privacidade)
+      }
+      if (isBroadcastJid(remoteJid) || isNewsletterJid(remoteJid)) {
+        skippedOther++;
+        continue;
+      }
+
       const isGroup = isGroupJid(remoteJid);
       const peerKey = peerKeyFromJid(remoteJid);
       if (!peerKey) continue;
+
       const pushName =
         (chat.name as string | undefined) ??
         (chat.subject as string | undefined) ??
+        (chat.verifiedName as string | undefined) ??
+        (chat.notify as string | undefined) ??
         (chat.pushName as string | undefined) ??
         null;
+      const profilePicUrl =
+        (chat.profilePicUrl as string | undefined) ??
+        (chat.imgUrl as string | undefined) ??
+        null;
+
       const existing = await this.prisma.messageLog.findFirst({
         where: {
           companyId,
@@ -414,6 +448,7 @@ export class WhatsappSessionService {
         select: { id: true },
       });
       if (existing) continue;
+
       await this.prisma.messageLog.create({
         data: {
           companyId,
@@ -423,12 +458,28 @@ export class WhatsappSessionService {
           fromAddress: isGroup ? remoteJid : peerKey,
           body: isGroup
             ? '— grupo importado do WhatsApp —'
-            : '— conversa importada do WhatsApp —',
+            : '— contato importado do WhatsApp —',
           status: MessageStatus.READ,
-          metadataJson: { pushName, source: 'sync', remoteJid, isGroup },
+          metadataJson: {
+            pushName,
+            profilePicUrl,
+            source: 'sync',
+            remoteJid,
+            isGroup,
+          },
         },
       });
       count++;
+    }
+    if (skippedLid > 0) {
+      this.logger.log(
+        `syncFromEvolution: ${skippedLid} contato(s) @lid pulados (sem telefone visível)`,
+      );
+    }
+    if (skippedOther > 0) {
+      this.logger.log(
+        `syncFromEvolution: ${skippedOther} broadcast/newsletter pulados`,
+      );
     }
     return count;
   }
@@ -650,6 +701,76 @@ export class WhatsappSessionService {
     return messages.map(mapMessage);
   }
 
+  async getContact(
+    companyId: string,
+    peerNumber: string,
+  ): Promise<WhatsappContactEntity> {
+    const where: Prisma.MessageLogWhereInput = {
+      companyId,
+      channel: NotificationChannel.WHATSAPP,
+      ...this.buildPeerWhere(peerNumber),
+    };
+    const [
+      first,
+      last,
+      total,
+      inbound,
+      outbound,
+    ] = await this.prisma.$transaction([
+      this.prisma.messageLog.findFirst({
+        where,
+        orderBy: { createdAt: 'asc' },
+        include: { customer: { select: { id: true, name: true } } },
+      }),
+      this.prisma.messageLog.findFirst({
+        where,
+        orderBy: { createdAt: 'desc' },
+        include: { customer: { select: { id: true, name: true } } },
+      }),
+      this.prisma.messageLog.count({ where }),
+      this.prisma.messageLog.count({ where: { ...where, direction: 'INBOUND' } }),
+      this.prisma.messageLog.count({ where: { ...where, direction: 'OUTBOUND' } }),
+    ]);
+
+    const isGroup = isGroupJid(peerNumber);
+    const meta = (last?.metadataJson ??
+      first?.metadataJson ??
+      {}) as Record<string, unknown>;
+    const displayName =
+      (meta.pushName as string | undefined) ??
+      (meta.subject as string | undefined) ??
+      last?.customer?.name ??
+      first?.customer?.name ??
+      (isGroup ? 'Grupo do WhatsApp' : peerNumber);
+    const profilePicUrl =
+      (meta.profilePicUrl as string | undefined) ?? null;
+    const customerId = last?.customerId ?? first?.customerId ?? null;
+    const customerName =
+      last?.customer?.name ?? first?.customer?.name ?? null;
+    const phoneDigits = isGroup ? '' : normalizePhone(peerNumber);
+    const phoneFormatted = isGroup ? null : phoneDigits;
+    const waLink = isGroup
+      ? ''
+      : `https://wa.me/${phoneDigits}`;
+
+    return {
+      peerNumber,
+      displayName,
+      phoneFormatted,
+      isGroup,
+      profilePicUrl,
+      about: null,
+      customerId,
+      customerName,
+      totalMessages: total,
+      inboundCount: inbound,
+      outboundCount: outbound,
+      firstMessageAt: first?.createdAt ?? null,
+      lastMessageAt: last?.createdAt ?? null,
+      waLink,
+    };
+  }
+
   async markConversationRead(
     companyId: string,
     peerNumber: string,
@@ -734,6 +855,13 @@ export class WhatsappSessionService {
         const key = (item.key ?? {}) as Record<string, unknown>;
         const fromMe = !!key.fromMe;
         const remoteJid = (key.remoteJid as string | undefined) ?? '';
+        if (
+          isLidJid(remoteJid) ||
+          isBroadcastJid(remoteJid) ||
+          isNewsletterJid(remoteJid)
+        ) {
+          continue;
+        }
         const participant = (key.participant as string | undefined) ?? null;
         const externalId = (key.id as string | undefined) ?? null;
         const messageObj = (item.message ?? {}) as Record<string, unknown>;

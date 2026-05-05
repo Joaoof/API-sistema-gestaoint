@@ -13,6 +13,7 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { TenancyService } from '../construction/shared/tenancy.service';
 import { AuthUser } from '../construction/shared/auth-user';
 import {
+  WhatsappContactEntity,
   WhatsappConversationEntity,
   WhatsappInstanceEntity,
   WhatsappMessageEntity,
@@ -48,6 +49,15 @@ export class WhatsappSessionResolver {
   ): Promise<WhatsappConversationEntity[]> {
     const companyId = await this.tenancy.resolveCompanyId(user);
     return this.service.listConversations(companyId);
+  }
+
+  @Query(() => WhatsappContactEntity)
+  async whatsappContact(
+    @CurrentUser() user: AuthUser,
+    @Args('peerNumber') peerNumber: string,
+  ): Promise<WhatsappContactEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.getContact(companyId, peerNumber);
   }
 
   @Query(() => [WhatsappMessageEntity])

@@ -43,6 +43,26 @@ export class WhatsappConversationEntity {
 }
 
 @ObjectType()
+export class WhatsappContactEntity {
+  @Field() peerNumber!: string;
+  @Field() displayName!: string;
+  @Field(() => String, { nullable: true }) phoneFormatted?: string | null;
+  @Field() isGroup!: boolean;
+  @Field(() => String, { nullable: true }) profilePicUrl?: string | null;
+  @Field(() => String, { nullable: true }) about?: string | null;
+  @Field(() => String, { nullable: true }) customerId?: string | null;
+  @Field(() => String, { nullable: true }) customerName?: string | null;
+  @Field(() => Int) totalMessages!: number;
+  @Field(() => Int) inboundCount!: number;
+  @Field(() => Int) outboundCount!: number;
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  firstMessageAt?: Date | null;
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  lastMessageAt?: Date | null;
+  @Field() waLink!: string;
+}
+
+@ObjectType()
 export class WhatsappMessageEntity {
   @Field(() => ID) id!: string;
   @Field() peerNumber!: string;
