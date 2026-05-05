@@ -1,0 +1,83 @@
+import { UseGuards } from '@nestjs/common';
+import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { GqlAuthGuard } from '../../auth/guards/auth.guard';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { TenancyService } from '../construction/shared/tenancy.service';
+import { AuthUser } from '../construction/shared/auth-user';
+import {
+  WhatsappConversationEntity,
+  WhatsappInstanceEntity,
+  WhatsappMessageEntity,
+} from './entities/whatsapp-session.entity';
+import { WhatsappSessionService } from './use-cases/whatsapp-session.service';
+
+@Resolver(() => WhatsappInstanceEntity)
+@UseGuards(GqlAuthGuard)
+export class WhatsappSessionResolver {
+  constructor(
+    private readonly service: WhatsappSessionService,
+    private readonly tenancy: TenancyService,
+  ) {}
+
+  @Query(() => WhatsappInstanceEntity)
+  async whatsappSession(
+    @CurrentUser() user: AuthUser,
+  ): Promise<WhatsappInstanceEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.refreshStatus(companyId);
+  }
+
+  @Query(() => [WhatsappConversationEntity])
+  async whatsappConversations(
+    @CurrentUser() user: AuthUser,
+  ): Promise<WhatsappConversationEntity[]> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.listConversations(companyId);
+  }
+
+  @Query(() => [WhatsappMessageEntity])
+  async whatsappMessages(
+    @CurrentUser() user: AuthUser,
+    @Args('peerNumber') peerNumber: string,
+    @Args('limit', { type: () => Int, nullable: true }) limit?: number,
+  ): Promise<WhatsappMessageEntity[]> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.listMessages(companyId, peerNumber, limit ?? 200);
+  }
+
+  @Mutation(() => WhatsappInstanceEntity)
+  async connectWhatsapp(
+    @CurrentUser() user: AuthUser,
+  ): Promise<WhatsappInstanceEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.connect(companyId);
+  }
+
+  @Mutation(() => WhatsappInstanceEntity)
+  async disconnectWhatsapp(
+    @CurrentUser() user: AuthUser,
+  ): Promise<WhatsappInstanceEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.disconnect(companyId);
+  }
+
+  @Mutation(() => WhatsappMessageEntity)
+  async sendWhatsappMessage(
+    @CurrentUser() user: AuthUser,
+    @Args('to') to: string,
+    @Args('body') body: string,
+    @Args('customerId', { nullable: true }) customerId?: string,
+  ): Promise<WhatsappMessageEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.sendText(companyId, to, body, customerId);
+  }
+
+  @Mutation(() => Int)
+  async markWhatsappConversationRead(
+    @CurrentUser() user: AuthUser,
+    @Args('peerNumber') peerNumber: string,
+  ): Promise<number> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.markConversationRead(companyId, peerNumber);
+  }
+}

@@ -341,6 +341,7 @@ model Company {
   messageLogs           MessageLog[]
   opportunities         Opportunity[]
   contracts             Contract[]
+  whatsappInstance      WhatsappInstance?
 }
 
 model Modules {
@@ -1512,4 +1513,34 @@ enum ContractEventType {
   AMENDED
   BREACH_REGISTERED
   NOTE
+}
+
+// =====================================================================
+// WHATSAPP SESSION (Evolution API)
+// =====================================================================
+
+model WhatsappInstance {
+  id            String                  @id @default(uuid())
+  companyId     String                  @unique
+  instanceName  String                  @unique
+  status        WhatsappInstanceStatus  @default(DISCONNECTED)
+  qrCode        String?
+  phone         String?
+  profileName   String?
+  profilePicUrl String?
+  lastError     String?
+  webhookToken  String?
+  lastSeenAt    DateTime?
+  connectedAt   DateTime?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  company       Company                 @relation(fields: [companyId], references: [id])
+}
+
+enum WhatsappInstanceStatus {
+  DISCONNECTED
+  CONNECTING
+  QR_PENDING
+  CONNECTED
+  ERROR
 }

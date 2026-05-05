@@ -39,6 +39,7 @@ import { MessageLogModule } from './modules/messageLog/message-log.module';
 import { OpportunityModule } from './modules/opportunity/opportunity.module';
 import { ContractModule } from './modules/contract/contract.module';
 import { WhatsappModule } from './modules/whatsapp/whatsapp.module';
+import { WhatsappSessionModule } from './modules/whatsappSession/whatsapp-session.module';
 
 @Module({
   imports: [
@@ -100,6 +101,7 @@ import { WhatsappModule } from './modules/whatsapp/whatsapp.module';
     OpportunityModule,
     ContractModule,
     WhatsappModule,
+    WhatsappSessionModule,
   ],
   controllers: [AppController],
   providers: [
