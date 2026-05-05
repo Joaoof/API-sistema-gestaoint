@@ -351,30 +351,21 @@ export class EvolutionApiClient {
     text: string,
   ): Promise<EvolutionSendTextResult> {
     const path = `/message/sendText/${encodeURIComponent(instanceName)}`;
+    // Formato canônico do Evolution v2.x: { number, text } no nível root.
+    // Se sua instância exige outro shape, tentamos um fallback abaixo.
     const variants: Array<{ shape: string; body: Record<string, unknown> }> = [
-      // Evolution v2.x — formato mais comum
       { shape: 'v2-flat', body: { number: toNumber, text } },
-      // Evolution v2.x com options
       {
-        shape: 'v2-options',
+        shape: 'v2-with-options',
         body: {
           number: toNumber,
           text,
-          options: { delay: 1000, presence: 'composing' },
-        },
-      },
-      // Evolution v1.x
-      {
-        shape: 'v1',
-        body: {
-          number: toNumber,
-          options: { delay: 1000 },
-          textMessage: { text },
+          options: { delay: 800, presence: 'composing' },
         },
       },
     ];
 
-    let lastErr: unknown = null;
+    const errors: string[] = [];
     for (const v of variants) {
       try {
         const result = await this.request<EvolutionSendTextResult>(
@@ -382,23 +373,21 @@ export class EvolutionApiClient {
           path,
           v.body,
         );
-        this.logger.debug(
+        this.logger.log(
           `sendText OK em ${instanceName} (formato: ${v.shape})`,
         );
         return result;
       } catch (err) {
-        lastErr = err;
         const msg = err instanceof Error ? err.message : String(err);
-        // Se o erro é 401/403/404 não vale a pena tentar outros formatos
+        errors.push(`[${v.shape}] ${msg.slice(0, 250)}`);
+        this.logger.warn(`sendText formato ${v.shape} falhou: ${msg.slice(0, 300)}`);
         if (msg.includes('401') || msg.includes('403') || msg.includes('404')) {
           throw err;
         }
       }
     }
     throw new Error(
-      `Falha ao enviar texto: ${
-        lastErr instanceof Error ? lastErr.message : String(lastErr)
-      }`,
+      `Falha ao enviar texto. Tentativas:\n${errors.join('\n')}`,
     );
   }
 }

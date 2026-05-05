@@ -405,7 +405,6 @@ export class WhatsappSessionService {
         : [];
 
     let count = 0;
-    let skippedLid = 0;
     let skippedOther = 0;
     for (const chat of list) {
       const remoteJid =
@@ -413,11 +412,8 @@ export class WhatsappSessionService {
         (chat.remoteJid as string | undefined);
       if (!remoteJid) continue;
 
-      // Pula tipos não-úteis para CRM
-      if (isLidJid(remoteJid)) {
-        skippedLid++;
-        continue; // contato sem telefone visível (privacidade)
-      }
+      // Pula só broadcast/newsletter (inúteis para CRM).
+      // @lid (sem telefone visível) é mantido — Evolution permite chatear com ele.
       if (isBroadcastJid(remoteJid) || isNewsletterJid(remoteJid)) {
         skippedOther++;
         continue;
@@ -471,11 +467,6 @@ export class WhatsappSessionService {
       });
       count++;
     }
-    if (skippedLid > 0) {
-      this.logger.log(
-        `syncFromEvolution: ${skippedLid} contato(s) @lid pulados (sem telefone visível)`,
-      );
-    }
     if (skippedOther > 0) {
       this.logger.log(
         `syncFromEvolution: ${skippedOther} broadcast/newsletter pulados`,
@@ -527,9 +518,10 @@ export class WhatsappSessionService {
       );
     }
 
-    // Se for JID de grupo, manda como está; senão sanitiza pra dígitos
-    const target = isGroupJid(to) ? to : normalizePhone(to);
-    if (!isGroupJid(to) && target.length < 10) {
+    // JIDs especiais (grupo @g.us / @lid) vão como estão; números reais sanitizam
+    const isJid = isGroupJid(to) || isLidJid(to);
+    const target = isJid ? to : normalizePhone(to);
+    if (!isJid && target.length < 10) {
       throw new BadRequestException('Telefone inválido.');
     }
     const phone = target;
@@ -606,6 +598,7 @@ export class WhatsappSessionService {
         unreadCount: number;
         totalMessages: number;
         isGroup: boolean;
+        isHiddenNumber: boolean;
       }
     >();
 
@@ -621,6 +614,7 @@ export class WhatsappSessionService {
       if (!peer) continue;
 
       const isGroup = isGroupJid(remoteJid);
+      const isHiddenNumber = isLidJid(remoteJid);
       const pushName =
         (meta.groupSubject as string | undefined) ??
         (meta.subject as string | undefined) ??
@@ -640,6 +634,7 @@ export class WhatsappSessionService {
               : 0,
           totalMessages: 1,
           isGroup,
+          isHiddenNumber,
         });
       } else {
         existing.totalMessages += 1;
@@ -995,11 +990,8 @@ export class WhatsappSessionService {
         const key = (item.key ?? {}) as Record<string, unknown>;
         const fromMe = !!key.fromMe;
         const remoteJid = (key.remoteJid as string | undefined) ?? '';
-        if (
-          isLidJid(remoteJid) ||
-          isBroadcastJid(remoteJid) ||
-          isNewsletterJid(remoteJid)
-        ) {
+        // Filtra só broadcast/newsletter; @lid é mantido (chat funciona)
+        if (isBroadcastJid(remoteJid) || isNewsletterJid(remoteJid)) {
           continue;
         }
         const participant = (key.participant as string | undefined) ?? null;

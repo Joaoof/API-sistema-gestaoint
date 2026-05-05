@@ -40,6 +40,8 @@ export class WhatsappConversationEntity {
   @Field(() => Int) unreadCount!: number;
   @Field(() => Int) totalMessages!: number;
   @Field() isGroup!: boolean;
+  @Field({ description: 'Contato @lid — telefone oculto pela privacidade do WhatsApp' })
+  isHiddenNumber!: boolean;
 }
 
 @ObjectType()
