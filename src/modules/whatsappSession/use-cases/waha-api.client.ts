@@ -7,12 +7,6 @@ export interface WahaSession {
   me?: { id?: string; pushName?: string } | null;
 }
 
-export interface WahaQrResult {
-  /** data:image/png;base64,... */
-  value?: string;
-  mimetype?: string;
-}
-
 export interface WahaSendResult {
   id?: string;
   timestamp?: number;
@@ -157,27 +151,6 @@ export class WahaApiClient {
     return this.request<WahaSession>('GET', `/api/sessions/${encodeURIComponent(name)}`);
   }
 
-  async createSession(name: string, webhookUrl: string | null): Promise<WahaSession> {
-    const webhooks =
-      webhookUrl && this.isValidHttpUrl(webhookUrl)
-        ? [
-            {
-              url: webhookUrl,
-              events: ['message', 'message.ack', 'session.status'],
-            },
-          ]
-        : [];
-    return this.request<WahaSession>('POST', '/api/sessions', {
-      name,
-      start: true,
-      config: { webhooks },
-    });
-  }
-
-  async startSession(name: string): Promise<void> {
-    await this.request<unknown>('POST', `/api/sessions/${encodeURIComponent(name)}/start`);
-  }
-
   async updateSessionWebhook(name: string, webhookUrl: string): Promise<WahaSession> {
     if (!this.isValidHttpUrl(webhookUrl)) {
       throw new Error(
@@ -194,53 +167,6 @@ export class WahaApiClient {
         ],
       },
     });
-  }
-
-  async stopSession(name: string): Promise<void> {
-    await this.request<unknown>('POST', `/api/sessions/${encodeURIComponent(name)}/stop`);
-  }
-
-  async deleteSession(name: string): Promise<void> {
-    await this.request<unknown>('DELETE', `/api/sessions/${encodeURIComponent(name)}`);
-  }
-
-  // ---------- Auth / QR ----------
-
-  /**
-   * O endpoint /api/{session}/auth/qr do WAHA retorna PNG binário por padrão
-   * (Content-Type: image/png). Buscamos o binário e convertemos em data URL
-   * pra que o front possa exibir em <img src=...> direto.
-   * Se o body vier como JSON (algumas versões), aceitamos isso também.
-   */
-  async getQr(name: string): Promise<WahaQrResult> {
-    const url = `${this.baseUrl}/api/${encodeURIComponent(name)}/auth/qr?format=image`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { 'X-Api-Key': this.apiKey, Accept: 'image/png, application/json' },
-    });
-
-    if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      this.logger.warn(`WAHA GET /auth/qr → ${response.status}: ${text.slice(0, 200)}`);
-      throw new Error(`WAHA QR ${response.status}: ${text.slice(0, 200)}`);
-    }
-
-    const contentType = response.headers.get('content-type') ?? '';
-    if (contentType.includes('application/json')) {
-      const json = (await response.json()) as Record<string, unknown>;
-      const value =
-        (json.value as string | undefined) ??
-        (json.data as string | undefined) ??
-        null;
-      const mimetype =
-        (json.mimetype as string | undefined) ?? 'image/png';
-      return { value: value ?? undefined, mimetype };
-    }
-
-    // PNG (ou outro binário) — converte para data URL
-    const buf = Buffer.from(await response.arrayBuffer());
-    const mimetype = contentType.split(';')[0]?.trim() || 'image/png';
-    return { value: `data:${mimetype};base64,${buf.toString('base64')}`, mimetype };
   }
 
   // ---------- Messages ----------

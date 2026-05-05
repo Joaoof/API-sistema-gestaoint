@@ -207,115 +207,26 @@ export class WhatsappSessionService {
     }
   }
 
+  /**
+   * Soft-connect: a sessão WAHA é criada e o QR escaneado direto no painel
+   * do WAHA (https://<waha-host>/dashboard). Aqui só lemos o estado atual e
+   * sincronizamos o DB local. Se a sessão ainda não existir no WAHA, o status
+   * vira DISCONNECTED com instrução pra abrir o painel.
+   */
   async connect(companyId: string): Promise<WhatsappInstanceEntity> {
     const inst = await this.getOrCreateInstance(companyId);
     const sessionName = this.wahaSessionFor(inst);
-    const webhookUrl = this.waha.buildWebhookUrl(sessionName);
-
-    // 1. Garantir que a sessão exista no WAHA. Em alguns estados ela precisa
-    //    ser recriada/reiniciada antes de fornecer QR.
-    let needsCreate = false;
-    let needsStart = false;
-    try {
-      const session = await this.waha.getSession(sessionName);
-      const st = session.status ?? '';
-      if (st === 'STOPPED' || st === 'FAILED') {
-        // tenta dar start; se não rolar, recria
-        needsStart = true;
-      }
-      if (webhookUrl) {
-        await this.waha
-          .updateSessionWebhook(sessionName, webhookUrl)
-          .catch((err) =>
-            this.logger.warn(
-              `updateSessionWebhook falhou: ${err instanceof Error ? err.message : err}`,
-            ),
-          );
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      if (message.includes('404') || message.toLowerCase().includes('not found')) {
-        needsCreate = true;
-      } else {
-        throw err;
-      }
-    }
-
-    if (needsCreate) {
-      try {
-        await this.waha.createSession(sessionName, webhookUrl);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        this.logger.error(`createSession falhou: ${message}`);
-        throw err;
-      }
-    } else if (needsStart) {
-      try {
-        await this.waha.startSession(sessionName);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        this.logger.warn(
-          `startSession falhou (${message}); tentando recriar a sessão`,
-        );
-        await this.waha.deleteSession(sessionName).catch(() => null);
-        await this.waha.createSession(sessionName, webhookUrl);
-      }
-    }
-
-    // 2. Polling: aguarda WAHA chegar em SCAN_QR_CODE (ou WORKING) e busca o QR
-    //    Tenta ~12s no total (24 × 500ms) — suficiente em redes normais.
-    let qrDataUrl: string | null = null;
-    let finalStatus: string = '';
-    for (let i = 0; i < 24; i++) {
-      try {
-        const s = await this.waha.getSession(sessionName);
-        finalStatus = s.status ?? '';
-
-        if (finalStatus === 'WORKING') break;
-
-        if (finalStatus === 'SCAN_QR_CODE') {
-          try {
-            const qr = await this.waha.getQr(sessionName);
-            const raw = qr.value ?? null;
-            if (raw) {
-              qrDataUrl = raw.startsWith('data:')
-                ? raw
-                : `data:${qr.mimetype ?? 'image/png'};base64,${raw}`;
-              break;
-            }
-          } catch (err) {
-            this.logger.debug(
-              `getQr ainda não pronto: ${err instanceof Error ? err.message : err}`,
-            );
-          }
-        }
-      } catch (err) {
-        this.logger.debug(
-          `polling getSession: ${err instanceof Error ? err.message : err}`,
-        );
-      }
-      await new Promise((r) => setTimeout(r, 500));
-    }
-
-    if (!qrDataUrl && finalStatus !== 'WORKING') {
-      this.logger.warn(
-        `connect terminou sem QR. Último estado WAHA: "${finalStatus || 'desconhecido'}". Tente novamente em alguns segundos.`,
-      );
-    }
-
-    const status =
-      finalStatus === 'WORKING'
-        ? WhatsappInstanceStatus.CONNECTED
-        : qrDataUrl
-          ? WhatsappInstanceStatus.QR_PENDING
-          : WhatsappInstanceStatus.CONNECTING;
-
-    const updated = await this.prisma.whatsappInstance.update({
-      where: { id: inst.id },
-      data: { status, qrCode: qrDataUrl, lastError: null },
+    return this.refreshStatus(companyId).catch(async () => {
+      const updated = await this.prisma.whatsappInstance.update({
+        where: { id: inst.id },
+        data: {
+          status: WhatsappInstanceStatus.DISCONNECTED,
+          qrCode: null,
+          lastError: `Sessão "${sessionName}" indisponível no WAHA. Conecte pelo painel do WAHA.`,
+        },
+      });
+      return toEntity(updated);
     });
-
-    return this.refreshStatus(companyId).catch(() => toEntity(updated));
   }
 
   async reconfigureWebhook(
@@ -487,15 +398,13 @@ export class WhatsappSessionService {
     return count;
   }
 
+  /**
+   * Em modo single-session (WAHA Core), parar a sessão derrubaria todas as
+   * empresas. Aqui só desvinculamos no DB local; o logout efetivo é feito
+   * pelo admin direto no painel do WAHA.
+   */
   async disconnect(companyId: string): Promise<WhatsappInstanceEntity> {
     const inst = await this.getOrCreateInstance(companyId);
-    try {
-      await this.waha.stopSession(this.wahaSessionFor(inst));
-    } catch (err) {
-      this.logger.warn(
-        `stopSession falhou: ${err instanceof Error ? err.message : err}`,
-      );
-    }
     const updated = await this.prisma.whatsappInstance.update({
       where: { id: inst.id },
       data: {
