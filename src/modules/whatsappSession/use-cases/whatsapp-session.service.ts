@@ -244,11 +244,14 @@ export class WhatsappSessionService {
   }
 
   /**
-   * Busca a lista completa de contatos resolvidos no WAHA e faz upsert na
-   * tabela WhatsappContact. Cada contato traz (quando disponível) o telefone
-   * real mesmo pra entradas LID, desde que esteja salvo na agenda do aparelho
-   * conectado ao WAHA. É o mesmo dado que o painel do WAHA exibe na lista de
-   * chats.
+   * Sincroniza contatos do WAHA pra cache local. Estratégia:
+   *  1) Tenta /api/{session}/contacts/all (full payload). Em algumas engines
+   *     do WAHA (WEBJS) esse endpoint retorna 500 — `getContacts` devolve [].
+   *  2) Fallback: deriva de /chats — o `name` do chat já vem resolvido pelo
+   *     WAHA (telefone formatado pra contatos salvos, "+55 21 9...").
+   *
+   * O cache deixa a leitura de listas/contatos rápida e oferece fallback de
+   * resolução de LID quando o WAHA não consegue mais (sessão dormindo etc.).
    */
   async syncContactsFromWaha(companyId: string): Promise<number> {
     const inst = await this.getOrCreateInstance(companyId);
@@ -256,8 +259,9 @@ export class WhatsappSessionService {
       throw new BadRequestException('WhatsApp não está conectado.');
     }
     const sessionName = this.wahaSessionFor(inst);
-    const contacts = await this.waha.getContacts(sessionName);
+
     let upserted = 0;
+    const contacts = await this.waha.getContacts(sessionName);
     for (const c of contacts) {
       const jid = c.id?.trim();
       if (!jid) continue;
@@ -268,26 +272,34 @@ export class WhatsappSessionService {
       const isGroup = !!c.isGroup || jid.endsWith('@g.us');
       await this.prisma.whatsappContact.upsert({
         where: { companyId_jid: { companyId, jid } },
-        create: {
-          companyId,
-          jid,
-          number,
-          name,
-          pushName,
-          isMyContact,
-          isGroup,
-        },
-        update: {
-          number,
-          name,
-          pushName,
-          isMyContact,
-          isGroup,
-          syncedAt: new Date(),
-        },
+        create: { companyId, jid, number, name, pushName, isMyContact, isGroup },
+        update: { number, name, pushName, isMyContact, isGroup, syncedAt: new Date() },
       });
       upserted++;
     }
+
+    // Fallback: deriva contatos da lista de chats. Em WAHA WEBJS isso já cobre
+    // tudo o que o painel mostra — `chat.name` vem com o telefone resolvido.
+    if (upserted === 0) {
+      const chats = await this.waha.getChats(sessionName);
+      for (const ch of chats) {
+        const jid = ch.id?.trim();
+        if (!jid) continue;
+        const isGroup = !!ch.isGroup || jid.endsWith('@g.us');
+        const name = ch.name ?? null;
+        // Quando o `name` for um telefone formatado (ex: "+55 21 98897-3348"),
+        // extraímos os dígitos pra usar como `number` real.
+        const digits = name ? name.replace(/\D+/g, '') : '';
+        const number = digits.length >= 10 ? digits : null;
+        await this.prisma.whatsappContact.upsert({
+          where: { companyId_jid: { companyId, jid } },
+          create: { companyId, jid, number, name, isGroup, isMyContact: false },
+          update: { number, name, isGroup, syncedAt: new Date() },
+        });
+        upserted++;
+      }
+    }
+
     this.logger.log(
       `syncContactsFromWaha: ${upserted} contato(s) sincronizado(s) (${sessionName})`,
     );
@@ -635,8 +647,12 @@ export class WhatsappSessionService {
       isHiddenNumber: boolean;
     };
     const groups = new Map<string, Conv>();
+    const fromWaha = new Set<string>();
 
-    // 1. Fonte primária: chats vivos do WAHA (mesmo dado que o painel mostra)
+    // 1. Fonte primária: chats vivos do WAHA (mesmo dado que o painel mostra).
+    //    O `name` já vem resolvido pelo WAHA (formato "+55 21 98897-3348" pra
+    //    contatos salvos, ou nome da agenda) e `unreadCount` / `lastMessageBody`
+    //    vêm prontos. É exatamente o que o dashboard renderiza.
     if (inst.status === WhatsappInstanceStatus.CONNECTED) {
       try {
         const liveChats = await this.waha.getChats(this.wahaSessionFor(inst));
@@ -657,13 +673,14 @@ export class WhatsappSessionService {
             peerNumber: peer,
             peerName: chat.name ?? null,
             customerId: null,
-            lastMessage: null,
+            lastMessage: chat.lastMessageBody ?? null,
             lastMessageAt,
-            unreadCount: 0,
+            unreadCount: chat.unreadCount ?? 0,
             totalMessages: 0,
             isGroup,
             isHiddenNumber,
           });
+          fromWaha.add(peer);
         }
       } catch (err) {
         this.logger.warn(
@@ -718,20 +735,25 @@ export class WhatsappSessionService {
         });
       } else {
         existing.totalMessages += 1;
-        if (isUnread) existing.unreadCount += 1;
-        // Customer e pushName preenchem se ainda vazio
+        // unreadCount: se veio do WAHA, ele é a verdade — não incrementa.
+        // Caso contrário (entrada criada só pelo MessageLog), conta local.
+        if (!fromWaha.has(peer) && isUnread) existing.unreadCount += 1;
         if (!existing.customerId && m.customerId) {
           existing.customerId = m.customerId;
         }
+        // Nome resolvido do WAHA tem prioridade. Só preenche aqui se nada veio.
         if (!existing.peerName && (pushName || m.customer?.name)) {
           existing.peerName = pushName ?? m.customer?.name ?? null;
         }
-        // Se MessageLog é mais recente que o lastMessageAt vindo do WAHA, usa ele
-        const mAt = m.createdAt.getTime();
-        const eAt = existing.lastMessageAt?.getTime() ?? 0;
-        if (mAt >= eAt || !existing.lastMessage) {
-          existing.lastMessage = m.body;
-          existing.lastMessageAt = m.createdAt;
+        // lastMessage: se entrada veio do WAHA, mantém o body do WAHA. Se não,
+        // pega o registro mais recente.
+        if (!fromWaha.has(peer)) {
+          const mAt = m.createdAt.getTime();
+          const eAt = existing.lastMessageAt?.getTime() ?? 0;
+          if (mAt >= eAt || !existing.lastMessage) {
+            existing.lastMessage = m.body;
+            existing.lastMessageAt = m.createdAt;
+          }
         }
       }
     }

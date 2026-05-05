@@ -28,11 +28,34 @@ export interface WahaMessage {
   };
 }
 
+/**
+ * Forma normalizada de um chat (já com JID extraído + nome resolvido pelo WAHA).
+ * O WAHA WEBJS retorna `id` como objeto `{ server, user, _serialized }` e o
+ * `name` já vem com telefone formatado quando o contato está na agenda do
+ * aparelho. Em LIDs, o `name` traz o telefone real resolvido pelo WAHA.
+ */
 export interface WahaChat {
   id?: string;
   name?: string;
   isGroup?: boolean;
+  isReadOnly?: boolean;
+  unreadCount?: number;
   timestamp?: number;
+  lastMessageBody?: string;
+}
+
+interface WahaChatRaw {
+  id?: string | { _serialized?: string };
+  name?: string;
+  isGroup?: boolean;
+  isReadOnly?: boolean;
+  unreadCount?: number;
+  timestamp?: number;
+  lastMessage?: {
+    body?: string;
+    caption?: string;
+    _data?: { body?: string; caption?: string };
+  };
 }
 
 export interface WahaContactAvatar {
@@ -212,11 +235,31 @@ export class WahaApiClient {
   // ---------- Chats ----------
 
   async getChats(sessionName: string): Promise<WahaChat[]> {
-    const result = await this.request<WahaChat[] | { chats?: WahaChat[] }>(
+    const result = await this.request<WahaChatRaw[] | { chats?: WahaChatRaw[] }>(
       'GET',
       `/api/${encodeURIComponent(sessionName)}/chats`,
     );
-    return Array.isArray(result) ? result : (result?.chats ?? []);
+    const raw = Array.isArray(result) ? result : (result?.chats ?? []);
+    return raw.map((c) => {
+      const id =
+        typeof c.id === 'string'
+          ? c.id
+          : c.id?._serialized ?? '';
+      const lastMessageBody =
+        c.lastMessage?.body ??
+        c.lastMessage?.caption ??
+        c.lastMessage?._data?.body ??
+        c.lastMessage?._data?.caption;
+      return {
+        id,
+        name: c.name,
+        isGroup: c.isGroup,
+        isReadOnly: c.isReadOnly,
+        unreadCount: c.unreadCount,
+        timestamp: c.timestamp,
+        lastMessageBody,
+      };
+    });
   }
 
   // ---------- Contacts ----------
