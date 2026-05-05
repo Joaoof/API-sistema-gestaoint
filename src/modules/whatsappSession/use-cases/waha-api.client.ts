@@ -76,6 +76,18 @@ export class WahaApiClient {
     return this.config.get<string>('WAHA_WEBHOOK_TOKEN') ?? '';
   }
 
+  /**
+   * WAHA Core (free) só aceita uma única sessão chamada "default".
+   * Em WAHA Plus pode-se ter várias sessões nomeadas (multi-tenant).
+   * Defina WAHA_SESSION_NAME no .env ("default" para Core) para
+   * sobrescrever o nome enviado nas chamadas. Sem a var, usamos o
+   * instanceName por empresa (modo Plus / multi-tenant).
+   */
+  get sessionNameOverride(): string | null {
+    const v = this.config.get<string>('WAHA_SESSION_NAME');
+    return v && v.trim().length > 0 ? v.trim() : null;
+  }
+
   buildWebhookUrl(sessionName: string): string | null {
     const base = this.webhookBaseUrl;
     if (!base) return null;

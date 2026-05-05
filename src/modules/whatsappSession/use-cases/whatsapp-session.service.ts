@@ -127,6 +127,15 @@ export class WhatsappSessionService {
     private readonly waha: WahaApiClient,
   ) {}
 
+  /**
+   * Nome efetivo da sessão a usar nas chamadas WAHA.
+   * - Em WAHA Plus (multi-tenant): retorna o instanceName da empresa.
+   * - Em WAHA Core (single session): retorna WAHA_SESSION_NAME (ex.: "default").
+   */
+  private wahaSessionFor(inst: { instanceName: string }): string {
+    return this.waha.sessionNameOverride ?? inst.instanceName;
+  }
+
   async getOrCreateInstance(
     companyId: string,
   ): Promise<WhatsappInstanceEntity> {
@@ -147,8 +156,9 @@ export class WhatsappSessionService {
 
   async refreshStatus(companyId: string): Promise<WhatsappInstanceEntity> {
     const inst = await this.getOrCreateInstance(companyId);
+    const sessionName = this.wahaSessionFor(inst);
     try {
-      const session = await this.waha.getSession(inst.instanceName);
+      const session = await this.waha.getSession(sessionName);
       const status = this.mapState(session.status ?? '');
       const phone = session.me?.id
         ? session.me.id.replace(/@.+$/, '')
@@ -199,20 +209,21 @@ export class WhatsappSessionService {
 
   async connect(companyId: string): Promise<WhatsappInstanceEntity> {
     const inst = await this.getOrCreateInstance(companyId);
-    const webhookUrl = this.waha.buildWebhookUrl(inst.instanceName);
+    const sessionName = this.wahaSessionFor(inst);
+    const webhookUrl = this.waha.buildWebhookUrl(sessionName);
 
     // Garante que a sessão existe no WAHA; se não, cria
     try {
-      const session = await this.waha.getSession(inst.instanceName);
+      const session = await this.waha.getSession(sessionName);
       // Se parada, recria para resetar estado
       if (session.status === 'STOPPED' || session.status === 'FAILED') {
-        await this.waha.deleteSession(inst.instanceName).catch(() => null);
-        await this.waha.createSession(inst.instanceName, webhookUrl);
+        await this.waha.deleteSession(sessionName).catch(() => null);
+        await this.waha.createSession(sessionName, webhookUrl);
       }
       // Se já tem webhook URL diferente, atualiza
       if (webhookUrl) {
         await this.waha
-          .updateSessionWebhook(inst.instanceName, webhookUrl)
+          .updateSessionWebhook(sessionName, webhookUrl)
           .catch((err) =>
             this.logger.warn(
               `updateSessionWebhook falhou: ${err instanceof Error ? err.message : err}`,
@@ -222,7 +233,7 @@ export class WhatsappSessionService {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       if (message.includes('404') || message.toLowerCase().includes('not found')) {
-        await this.waha.createSession(inst.instanceName, webhookUrl);
+        await this.waha.createSession(sessionName, webhookUrl);
       } else {
         throw err;
       }
@@ -231,7 +242,7 @@ export class WhatsappSessionService {
     // Pede QR
     let qrDataUrl: string | null = null;
     try {
-      const qr = await this.waha.getQr(inst.instanceName);
+      const qr = await this.waha.getQr(sessionName);
       const raw = qr.value ?? null;
       if (raw) {
         qrDataUrl = raw.startsWith('data:') ? raw : `data:image/png;base64,${raw}`;
@@ -258,15 +269,16 @@ export class WhatsappSessionService {
     companyId: string,
   ): Promise<{ ok: boolean; format: string | null; webhookUrl: string | null }> {
     const inst = await this.getOrCreateInstance(companyId);
-    const url = this.waha.buildWebhookUrl(inst.instanceName);
+    const sessionName = this.wahaSessionFor(inst);
+    const url = this.waha.buildWebhookUrl(sessionName);
     if (!url) throw new Error('WAHA_WEBHOOK_URL não configurada.');
-    await this.waha.updateSessionWebhook(inst.instanceName, url);
+    await this.waha.updateSessionWebhook(sessionName, url);
     return { ok: true, format: 'waha', webhookUrl: url };
   }
 
   async getWebhookConfigFromEvolution(companyId: string): Promise<string> {
     const inst = await this.getOrCreateInstance(companyId);
-    const session = await this.waha.getSession(inst.instanceName);
+    const session = await this.waha.getSession(this.wahaSessionFor(inst));
     return JSON.stringify(session, null, 2);
   }
 
@@ -288,7 +300,11 @@ export class WhatsappSessionService {
 
     let items: ReturnType<typeof Object.assign>[] = [];
     try {
-      items = await this.waha.getMessages(inst.instanceName, remoteJid, limit);
+      items = await this.waha.getMessages(
+        this.wahaSessionFor(inst),
+        remoteJid,
+        limit,
+      );
     } catch (err) {
       this.logger.warn(
         `getMessages falhou: ${err instanceof Error ? err.message : err}`,
@@ -356,7 +372,7 @@ export class WhatsappSessionService {
     }
     let list: { id?: string; name?: string; isGroup?: boolean }[] = [];
     try {
-      list = await this.waha.getChats(inst.instanceName);
+      list = await this.waha.getChats(this.wahaSessionFor(inst));
     } catch (err) {
       this.logger.warn(
         `getChats falhou: ${err instanceof Error ? err.message : err}`,
@@ -421,7 +437,7 @@ export class WhatsappSessionService {
   async disconnect(companyId: string): Promise<WhatsappInstanceEntity> {
     const inst = await this.getOrCreateInstance(companyId);
     try {
-      await this.waha.stopSession(inst.instanceName);
+      await this.waha.stopSession(this.wahaSessionFor(inst));
     } catch (err) {
       this.logger.warn(
         `stopSession falhou: ${err instanceof Error ? err.message : err}`,
@@ -468,8 +484,9 @@ export class WhatsappSessionService {
       throw new BadRequestException('Telefone inválido.');
     }
     const phone = target;
+    const sessionName = this.wahaSessionFor(inst);
     this.logger.log(
-      `sendText: ${inst.instanceName} → ${phone} (${body.length} chars)`,
+      `sendText: ${sessionName} → ${phone} (${body.length} chars)`,
     );
 
     const log = await this.prisma.messageLog.create({
@@ -488,7 +505,7 @@ export class WhatsappSessionService {
     try {
       // WAHA espera chatId no formato JID completo
       const chatId = isJid ? phone : `${phone}@s.whatsapp.net`;
-      const result = await this.waha.sendText(inst.instanceName, chatId, body);
+      const result = await this.waha.sendText(sessionName, chatId, body);
       const externalId = result.id ?? null;
       const updated = await this.prisma.messageLog.update({
         where: { id: log.id },
@@ -508,7 +525,7 @@ export class WhatsappSessionService {
           errorMessage: message.slice(0, 500),
         },
       });
-      this.logger.error(`sendText falhou em ${inst.instanceName}: ${message}`);
+      this.logger.error(`sendText falhou em ${sessionName}: ${message}`);
       throw new BadRequestException(`Falha ao enviar: ${message}`);
     }
   }
@@ -708,7 +725,7 @@ export class WhatsappSessionService {
         const number = normalizePhone(peerNumber);
         const contactId = `${number}@s.whatsapp.net`;
         const avatarRes = await this.waha.getContactAvatar(
-          inst!.instanceName,
+          this.wahaSessionFor(inst!),
           contactId,
         );
         if (avatarRes.url) profilePicUrl = avatarRes.url;
@@ -836,9 +853,28 @@ export class WhatsappSessionService {
     event: string,
     payload: Record<string, unknown>,
   ): Promise<void> {
-    const inst = await this.prisma.whatsappInstance.findUnique({
+    let inst = await this.prisma.whatsappInstance.findUnique({
       where: { instanceName },
     });
+
+    // Single-session mode (WAHA Core): a URL vem com o nome do override
+    // (ex.: "default") mas o DB guarda instanceName por empresa. Resolve
+    // pegando a instância mais recentemente ativa.
+    if (!inst && this.waha.sessionNameOverride === instanceName) {
+      inst = await this.prisma.whatsappInstance.findFirst({
+        where: {
+          status: {
+            in: [
+              WhatsappInstanceStatus.CONNECTED,
+              WhatsappInstanceStatus.QR_PENDING,
+              WhatsappInstanceStatus.CONNECTING,
+            ],
+          },
+        },
+        orderBy: { lastSeenAt: 'desc' },
+      });
+    }
+
     if (!inst) {
       this.logger.warn(`Webhook para instância desconhecida: ${instanceName}`);
       return;
