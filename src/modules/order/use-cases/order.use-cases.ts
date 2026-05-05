@@ -311,6 +311,58 @@ export class OrderUseCases {
         });
       }
 
+      // Auto-cria conta a receber pelo saldo restante.
+      // Regra: status CONFIRMED + tem customer + saldo > 0 + paymentMethod
+      // não-CASH (CASH presume recebimento imediato → vai como CashMovement).
+      const balance = Number((total - Number(input.depositAmount ?? 0)).toFixed(2));
+      const shouldCreateAR =
+        finalStatus === OrderStatus.CONFIRMED &&
+        !!input.customerId &&
+        balance > 0 &&
+        input.paymentMethod !== OrderPaymentMethod.CASH;
+      if (shouldCreateAR) {
+        const dueDate =
+          input.expectedDeliveryDate ??
+          new Date(Date.now() + 30 * 86400_000);
+        await tx.accountReceivable.create({
+          data: {
+            customerId: input.customerId!,
+            orderId: created.id,
+            description: `Pedido #${created.number}`,
+            amount: balance,
+            dueDate: new Date(dueDate),
+            notes: `Auto-gerado pela venda #${created.number} (${PAYMENT_METHOD_LABEL[input.paymentMethod]})`,
+          },
+        });
+      }
+
+      // Se a venda já foi paga à vista (CASH + PAID), registra entrada
+      // no caixa automaticamente — single source of truth.
+      if (
+        finalStatus === OrderStatus.PAID &&
+        input.paymentMethod === OrderPaymentMethod.CASH &&
+        total > 0 &&
+        actor.userId
+      ) {
+        await tx.cashMovement.create({
+          data: {
+            type: 'ENTRY',
+            category: 'SALE',
+            value: total,
+            description: `Venda à vista — Pedido #${created.number}${customerName ? ` (${customerName})` : ''}`,
+            user_id: actor.userId,
+            typePayment: 'CASH',
+            status: 'COMPLETED',
+            referenceCode: `ORDER-${created.number}`,
+            counterpartyName: customerName,
+            counterpartyDocument: customerDocument,
+            orderId: created.id,
+            customerId: input.customerId ?? null,
+            paidAt: new Date(),
+          },
+        });
+      }
+
       await this.audit.log(
         {
           companyId: actor.companyId,
@@ -538,5 +590,103 @@ export class OrderUseCases {
       monthCount: month.length,
       monthTotal: month.reduce((s, o) => s + Number(o.total), 0),
     };
+  }
+
+  /**
+   * Atalho "recebi o pagamento" — em uma única chamada:
+   *  1. Marca todos AccountReceivable pendentes do Order como PAID
+   *  2. Cria (via trigger do AR.update) o CashMovement de entrada
+   *  3. Atualiza o Order pra status=PAID
+   *
+   * Permite ao usuário não precisar passar por 3 telas (Vendas → Contas a
+   * Receber → Movimentações). Aceita opcionalmente paymentMethod e bankId.
+   */
+  async payOrderShortcut(
+    actor: AuditActor,
+    orderId: string,
+    options?: {
+      paymentMethod?: 'CASH' | 'PIX' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'OTHER';
+      bankId?: string;
+      receivedAmount?: number;
+    },
+  ): Promise<OrderEntity> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { customer: true, items: true },
+    });
+    if (!order) throw new NotFoundException('Pedido não encontrado.');
+    if (order.status === OrderStatus.PAID) {
+      throw new BadRequestException('Pedido já está pago.');
+    }
+    if (order.status === OrderStatus.CANCELED) {
+      throw new BadRequestException('Pedido cancelado não pode ser pago.');
+    }
+
+    const customerName = order.customerName ?? order.customer?.name ?? null;
+    const movPayment = options?.paymentMethod ?? 'OTHER';
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      // 1. Marca AR vinculados como pagos
+      const pendingARs = await tx.accountReceivable.findMany({
+        where: { orderId: order.id, status: 'PENDING' },
+      });
+      const now = new Date();
+      for (const ar of pendingARs) {
+        await tx.accountReceivable.update({
+          where: { id: ar.id },
+          data: { status: 'PAID', paidAt: now },
+        });
+      }
+
+      // 2. Cria CashMovement de entrada (dedupe por order)
+      const totalReceived =
+        options?.receivedAmount ?? Number(order.total);
+      const alreadyMov = await tx.cashMovement.findFirst({
+        where: { orderId: order.id, accountReceivableId: null },
+      });
+      if (!alreadyMov && totalReceived > 0 && actor.userId) {
+        await tx.cashMovement.create({
+          data: {
+            type: 'ENTRY',
+            category: 'SALE',
+            value: totalReceived,
+            description: `Recebimento — Pedido #${order.number}${customerName ? ` (${customerName})` : ''}`,
+            user_id: actor.userId,
+            typePayment: movPayment,
+            status: 'COMPLETED',
+            referenceCode: `ORDER-${order.number}`,
+            counterpartyName: customerName,
+            counterpartyDocument: order.customerDocument,
+            orderId: order.id,
+            customerId: order.customerId,
+            bankId: options?.bankId ?? null,
+            paidAt: now,
+          },
+        });
+      }
+
+      // 3. Atualiza Order pra PAID
+      const updatedOrder = await tx.order.update({
+        where: { id: order.id },
+        data: { status: OrderStatus.PAID },
+        include: { customer: true, items: true },
+      });
+
+      await this.audit.log(
+        {
+          companyId: actor.companyId,
+          userId: actor.userId,
+          entity: 'Order',
+          entityId: order.id,
+          action: AuditAction.UPDATE,
+          before: toAuditSnapshot(order),
+          after: toAuditSnapshot(updatedOrder),
+        },
+        tx,
+      );
+      return updatedOrder;
+    });
+
+    return toEntity(updated);
   }
 }

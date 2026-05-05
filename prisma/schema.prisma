@@ -240,6 +240,7 @@ model AccountReceivable {
   productId     String?
   obraId        String?
   centroCustoId String?
+  orderId       String?
   description   String
   amount        Decimal
   interestRate  Decimal               @default(0.033)
@@ -259,6 +260,7 @@ model AccountReceivable {
   @@index([productId])
   @@index([obraId])
   @@index([centroCustoId])
+  @@index([orderId])
   @@index([dueDate])
   @@index([status])
 }
@@ -439,6 +441,9 @@ model CashMovement {
   attachmentUrl        String?
   dueDate              DateTime?
   paidAt               DateTime?
+  orderId              String?
+  accountReceivableId  String?
+  customerId           String?
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
   user                 Users                @relation(fields: [user_id], references: [id])
@@ -451,6 +456,9 @@ model CashMovement {
   @@index([date])
   @@index([referenceCode])
   @@index([bankId])
+  @@index([orderId])
+  @@index([accountReceivableId])
+  @@index([customerId])
 }
 
 model Bank {

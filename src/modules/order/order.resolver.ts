@@ -84,4 +84,35 @@ export class OrderResolver {
     const companyId = await this.tenancy.resolveCompanyId(user);
     return this.useCases.remove({ userId: user.id, companyId }, id);
   }
+
+  /**
+   * Atalho "recebi o pagamento" — marca AR como pago + cria movimento de
+   * entrada no caixa + marca order como PAID, tudo numa transação.
+   */
+  @Mutation(() => OrderEntity)
+  async payOrderShortcut(
+    @CurrentUser() user: User,
+    @Args('orderId') orderId: string,
+    @Args('paymentMethod', { nullable: true }) paymentMethod?: string,
+    @Args('bankId', { nullable: true }) bankId?: string,
+    @Args('receivedAmount', { type: () => Float, nullable: true })
+    receivedAmount?: number,
+  ): Promise<OrderEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.payOrderShortcut(
+      { userId: user.id, companyId },
+      orderId,
+      {
+        paymentMethod: paymentMethod as
+          | 'CASH'
+          | 'PIX'
+          | 'CREDIT_CARD'
+          | 'DEBIT_CARD'
+          | 'OTHER'
+          | undefined,
+        bankId,
+        receivedAmount,
+      },
+    );
+  }
 }

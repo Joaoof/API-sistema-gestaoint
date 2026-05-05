@@ -189,6 +189,50 @@ export class AccountReceivableUseCases {
       include: { customer: true, product: { include: { images: true } } },
     });
 
+    // Auto-cria CashMovement de entrada quando AR passa pra PAID — só uma vez
+    // (dedupe por accountReceivableId). Se ainda existe movimento p/ esse AR
+    // pula. Se faltam paymentMethod/bankId, fica COMPLETED com paymentMethod
+    // OTHER (usuário pode editar depois).
+    const transitionedToPaid =
+      existing.status !== AccountStatus.PAID &&
+      updated.status === AccountStatus.PAID;
+    if (transitionedToPaid && actor.userId) {
+      const already = await this.prisma.cashMovement.findFirst({
+        where: { accountReceivableId: updated.id },
+      });
+      if (!already) {
+        const customerName = updated.customer?.name ?? null;
+        await this.prisma.cashMovement.create({
+          data: {
+            type: 'ENTRY',
+            category: 'SALE',
+            value: updated.amount,
+            description: customerName
+              ? `Recebimento de ${customerName} — ${updated.description}`
+              : `Recebimento — ${updated.description}`,
+            user_id: actor.userId,
+            typePayment: 'OTHER',
+            status: 'COMPLETED',
+            referenceCode: `AR-${updated.id.slice(0, 8)}`,
+            counterpartyName: customerName,
+            counterpartyDocument: updated.customer?.document ?? null,
+            accountReceivableId: updated.id,
+            orderId: updated.orderId ?? null,
+            customerId: updated.customerId,
+            paidAt: updated.paidAt ?? new Date(),
+          },
+        });
+
+        // Se AR estava vinculado a um Order, marca o Order como PAID também.
+        if (updated.orderId) {
+          await this.prisma.order.update({
+            where: { id: updated.orderId },
+            data: { status: 'PAID' },
+          }).catch(() => undefined);
+        }
+      }
+    }
+
     await this.audit.log({
       companyId: actor.companyId,
       userId: actor.userId,
