@@ -1,5 +1,13 @@
 import { UseGuards } from '@nestjs/common';
-import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  Field,
+  Int,
+  Mutation,
+  ObjectType,
+  Query,
+  Resolver,
+} from '@nestjs/graphql';
 import { GqlAuthGuard } from '../../auth/guards/auth.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { TenancyService } from '../construction/shared/tenancy.service';
@@ -10,6 +18,13 @@ import {
   WhatsappMessageEntity,
 } from './entities/whatsapp-session.entity';
 import { WhatsappSessionService } from './use-cases/whatsapp-session.service';
+
+@ObjectType()
+class WebhookConfigResult {
+  @Field() ok!: boolean;
+  @Field(() => String, { nullable: true }) format?: string | null;
+  @Field(() => String, { nullable: true }) webhookUrl?: string | null;
+}
 
 @Resolver(() => WhatsappInstanceEntity)
 @UseGuards(GqlAuthGuard)
@@ -79,5 +94,29 @@ export class WhatsappSessionResolver {
   ): Promise<number> {
     const companyId = await this.tenancy.resolveCompanyId(user);
     return this.service.markConversationRead(companyId, peerNumber);
+  }
+
+  @Mutation(() => WebhookConfigResult)
+  async reconfigureWhatsappWebhook(
+    @CurrentUser() user: AuthUser,
+  ): Promise<WebhookConfigResult> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.reconfigureWebhook(companyId);
+  }
+
+  @Query(() => String)
+  async whatsappWebhookConfig(
+    @CurrentUser() user: AuthUser,
+  ): Promise<string> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.getWebhookConfigFromEvolution(companyId);
+  }
+
+  @Mutation(() => Int)
+  async syncWhatsappFromEvolution(
+    @CurrentUser() user: AuthUser,
+  ): Promise<number> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.syncFromEvolution(companyId);
   }
 }

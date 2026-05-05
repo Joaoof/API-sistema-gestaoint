@@ -167,6 +167,18 @@ export class WhatsappSessionService {
       }
     }
 
+    // Configura webhook num passo dedicado (idempotente)
+    try {
+      const result = await this.evolution.setWebhook(inst.instanceName);
+      this.logger.log(
+        `Webhook registrado em ${inst.instanceName} (${result.format})`,
+      );
+    } catch (err) {
+      this.logger.warn(
+        `setWebhook falhou: ${err instanceof Error ? err.message : err}`,
+      );
+    }
+
     // Pede QR
     let qrDataUrl: string | null = null;
     try {
@@ -198,6 +210,82 @@ export class WhatsappSessionService {
     return this.refreshStatus(companyId).catch(() => toEntity(updated));
   }
 
+  async reconfigureWebhook(
+    companyId: string,
+  ): Promise<{ ok: boolean; format: string | null; webhookUrl: string | null }> {
+    const inst = await this.getOrCreateInstance(companyId);
+    const url = this.evolution.buildWebhookUrl(inst.instanceName);
+    const result = await this.evolution.setWebhook(inst.instanceName);
+    return { ok: result.ok, format: result.format ?? null, webhookUrl: url };
+  }
+
+  async getWebhookConfigFromEvolution(companyId: string): Promise<string> {
+    const inst = await this.getOrCreateInstance(companyId);
+    const result = await this.evolution.getWebhookConfig(inst.instanceName);
+    return JSON.stringify(result, null, 2);
+  }
+
+  async syncFromEvolution(companyId: string): Promise<number> {
+    const inst = await this.getOrCreateInstance(companyId);
+    if (inst.status !== WhatsappInstanceStatus.CONNECTED) {
+      throw new BadRequestException('WhatsApp não está conectado.');
+    }
+    let raw: unknown;
+    try {
+      raw = await this.evolution.findChats(inst.instanceName);
+    } catch (err) {
+      this.logger.warn(
+        `findChats falhou: ${err instanceof Error ? err.message : err}`,
+      );
+      return 0;
+    }
+    const list: Record<string, unknown>[] = Array.isArray(raw)
+      ? (raw as Record<string, unknown>[])
+      : Array.isArray((raw as { chats?: unknown })?.chats)
+        ? ((raw as { chats: Record<string, unknown>[] }).chats)
+        : [];
+
+    let count = 0;
+    for (const chat of list) {
+      const remoteJid =
+        (chat.id as string | undefined) ??
+        (chat.remoteJid as string | undefined);
+      if (!remoteJid || remoteJid.endsWith('@g.us')) continue;
+      const phone = phoneFromJid(remoteJid);
+      if (!phone) continue;
+      const pushName =
+        (chat.name as string | undefined) ??
+        (chat.pushName as string | undefined) ??
+        null;
+      const existing = await this.prisma.messageLog.findFirst({
+        where: {
+          companyId,
+          channel: NotificationChannel.WHATSAPP,
+          OR: [
+            { fromAddress: { contains: phone } },
+            { toAddress: { contains: phone } },
+          ],
+        },
+        select: { id: true },
+      });
+      if (existing) continue;
+      await this.prisma.messageLog.create({
+        data: {
+          companyId,
+          channel: NotificationChannel.WHATSAPP,
+          direction: 'INBOUND',
+          toAddress: '',
+          fromAddress: phone,
+          body: '— conversa importada do WhatsApp —',
+          status: MessageStatus.READ,
+          metadataJson: { pushName, source: 'sync', remoteJid },
+        },
+      });
+      count++;
+    }
+    return count;
+  }
+
   async disconnect(companyId: string): Promise<WhatsappInstanceEntity> {
     const inst = await this.getOrCreateInstance(companyId);
     try {
@@ -227,10 +315,17 @@ export class WhatsappSessionService {
     if (!body.trim()) {
       throw new BadRequestException('Mensagem vazia.');
     }
-    const inst = await this.getOrCreateInstance(companyId);
+    let inst = await this.getOrCreateInstance(companyId);
+    // Se status local diz desconectado, tenta refresh antes de bloquear
+    if (inst.status !== WhatsappInstanceStatus.CONNECTED) {
+      this.logger.log(
+        `sendText: status local é ${inst.status}, fazendo refresh antes de enviar`,
+      );
+      inst = await this.refreshStatus(companyId);
+    }
     if (inst.status !== WhatsappInstanceStatus.CONNECTED) {
       throw new BadRequestException(
-        'WhatsApp não está conectado. Conecte primeiro via QR.',
+        `WhatsApp não está conectado (status: ${inst.status}). Conecte primeiro via QR.`,
       );
     }
 
@@ -238,6 +333,9 @@ export class WhatsappSessionService {
     if (phone.length < 10) {
       throw new BadRequestException('Telefone inválido.');
     }
+    this.logger.log(
+      `sendText: ${inst.instanceName} → ${phone} (${body.length} chars)`,
+    );
 
     const log = await this.prisma.messageLog.create({
       data: {
@@ -270,13 +368,14 @@ export class WhatsappSessionService {
       return mapMessage(updated);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      const updated = await this.prisma.messageLog.update({
+      await this.prisma.messageLog.update({
         where: { id: log.id },
         data: {
           status: MessageStatus.FAILED,
           errorMessage: message.slice(0, 500),
         },
       });
+      this.logger.error(`sendText falhou em ${inst.instanceName}: ${message}`);
       throw new BadRequestException(`Falha ao enviar: ${message}`);
     }
   }

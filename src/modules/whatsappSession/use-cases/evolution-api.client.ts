@@ -99,26 +99,108 @@ export class EvolutionApiClient {
     return parsed as T;
   }
 
+  buildWebhookUrl(instanceName: string): string | null {
+    const base = this.webhookUrl;
+    if (!base) return null;
+    return `${base.replace(/\/+$/, '')}/api/whatsapp/webhook/${instanceName}`;
+  }
+
   async createInstance(instanceName: string): Promise<EvolutionInstance> {
-    const webhook = this.webhookUrl;
-    const body: Record<string, unknown> = {
+    return this.request<EvolutionInstance>('POST', '/instance/create', {
       instanceName,
       qrcode: true,
       integration: 'WHATSAPP-BAILEYS',
-    };
-    if (webhook) {
-      body.webhook = {
-        url: `${webhook.replace(/\/+$/, '')}/api/whatsapp/webhook/${instanceName}`,
-        events: [
-          'CONNECTION_UPDATE',
-          'QRCODE_UPDATED',
-          'MESSAGES_UPSERT',
-          'MESSAGES_UPDATE',
-        ],
-        webhook_by_events: false,
-      };
+    });
+  }
+
+  /**
+   * Configura webhook em endpoint dedicado — mais confiável que junto do create.
+   * Tenta os 3 formatos das versões mais comuns do Evolution.
+   */
+  async setWebhook(
+    instanceName: string,
+  ): Promise<{ ok: boolean; tried: string[]; format?: string }> {
+    const url = this.buildWebhookUrl(instanceName);
+    if (!url) {
+      throw new Error(
+        'EVOLUTION_WEBHOOK_URL não configurada — webhook não pode ser registrado.',
+      );
     }
-    return this.request<EvolutionInstance>('POST', '/instance/create', body);
+    const events = [
+      'CONNECTION_UPDATE',
+      'QRCODE_UPDATED',
+      'MESSAGES_UPSERT',
+      'MESSAGES_UPDATE',
+    ];
+
+    const variants: Array<{ shape: string; body: Record<string, unknown> }> = [
+      {
+        shape: 'v2-nested',
+        body: {
+          webhook: {
+            enabled: true,
+            url,
+            events,
+            webhook_by_events: false,
+            webhookByEvents: false,
+            byEvents: false,
+          },
+        },
+      },
+      {
+        shape: 'v2-flat',
+        body: { url, enabled: true, events, webhookByEvents: false },
+      },
+      { shape: 'v1', body: { url, events, webhook_by_events: false } },
+    ];
+
+    const tried: string[] = [];
+    let lastErr: unknown = null;
+    for (const v of variants) {
+      try {
+        await this.request<unknown>(
+          'POST',
+          `/webhook/set/${encodeURIComponent(instanceName)}`,
+          v.body,
+        );
+        this.logger.log(
+          `Webhook configurado em ${instanceName} (formato: ${v.shape}) → ${url}`,
+        );
+        return { ok: true, tried: [...tried, v.shape], format: v.shape };
+      } catch (err) {
+        tried.push(v.shape);
+        lastErr = err;
+        const msg = err instanceof Error ? err.message : String(err);
+        this.logger.debug(`Formato ${v.shape} falhou: ${msg.slice(0, 200)}`);
+      }
+    }
+    throw new Error(
+      `Falha ao configurar webhook em todos os formatos. Último erro: ${
+        lastErr instanceof Error ? lastErr.message : String(lastErr)
+      }`,
+    );
+  }
+
+  async getWebhookConfig(instanceName: string): Promise<unknown> {
+    return this.request<unknown>(
+      'GET',
+      `/webhook/find/${encodeURIComponent(instanceName)}`,
+    );
+  }
+
+  async findChats(instanceName: string): Promise<unknown> {
+    try {
+      return await this.request<unknown>(
+        'POST',
+        `/chat/findChats/${encodeURIComponent(instanceName)}`,
+        {},
+      );
+    } catch {
+      return this.request<unknown>(
+        'GET',
+        `/chat/findChats/${encodeURIComponent(instanceName)}`,
+      );
+    }
   }
 
   async fetchInstances(instanceName: string): Promise<EvolutionInstance[]> {
@@ -163,13 +245,55 @@ export class EvolutionApiClient {
     toNumber: string,
     text: string,
   ): Promise<EvolutionSendTextResult> {
-    return this.request<EvolutionSendTextResult>(
-      'POST',
-      `/message/sendText/${encodeURIComponent(instanceName)}`,
+    const path = `/message/sendText/${encodeURIComponent(instanceName)}`;
+    const variants: Array<{ shape: string; body: Record<string, unknown> }> = [
+      // Evolution v2.x — formato mais comum
+      { shape: 'v2-flat', body: { number: toNumber, text } },
+      // Evolution v2.x com options
       {
-        number: toNumber,
-        text,
+        shape: 'v2-options',
+        body: {
+          number: toNumber,
+          text,
+          options: { delay: 1000, presence: 'composing' },
+        },
       },
+      // Evolution v1.x
+      {
+        shape: 'v1',
+        body: {
+          number: toNumber,
+          options: { delay: 1000 },
+          textMessage: { text },
+        },
+      },
+    ];
+
+    let lastErr: unknown = null;
+    for (const v of variants) {
+      try {
+        const result = await this.request<EvolutionSendTextResult>(
+          'POST',
+          path,
+          v.body,
+        );
+        this.logger.debug(
+          `sendText OK em ${instanceName} (formato: ${v.shape})`,
+        );
+        return result;
+      } catch (err) {
+        lastErr = err;
+        const msg = err instanceof Error ? err.message : String(err);
+        // Se o erro é 401/403/404 não vale a pena tentar outros formatos
+        if (msg.includes('401') || msg.includes('403') || msg.includes('404')) {
+          throw err;
+        }
+      }
+    }
+    throw new Error(
+      `Falha ao enviar texto: ${
+        lastErr instanceof Error ? lastErr.message : String(lastErr)
+      }`,
     );
   }
 }
