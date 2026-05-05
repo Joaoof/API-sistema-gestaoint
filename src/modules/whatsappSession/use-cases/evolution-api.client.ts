@@ -188,6 +188,65 @@ export class EvolutionApiClient {
     );
   }
 
+  async fetchProfilePictureUrl(
+    instanceName: string,
+    number: string,
+  ): Promise<{ profilePictureUrl: string | null }> {
+    const path = `/chat/fetchProfilePictureUrl/${encodeURIComponent(instanceName)}`;
+    try {
+      const result = await this.request<Record<string, unknown>>('POST', path, {
+        number,
+      });
+      const url =
+        (result.profilePictureUrl as string | undefined) ??
+        (result.profilePicUrl as string | undefined) ??
+        ((result as { url?: string }).url) ??
+        null;
+      return { profilePictureUrl: url };
+    } catch (err) {
+      this.logger.debug(
+        `fetchProfilePictureUrl falhou: ${err instanceof Error ? err.message : err}`,
+      );
+      return { profilePictureUrl: null };
+    }
+  }
+
+  async fetchProfile(
+    instanceName: string,
+    number: string,
+  ): Promise<Record<string, unknown> | null> {
+    const path = `/chat/fetchProfile/${encodeURIComponent(instanceName)}`;
+    try {
+      const result = await this.request<Record<string, unknown>>('POST', path, {
+        number,
+      });
+      return result;
+    } catch (err) {
+      this.logger.debug(
+        `fetchProfile falhou: ${err instanceof Error ? err.message : err}`,
+      );
+      return null;
+    }
+  }
+
+  async fetchBusinessProfile(
+    instanceName: string,
+    number: string,
+  ): Promise<Record<string, unknown> | null> {
+    const path = `/chat/fetchBusinessProfile/${encodeURIComponent(instanceName)}`;
+    try {
+      const result = await this.request<Record<string, unknown>>('POST', path, {
+        number,
+      });
+      return result;
+    } catch (err) {
+      this.logger.debug(
+        `fetchBusinessProfile falhou: ${err instanceof Error ? err.message : err}`,
+      );
+      return null;
+    }
+  }
+
   async findChats(instanceName: string): Promise<unknown> {
     try {
       return await this.request<unknown>(

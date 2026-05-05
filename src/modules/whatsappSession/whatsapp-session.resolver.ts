@@ -143,4 +143,30 @@ export class WhatsappSessionResolver {
       limit ?? 200,
     );
   }
+
+  @Mutation(() => Int)
+  async linkCustomerToWhatsappContact(
+    @CurrentUser() user: AuthUser,
+    @Args('peerNumber') peerNumber: string,
+    @Args('customerId') customerId: string,
+  ): Promise<number> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.linkCustomerToWhatsappContact(
+      companyId,
+      peerNumber,
+      customerId,
+    );
+  }
+
+  @Mutation(() => Int)
+  async unlinkCustomerFromWhatsappContact(
+    @CurrentUser() user: AuthUser,
+    @Args('peerNumber') peerNumber: string,
+  ): Promise<number> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.unlinkCustomerFromWhatsappContact(
+      companyId,
+      peerNumber,
+    );
+  }
 }

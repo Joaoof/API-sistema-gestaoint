@@ -710,48 +710,147 @@ export class WhatsappSessionService {
       channel: NotificationChannel.WHATSAPP,
       ...this.buildPeerWhere(peerNumber),
     };
-    const [
-      first,
-      last,
-      total,
-      inbound,
-      outbound,
-    ] = await this.prisma.$transaction([
-      this.prisma.messageLog.findFirst({
-        where,
-        orderBy: { createdAt: 'asc' },
-        include: { customer: { select: { id: true, name: true } } },
-      }),
-      this.prisma.messageLog.findFirst({
-        where,
-        orderBy: { createdAt: 'desc' },
-        include: { customer: { select: { id: true, name: true } } },
-      }),
-      this.prisma.messageLog.count({ where }),
-      this.prisma.messageLog.count({ where: { ...where, direction: 'INBOUND' } }),
-      this.prisma.messageLog.count({ where: { ...where, direction: 'OUTBOUND' } }),
-    ]);
+    const [first, last, total, inbound, outbound] =
+      await this.prisma.$transaction([
+        this.prisma.messageLog.findFirst({
+          where,
+          orderBy: { createdAt: 'asc' },
+          include: { customer: { select: { id: true, name: true } } },
+        }),
+        this.prisma.messageLog.findFirst({
+          where,
+          orderBy: { createdAt: 'desc' },
+          include: { customer: { select: { id: true, name: true } } },
+        }),
+        this.prisma.messageLog.count({ where }),
+        this.prisma.messageLog.count({
+          where: { ...where, direction: 'INBOUND' },
+        }),
+        this.prisma.messageLog.count({
+          where: { ...where, direction: 'OUTBOUND' },
+        }),
+      ]);
 
     const isGroup = isGroupJid(peerNumber);
-    const meta = (last?.metadataJson ??
+    const baseMeta = (last?.metadataJson ??
       first?.metadataJson ??
       {}) as Record<string, unknown>;
+
+    // Cache de profile no metadata (evita bater no Evolution toda hora)
+    const profileCache =
+      (baseMeta.profileCache as Record<string, unknown> | undefined) ?? {};
+    const cachedAt =
+      typeof profileCache.fetchedAt === 'number'
+        ? profileCache.fetchedAt
+        : 0;
+    const STALE_MS = 24 * 60 * 60 * 1000; // 24h
+    const isStale = Date.now() - cachedAt > STALE_MS;
+
+    let profilePicUrl =
+      (profileCache.profilePicUrl as string | undefined) ??
+      (baseMeta.profilePicUrl as string | undefined) ??
+      null;
+    let about: string | null =
+      (profileCache.about as string | undefined) ?? null;
+    let isBusiness = !!profileCache.isBusiness;
+    let verifiedName =
+      (profileCache.verifiedName as string | undefined) ?? null;
+    let businessCategory =
+      (profileCache.businessCategory as string | undefined) ?? null;
+    let businessDescription =
+      (profileCache.businessDescription as string | undefined) ?? null;
+    let evolutionDisplayName: string | null = null;
+
+    // Tenta enriquecer via Evolution se conectado e (cache vazio OR stale)
+    const inst = await this.prisma.whatsappInstance.findUnique({
+      where: { companyId },
+    });
+    const canFetch =
+      inst?.status === WhatsappInstanceStatus.CONNECTED && !isGroup;
+
+    if (canFetch && (isStale || !profilePicUrl)) {
+      try {
+        const number = normalizePhone(peerNumber);
+        const [picRes, profile, business] = await Promise.all([
+          this.evolution.fetchProfilePictureUrl(inst!.instanceName, number),
+          this.evolution.fetchProfile(inst!.instanceName, number),
+          this.evolution.fetchBusinessProfile(inst!.instanceName, number),
+        ]);
+
+        if (picRes.profilePictureUrl) {
+          profilePicUrl = picRes.profilePictureUrl;
+        }
+        if (profile) {
+          about =
+            (profile.status as string | undefined) ??
+            (profile.about as string | undefined) ??
+            ((profile.bio as string | undefined) ?? about);
+          if (profile.isBusiness !== undefined) {
+            isBusiness = !!profile.isBusiness;
+          }
+          if (typeof profile.name === 'string' && profile.name) {
+            evolutionDisplayName = profile.name;
+          }
+          if (profile.verifiedName) {
+            verifiedName = profile.verifiedName as string;
+          }
+        }
+        if (business && Object.keys(business).length > 0) {
+          isBusiness = true;
+          if (typeof business.description === 'string') {
+            businessDescription = business.description;
+          }
+          if (Array.isArray(business.categories)) {
+            businessCategory = (business.categories as string[]).join(', ');
+          } else if (typeof business.category === 'string') {
+            businessCategory = business.category;
+          }
+          if (typeof business.verifiedName === 'string') {
+            verifiedName = business.verifiedName;
+          }
+        }
+
+        // Persiste o cache no MessageLog mais recente
+        if (last) {
+          const newMeta = {
+            ...baseMeta,
+            profileCache: {
+              fetchedAt: Date.now(),
+              profilePicUrl,
+              about,
+              isBusiness,
+              verifiedName,
+              businessCategory,
+              businessDescription,
+            },
+          };
+          await this.prisma.messageLog.update({
+            where: { id: last.id },
+            data: { metadataJson: newMeta as Prisma.InputJsonValue },
+          });
+        }
+      } catch (err) {
+        this.logger.warn(
+          `getContact: enrichment falhou: ${err instanceof Error ? err.message : err}`,
+        );
+      }
+    }
+
     const displayName =
-      (meta.pushName as string | undefined) ??
-      (meta.subject as string | undefined) ??
+      verifiedName ??
+      evolutionDisplayName ??
+      (baseMeta.pushName as string | undefined) ??
+      (baseMeta.subject as string | undefined) ??
       last?.customer?.name ??
       first?.customer?.name ??
       (isGroup ? 'Grupo do WhatsApp' : peerNumber);
-    const profilePicUrl =
-      (meta.profilePicUrl as string | undefined) ?? null;
+
     const customerId = last?.customerId ?? first?.customerId ?? null;
     const customerName =
       last?.customer?.name ?? first?.customer?.name ?? null;
     const phoneDigits = isGroup ? '' : normalizePhone(peerNumber);
     const phoneFormatted = isGroup ? null : phoneDigits;
-    const waLink = isGroup
-      ? ''
-      : `https://wa.me/${phoneDigits}`;
+    const waLink = isGroup ? '' : `https://wa.me/${phoneDigits}`;
 
     return {
       peerNumber,
@@ -759,7 +858,11 @@ export class WhatsappSessionService {
       phoneFormatted,
       isGroup,
       profilePicUrl,
-      about: null,
+      about,
+      isBusiness,
+      verifiedName,
+      businessCategory,
+      businessDescription,
       customerId,
       customerName,
       totalMessages: total,
@@ -769,6 +872,43 @@ export class WhatsappSessionService {
       lastMessageAt: last?.createdAt ?? null,
       waLink,
     };
+  }
+
+  async linkCustomerToWhatsappContact(
+    companyId: string,
+    peerNumber: string,
+    customerId: string,
+  ): Promise<number> {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+    });
+    if (!customer) {
+      throw new BadRequestException('Cliente não encontrado.');
+    }
+    const result = await this.prisma.messageLog.updateMany({
+      where: {
+        companyId,
+        channel: NotificationChannel.WHATSAPP,
+        ...this.buildPeerWhere(peerNumber),
+      },
+      data: { customerId },
+    });
+    return result.count;
+  }
+
+  async unlinkCustomerFromWhatsappContact(
+    companyId: string,
+    peerNumber: string,
+  ): Promise<number> {
+    const result = await this.prisma.messageLog.updateMany({
+      where: {
+        companyId,
+        channel: NotificationChannel.WHATSAPP,
+        ...this.buildPeerWhere(peerNumber),
+      },
+      data: { customerId: null },
+    });
+    return result.count;
   }
 
   async markConversationRead(

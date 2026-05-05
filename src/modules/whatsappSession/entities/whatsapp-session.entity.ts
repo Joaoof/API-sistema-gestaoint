@@ -50,6 +50,10 @@ export class WhatsappContactEntity {
   @Field() isGroup!: boolean;
   @Field(() => String, { nullable: true }) profilePicUrl?: string | null;
   @Field(() => String, { nullable: true }) about?: string | null;
+  @Field() isBusiness!: boolean;
+  @Field(() => String, { nullable: true }) verifiedName?: string | null;
+  @Field(() => String, { nullable: true }) businessCategory?: string | null;
+  @Field(() => String, { nullable: true }) businessDescription?: string | null;
   @Field(() => String, { nullable: true }) customerId?: string | null;
   @Field(() => String, { nullable: true }) customerName?: string | null;
   @Field(() => Int) totalMessages!: number;
