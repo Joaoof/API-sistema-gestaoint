@@ -88,10 +88,33 @@ export class WahaApiClient {
     return v && v.trim().length > 0 ? v.trim() : null;
   }
 
+  private isValidHttpUrl(value: string): boolean {
+    try {
+      const u = new URL(value);
+      return u.protocol === 'http:' || u.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }
+
   buildWebhookUrl(sessionName: string): string | null {
-    const base = this.webhookBaseUrl;
-    if (!base) return null;
-    return `${base.replace(/\/+$/, '')}/api/whatsapp/webhook/${sessionName}`;
+    const raw = this.webhookBaseUrl;
+    if (!raw) return null;
+    const base = raw.trim().replace(/\/+$/, '');
+    if (!base || !this.isValidHttpUrl(base)) {
+      this.logger.warn(
+        `WAHA_WEBHOOK_URL inválida ("${raw}"). Criando sessão SEM webhook — ` +
+          `para receber mensagens em tempo real, configure uma URL HTTPS pública ` +
+          `(ngrok em dev) e chame "Reconfigurar webhook" no painel.`,
+      );
+      return null;
+    }
+    const url = `${base}/api/whatsapp/webhook/${encodeURIComponent(sessionName)}`;
+    if (!this.isValidHttpUrl(url)) {
+      this.logger.warn(`webhookUrl construída ficou inválida: "${url}"`);
+      return null;
+    }
+    return url;
   }
 
   private async request<T>(
@@ -135,14 +158,15 @@ export class WahaApiClient {
   }
 
   async createSession(name: string, webhookUrl: string | null): Promise<WahaSession> {
-    const webhooks = webhookUrl
-      ? [
-          {
-            url: webhookUrl,
-            events: ['message', 'message.ack', 'session.status'],
-          },
-        ]
-      : [];
+    const webhooks =
+      webhookUrl && this.isValidHttpUrl(webhookUrl)
+        ? [
+            {
+              url: webhookUrl,
+              events: ['message', 'message.ack', 'session.status'],
+            },
+          ]
+        : [];
     return this.request<WahaSession>('POST', '/api/sessions', {
       name,
       config: { webhooks },
@@ -150,6 +174,11 @@ export class WahaApiClient {
   }
 
   async updateSessionWebhook(name: string, webhookUrl: string): Promise<WahaSession> {
+    if (!this.isValidHttpUrl(webhookUrl)) {
+      throw new Error(
+        `URL de webhook inválida ("${webhookUrl}"). Use uma URL HTTPS pública (ex.: ngrok em dev).`,
+      );
+    }
     return this.request<WahaSession>('PUT', `/api/sessions/${encodeURIComponent(name)}`, {
       config: {
         webhooks: [
