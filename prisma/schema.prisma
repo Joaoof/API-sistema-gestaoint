@@ -121,6 +121,7 @@ model Customer {
   receivables  AccountReceivable[]
   orders       Order[]
   obras        Obra[]
+  messageLogs  MessageLog[]
 
   @@index([name])
   @@index([document])
@@ -303,34 +304,39 @@ model Inventory {
 }
 
 model Company {
-  id                String                @id @default(cuid())
-  name              String                @unique
-  nomeFantasia      String?
-  razaoSocial       String?
-  inscricaoEstadual String?
-  bairro            String?
-  cidade            String?
-  estado            String?
-  cep               String?
-  email             String?               @unique
-  phone             String?
-  address           String?
-  cnpj              String?               @unique
-  logoUrl           String?
-  latitude          Float?
-  longitude         Float?
-  is_active         Boolean?              @default(true)
-  createdAt         DateTime              @default(now())
-  Users             Users[]
-  companyPlan       CompanyPlan?
-  obras             Obra[]
-  centrosCusto      CentroCusto[]
-  categoriasObra    CategoriaConstrucao[]
-  versoesOrcamento  VersaoOrcamento[]
-  transacoes        TransacaoFinanceira[]
-  auditLogs         AuditLog[]
-  fiscalConfig      CompanyFiscalConfig?
-  invoices          Invoice[]
+  id                    String                 @id @default(cuid())
+  name                  String                 @unique
+  nomeFantasia          String?
+  razaoSocial           String?
+  inscricaoEstadual     String?
+  bairro                String?
+  cidade                String?
+  estado                String?
+  cep                   String?
+  email                 String?                @unique
+  phone                 String?
+  address               String?
+  cnpj                  String?                @unique
+  logoUrl               String?
+  latitude              Float?
+  longitude             Float?
+  is_active             Boolean?               @default(true)
+  createdAt             DateTime               @default(now())
+  Users                 Users[]
+  companyPlan           CompanyPlan?
+  obras                 Obra[]
+  centrosCusto          CentroCusto[]
+  categoriasObra        CategoriaConstrucao[]
+  versoesOrcamento      VersaoOrcamento[]
+  transacoes            TransacaoFinanceira[]
+  auditLogs             AuditLog[]
+  fiscalConfig          CompanyFiscalConfig?
+  invoices              Invoice[]
+  settings              CompanySettings?
+  financialAccounts     FinancialAccount[]
+  notifications         Notification[]
+  notificationTemplates NotificationTemplate[]
+  messageLogs           MessageLog[]
 }
 
 model Modules {
@@ -362,6 +368,7 @@ model Users {
   transacoesConfirmadas   TransacaoFinanceira[] @relation("TransacaoConfirmadaPor")
   auditLogs               AuditLog[]
   invoicesCreated         Invoice[]             @relation("InvoiceCreatedBy")
+  notifications           Notification[]
 
   @@index([company_id])
   @@index([company_id, email])
@@ -1140,4 +1147,167 @@ enum TaxRegime {
   SIMPLES_NACIONAL_EXCESSO
   REGIME_NORMAL
   MEI
+}
+
+// =====================================================================
+// CONFIGURAÇÕES DO SISTEMA
+// =====================================================================
+
+model CompanySettings {
+  id                   String   @id @default(uuid())
+  companyId            String   @unique
+  currency             String   @default("BRL")
+  locale               String   @default("pt-BR")
+  timezone             String   @default("America/Sao_Paulo")
+  dateFormat           String   @default("dd/MM/yyyy")
+  timeFormat           String   @default("HH:mm")
+  numberDecimals       Int      @default(2)
+  numberDecimalSep     String   @default(",")
+  numberThousandSep    String   @default(".")
+  weekStartsOn         Int      @default(0)
+  fiscalYearStartMonth Int      @default(1)
+  defaultPageSize      Int      @default(50)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  company              Company  @relation(fields: [companyId], references: [id])
+}
+
+model FinancialAccount {
+  id          String               @id @default(uuid())
+  companyId   String
+  code        String
+  name        String
+  type        FinancialAccountType
+  parentId    String?
+  active      Boolean              @default(true)
+  description String?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  company     Company              @relation(fields: [companyId], references: [id])
+  parent      FinancialAccount?    @relation("FinancialAccountTree", fields: [parentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  children    FinancialAccount[]   @relation("FinancialAccountTree")
+
+  @@unique([companyId, code])
+  @@index([companyId, type])
+  @@index([companyId, parentId])
+}
+
+enum FinancialAccountType {
+  INCOME
+  EXPENSE
+  ASSET
+  LIABILITY
+  EQUITY
+}
+
+// =====================================================================
+// NOTIFICAÇÕES + COMUNICAÇÕES
+// =====================================================================
+
+model Notification {
+  id           String               @id @default(uuid())
+  companyId    String
+  userId       String?
+  type         NotificationType
+  severity     NotificationSeverity @default(INFO)
+  title        String
+  message      String
+  href         String?
+  entity       String?
+  entityId     String?
+  metadataJson Json?
+  readAt       DateTime?
+  createdAt    DateTime             @default(now())
+  expiresAt    DateTime?
+  company      Company              @relation(fields: [companyId], references: [id])
+  user         Users?               @relation(fields: [userId], references: [id])
+
+  @@index([companyId, userId, readAt])
+  @@index([companyId, createdAt(sort: Desc)])
+  @@index([companyId, type])
+}
+
+model NotificationTemplate {
+  id        String              @id @default(uuid())
+  companyId String
+  key       String
+  channel   NotificationChannel
+  name      String
+  subject   String?
+  body      String
+  active    Boolean             @default(true)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  company   Company             @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, key, channel])
+  @@index([companyId])
+}
+
+model MessageLog {
+  id           String              @id @default(uuid())
+  companyId    String
+  channel      NotificationChannel
+  direction    MessageDirection    @default(OUTBOUND)
+  toAddress    String
+  fromAddress  String?
+  subject      String?
+  body         String
+  status       MessageStatus       @default(PENDING)
+  externalId   String?
+  errorMessage String?
+  customerId   String?
+  templateKey  String?
+  metadataJson Json?
+  createdAt    DateTime            @default(now())
+  sentAt       DateTime?
+  deliveredAt  DateTime?
+  readAt       DateTime?
+  company      Company             @relation(fields: [companyId], references: [id])
+  customer     Customer?           @relation(fields: [customerId], references: [id])
+
+  @@index([companyId, createdAt(sort: Desc)])
+  @@index([companyId, customerId])
+  @@index([companyId, status])
+  @@index([externalId])
+}
+
+enum NotificationType {
+  STOCK_LOW
+  ORDER_PENDING
+  INVOICE_DUE
+  INVOICE_OVERDUE
+  PAYMENT_RECEIVED
+  PAYMENT_FAILED
+  DELIVERY_SCHEDULED
+  DELIVERY_COMPLETED
+  CUSTOM
+  INFO
+}
+
+enum NotificationSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  WHATSAPP
+  SMS
+  PUSH
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  READ
 }

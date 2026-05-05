@@ -31,6 +31,11 @@ import { BankModule } from './modules/bank/bank.module';
 import { InvoiceModule } from './modules/invoice/invoice.module';
 import { CompanyFiscalConfigModule } from './modules/companyFiscalConfig/company-fiscal-config.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { CompanySettingsModule } from './modules/companySettings/company-settings.module';
+import { FinancialAccountModule } from './modules/financialAccount/financial-account.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { NotificationTemplateModule } from './modules/notificationTemplate/notification-template.module';
+import { MessageLogModule } from './modules/messageLog/message-log.module';
 
 @Module({
   imports: [
@@ -84,6 +89,11 @@ import { AuditModule } from './modules/audit/audit.module';
     InvoiceModule,
     CompanyFiscalConfigModule,
     AuditModule,
+    CompanySettingsModule,
+    FinancialAccountModule,
+    NotificationModule,
+    NotificationTemplateModule,
+    MessageLogModule,
   ],
   controllers: [AppController],
   providers: [
