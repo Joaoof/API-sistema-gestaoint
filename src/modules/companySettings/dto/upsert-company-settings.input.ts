@@ -80,4 +80,16 @@ export class UpsertCompanySettingsInput {
   @Min(10)
   @Max(500)
   defaultPageSize?: number;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  companyWhatsappNumber?: string | null;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  companyWhatsappName?: string | null;
 }

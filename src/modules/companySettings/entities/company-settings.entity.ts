@@ -15,6 +15,8 @@ export class CompanySettingsEntity {
   @Field(() => Int) weekStartsOn!: number;
   @Field(() => Int) fiscalYearStartMonth!: number;
   @Field(() => Int) defaultPageSize!: number;
+  @Field(() => String, { nullable: true }) companyWhatsappNumber?: string | null;
+  @Field(() => String, { nullable: true }) companyWhatsappName?: string | null;
   @Field(() => GraphQLISODateTime) createdAt!: Date;
   @Field(() => GraphQLISODateTime) updatedAt!: Date;
 }

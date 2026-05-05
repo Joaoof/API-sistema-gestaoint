@@ -1158,22 +1158,24 @@ enum TaxRegime {
 // =====================================================================
 
 model CompanySettings {
-  id                   String   @id @default(uuid())
-  companyId            String   @unique
-  currency             String   @default("BRL")
-  locale               String   @default("pt-BR")
-  timezone             String   @default("America/Sao_Paulo")
-  dateFormat           String   @default("dd/MM/yyyy")
-  timeFormat           String   @default("HH:mm")
-  numberDecimals       Int      @default(2)
-  numberDecimalSep     String   @default(",")
-  numberThousandSep    String   @default(".")
-  weekStartsOn         Int      @default(0)
-  fiscalYearStartMonth Int      @default(1)
-  defaultPageSize      Int      @default(50)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-  company              Company  @relation(fields: [companyId], references: [id])
+  id                     String   @id @default(uuid())
+  companyId              String   @unique
+  currency               String   @default("BRL")
+  locale                 String   @default("pt-BR")
+  timezone               String   @default("America/Sao_Paulo")
+  dateFormat             String   @default("dd/MM/yyyy")
+  timeFormat             String   @default("HH:mm")
+  numberDecimals         Int      @default(2)
+  numberDecimalSep       String   @default(",")
+  numberThousandSep      String   @default(".")
+  weekStartsOn           Int      @default(0)
+  fiscalYearStartMonth   Int      @default(1)
+  defaultPageSize        Int      @default(50)
+  companyWhatsappNumber  String?
+  companyWhatsappName    String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  company                Company  @relation(fields: [companyId], references: [id])
 }
 
 model FinancialAccount {

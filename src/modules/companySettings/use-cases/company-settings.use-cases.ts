@@ -23,6 +23,8 @@ function toEntity(raw: RawSettings): CompanySettingsEntity {
     weekStartsOn: raw.weekStartsOn,
     fiscalYearStartMonth: raw.fiscalYearStartMonth,
     defaultPageSize: raw.defaultPageSize,
+    companyWhatsappNumber: raw.companyWhatsappNumber,
+    companyWhatsappName: raw.companyWhatsappName,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
   };
@@ -77,6 +79,12 @@ export class CompanySettingsUseCases {
         : {}),
       ...(input.defaultPageSize !== undefined
         ? { defaultPageSize: input.defaultPageSize }
+        : {}),
+      ...(input.companyWhatsappNumber !== undefined
+        ? { companyWhatsappNumber: input.companyWhatsappNumber }
+        : {}),
+      ...(input.companyWhatsappName !== undefined
+        ? { companyWhatsappName: input.companyWhatsappName }
         : {}),
     };
 

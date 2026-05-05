@@ -38,6 +38,7 @@ import { NotificationTemplateModule } from './modules/notificationTemplate/notif
 import { MessageLogModule } from './modules/messageLog/message-log.module';
 import { OpportunityModule } from './modules/opportunity/opportunity.module';
 import { ContractModule } from './modules/contract/contract.module';
+import { WhatsappModule } from './modules/whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -98,6 +99,7 @@ import { ContractModule } from './modules/contract/contract.module';
     MessageLogModule,
     OpportunityModule,
     ContractModule,
+    WhatsappModule,
   ],
   controllers: [AppController],
   providers: [
