@@ -280,7 +280,7 @@ export class WhatsappSessionService {
             if (raw) {
               qrDataUrl = raw.startsWith('data:')
                 ? raw
-                : `data:image/png;base64,${raw}`;
+                : `data:${qr.mimetype ?? 'image/png'};base64,${raw}`;
               break;
             }
           } catch (err) {

@@ -206,8 +206,41 @@ export class WahaApiClient {
 
   // ---------- Auth / QR ----------
 
+  /**
+   * O endpoint /api/{session}/auth/qr do WAHA retorna PNG binário por padrão
+   * (Content-Type: image/png). Buscamos o binário e convertemos em data URL
+   * pra que o front possa exibir em <img src=...> direto.
+   * Se o body vier como JSON (algumas versões), aceitamos isso também.
+   */
   async getQr(name: string): Promise<WahaQrResult> {
-    return this.request<WahaQrResult>('GET', `/api/${encodeURIComponent(name)}/auth/qr`);
+    const url = `${this.baseUrl}/api/${encodeURIComponent(name)}/auth/qr?format=image`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'X-Api-Key': this.apiKey, Accept: 'image/png, application/json' },
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      this.logger.warn(`WAHA GET /auth/qr → ${response.status}: ${text.slice(0, 200)}`);
+      throw new Error(`WAHA QR ${response.status}: ${text.slice(0, 200)}`);
+    }
+
+    const contentType = response.headers.get('content-type') ?? '';
+    if (contentType.includes('application/json')) {
+      const json = (await response.json()) as Record<string, unknown>;
+      const value =
+        (json.value as string | undefined) ??
+        (json.data as string | undefined) ??
+        null;
+      const mimetype =
+        (json.mimetype as string | undefined) ?? 'image/png';
+      return { value: value ?? undefined, mimetype };
+    }
+
+    // PNG (ou outro binário) — converte para data URL
+    const buf = Buffer.from(await response.arrayBuffer());
+    const mimetype = contentType.split(';')[0]?.trim() || 'image/png';
+    return { value: `data:${mimetype};base64,${buf.toString('base64')}`, mimetype };
   }
 
   // ---------- Messages ----------
