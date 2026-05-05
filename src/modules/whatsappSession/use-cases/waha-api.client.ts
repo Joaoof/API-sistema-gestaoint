@@ -1,0 +1,223 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+
+export interface WahaSession {
+  name: string;
+  status: 'STOPPED' | 'STARTING' | 'SCAN_QR_CODE' | 'WORKING' | 'FAILED' | string;
+  me?: { id?: string; pushName?: string } | null;
+}
+
+export interface WahaQrResult {
+  /** data:image/png;base64,... */
+  value?: string;
+  mimetype?: string;
+}
+
+export interface WahaSendResult {
+  id?: string;
+  timestamp?: number;
+}
+
+export interface WahaMessage {
+  id?: string;
+  timestamp?: number;
+  from?: string;
+  fromMe?: boolean;
+  to?: string;
+  body?: string;
+  hasMedia?: boolean;
+  ack?: number;
+  _data?: {
+    id?: { id?: string; fromMe?: boolean; remote?: string };
+    pushName?: string;
+    notifyName?: string;
+  };
+}
+
+export interface WahaChat {
+  id?: string;
+  name?: string;
+  isGroup?: boolean;
+  timestamp?: number;
+}
+
+export interface WahaContactAvatar {
+  url?: string;
+  value?: string;
+}
+
+@Injectable()
+export class WahaApiClient {
+  private readonly logger = new Logger(WahaApiClient.name);
+
+  constructor(private readonly config: ConfigService) {}
+
+  private get baseUrl(): string {
+    const url = this.config.get<string>('WAHA_API_URL');
+    if (!url) throw new Error('WAHA_API_URL não configurada no .env.');
+    return url.replace(/\/+$/, '');
+  }
+
+  private get apiKey(): string {
+    const key = this.config.get<string>('WAHA_API_KEY');
+    if (!key) throw new Error('WAHA_API_KEY não configurada no .env.');
+    return key;
+  }
+
+  private get webhookBaseUrl(): string | null {
+    return (
+      this.config.get<string>('WAHA_WEBHOOK_URL') ??
+      this.config.get<string>('WEBHOOK_PUBLIC_URL') ??
+      null
+    );
+  }
+
+  get webhookToken(): string {
+    return this.config.get<string>('WAHA_WEBHOOK_TOKEN') ?? '';
+  }
+
+  buildWebhookUrl(sessionName: string): string | null {
+    const base = this.webhookBaseUrl;
+    if (!base) return null;
+    return `${base.replace(/\/+$/, '')}/api/whatsapp/webhook/${sessionName}`;
+  }
+
+  private async request<T>(
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+    path: string,
+    body?: unknown,
+  ): Promise<T> {
+    const url = `${this.baseUrl}${path}`;
+    const init: RequestInit = {
+      method,
+      headers: {
+        'X-Api-Key': this.apiKey,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+    };
+    if (body !== undefined) init.body = JSON.stringify(body);
+    const response = await fetch(url, init);
+    const text = await response.text();
+    let parsed: unknown = null;
+    try {
+      parsed = text ? JSON.parse(text) : null;
+    } catch {
+      parsed = text;
+    }
+    if (!response.ok) {
+      const message =
+        typeof parsed === 'object' && parsed !== null
+          ? JSON.stringify(parsed)
+          : String(parsed);
+      this.logger.warn(`WAHA ${method} ${path} → ${response.status}: ${message}`);
+      throw new Error(`WAHA API ${response.status}: ${message.slice(0, 500)}`);
+    }
+    return parsed as T;
+  }
+
+  // ---------- Session ----------
+
+  async getSession(name: string): Promise<WahaSession> {
+    return this.request<WahaSession>('GET', `/api/sessions/${encodeURIComponent(name)}`);
+  }
+
+  async createSession(name: string, webhookUrl: string | null): Promise<WahaSession> {
+    const webhooks = webhookUrl
+      ? [
+          {
+            url: webhookUrl,
+            events: ['message', 'message.ack', 'session.status'],
+          },
+        ]
+      : [];
+    return this.request<WahaSession>('POST', '/api/sessions', {
+      name,
+      config: { webhooks },
+    });
+  }
+
+  async updateSessionWebhook(name: string, webhookUrl: string): Promise<WahaSession> {
+    return this.request<WahaSession>('PUT', `/api/sessions/${encodeURIComponent(name)}`, {
+      config: {
+        webhooks: [
+          {
+            url: webhookUrl,
+            events: ['message', 'message.ack', 'session.status'],
+          },
+        ],
+      },
+    });
+  }
+
+  async stopSession(name: string): Promise<void> {
+    await this.request<unknown>('POST', `/api/sessions/${encodeURIComponent(name)}/stop`);
+  }
+
+  async deleteSession(name: string): Promise<void> {
+    await this.request<unknown>('DELETE', `/api/sessions/${encodeURIComponent(name)}`);
+  }
+
+  // ---------- Auth / QR ----------
+
+  async getQr(name: string): Promise<WahaQrResult> {
+    return this.request<WahaQrResult>('GET', `/api/${encodeURIComponent(name)}/auth/qr`);
+  }
+
+  // ---------- Messages ----------
+
+  async sendText(sessionName: string, chatId: string, text: string): Promise<WahaSendResult> {
+    return this.request<WahaSendResult>('POST', '/api/sendText', {
+      session: sessionName,
+      chatId,
+      text,
+    });
+  }
+
+  async getMessages(
+    sessionName: string,
+    chatId: string,
+    limit = 200,
+  ): Promise<WahaMessage[]> {
+    const qs = new URLSearchParams({
+      chatId,
+      limit: String(limit),
+      downloadMedia: 'false',
+    });
+    const result = await this.request<WahaMessage[] | { messages?: WahaMessage[] }>(
+      'GET',
+      `/api/${encodeURIComponent(sessionName)}/messages?${qs}`,
+    );
+    return Array.isArray(result) ? result : (result?.messages ?? []);
+  }
+
+  // ---------- Chats ----------
+
+  async getChats(sessionName: string): Promise<WahaChat[]> {
+    const result = await this.request<WahaChat[] | { chats?: WahaChat[] }>(
+      'GET',
+      `/api/${encodeURIComponent(sessionName)}/chats`,
+    );
+    return Array.isArray(result) ? result : (result?.chats ?? []);
+  }
+
+  // ---------- Contacts ----------
+
+  async getContactAvatar(
+    sessionName: string,
+    contactId: string,
+  ): Promise<WahaContactAvatar> {
+    try {
+      const qs = new URLSearchParams({ contactId, session: sessionName });
+      return await this.request<WahaContactAvatar>(
+        'GET',
+        `/api/contacts/avatar?${qs}`,
+      );
+    } catch (err) {
+      this.logger.debug(
+        `getContactAvatar falhou: ${err instanceof Error ? err.message : err}`,
+      );
+      return {};
+    }
+  }
+}
