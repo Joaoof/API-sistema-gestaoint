@@ -116,6 +116,9 @@ function mapMessage(raw: RawMessage): WhatsappMessageEntity {
       (meta.participantName as string | undefined) ??
       (meta.pushName as string | undefined) ??
       null,
+    mediaType: (meta.mediaType as string | undefined) ?? null,
+    mediaUrl: (meta.mediaUrl as string | undefined) ?? null,
+    mediaMimetype: (meta.mediaMimetype as string | undefined) ?? null,
     createdAt: raw.createdAt,
     sentAt: raw.sentAt,
     deliveredAt: raw.deliveredAt,
@@ -303,7 +306,52 @@ export class WhatsappSessionService {
     this.logger.log(
       `syncContactsFromWaha: ${upserted} contato(s) sincronizado(s) (${sessionName})`,
     );
+    // Background: preenche fotos de perfil em paralelo (limite). WAHA bloqueia
+    // se chamarmos em rajada — limitamos concorrência via fila simples.
+    this.refreshMissingProfilePics(companyId, sessionName).catch((err) =>
+      this.logger.debug(
+        `refreshMissingProfilePics: ${err instanceof Error ? err.message : err}`,
+      ),
+    );
     return upserted;
+  }
+
+  /**
+   * Busca foto de perfil para contatos individuais (não-grupo) sem cache ou
+   * com cache stale (>7d). Limita a 50 contatos por execução pra não estourar
+   * rate-limit do WAHA. Falhas são silenciosas — voltamos a tentar na próxima.
+   */
+  private async refreshMissingProfilePics(
+    companyId: string,
+    sessionName: string,
+  ): Promise<void> {
+    const STALE_MS = 7 * 24 * 60 * 60 * 1000;
+    const cutoff = new Date(Date.now() - STALE_MS);
+    const targets = await this.prisma.whatsappContact.findMany({
+      where: {
+        companyId,
+        isGroup: false,
+        OR: [{ picFetchedAt: null }, { picFetchedAt: { lt: cutoff } }],
+      },
+      take: 50,
+      orderBy: { syncedAt: 'desc' },
+    });
+    for (const c of targets) {
+      try {
+        const res = await this.waha.getContactAvatar(sessionName, c.jid);
+        const url = res.profilePictureURL ?? res.url ?? res.value ?? null;
+        await this.prisma.whatsappContact.update({
+          where: { id: c.id },
+          data: { profilePicUrl: url, picFetchedAt: new Date() },
+        });
+      } catch {
+        // erro silencioso — registra fetch pra não tentar de novo já já
+        await this.prisma.whatsappContact.update({
+          where: { id: c.id },
+          data: { picFetchedAt: new Date() },
+        });
+      }
+    }
   }
 
   /**
@@ -638,6 +686,7 @@ export class WhatsappSessionService {
     type Conv = {
       peerNumber: string;
       peerName: string | null;
+      profilePicUrl: string | null;
       customerId: string | null;
       lastMessage: string | null;
       lastMessageAt: Date | null;
@@ -672,6 +721,7 @@ export class WhatsappSessionService {
           groups.set(peer, {
             peerNumber: peer,
             peerName: chat.name ?? null,
+            profilePicUrl: null,
             customerId: null,
             lastMessage: chat.lastMessageBody ?? null,
             lastMessageAt,
@@ -725,6 +775,7 @@ export class WhatsappSessionService {
         groups.set(peer, {
           peerNumber: peer,
           peerName: pushName ?? m.customer?.name ?? null,
+          profilePicUrl: null,
           customerId: m.customerId ?? null,
           lastMessage: m.body,
           lastMessageAt: m.createdAt,
@@ -758,8 +809,8 @@ export class WhatsappSessionService {
       }
     }
 
-    // 3. Enriquece nomes/telefones via cache de contatos do WAHA (resolve LIDs
-    //    e contatos salvos na agenda do aparelho).
+    // 3. Enriquece nomes/telefones/fotos via cache de contatos do WAHA (resolve
+    //    LIDs e contatos salvos na agenda do aparelho).
     const peers = Array.from(groups.values());
     if (peers.length > 0) {
       const cached = await this.prisma.whatsappContact.findMany({
@@ -771,9 +822,23 @@ export class WhatsappSessionService {
       const byJid = new Map(cached.map((c) => [c.jid, c] as const));
       for (const p of peers) {
         const c = byJid.get(p.peerNumber);
-        if (c && (c.name || c.pushName)) {
-          p.peerName = c.name ?? c.pushName ?? p.peerName;
+        if (c) {
+          if (c.name || c.pushName) {
+            p.peerName = c.name ?? c.pushName ?? p.peerName;
+          }
+          if (c.profilePicUrl) p.profilePicUrl = c.profilePicUrl;
         }
+      }
+
+      // Background: contatos sem foto cacheada (e não-grupos) → tenta buscar
+      // pra próxima leitura. Não bloqueia a resposta atual.
+      if (inst.status === WhatsappInstanceStatus.CONNECTED) {
+        this.refreshMissingProfilePics(companyId, this.wahaSessionFor(inst)).catch(
+          (err) =>
+            this.logger.debug(
+              `refreshMissingProfilePics (listConversations): ${err instanceof Error ? err.message : err}`,
+            ),
+        );
       }
     }
 
@@ -890,7 +955,12 @@ export class WhatsappSessionService {
     const STALE_MS = 24 * 60 * 60 * 1000; // 24h
     const isStale = Date.now() - cachedAt > STALE_MS;
 
+    // Cache primário: WhatsappContact (preenchido por syncContactsFromWaha)
+    const cachedContact = await this.prisma.whatsappContact.findUnique({
+      where: { companyId_jid: { companyId, jid: peerNumber } },
+    });
     let profilePicUrl =
+      cachedContact?.profilePicUrl ??
       (profileCache.profilePicUrl as string | undefined) ??
       (baseMeta.profilePicUrl as string | undefined) ??
       null;
@@ -919,8 +989,9 @@ export class WhatsappSessionService {
           this.wahaSessionFor(inst!),
           contactId,
         );
-        if (avatarRes.url) profilePicUrl = avatarRes.url;
-        else if (avatarRes.value) profilePicUrl = avatarRes.value;
+        const avatarUrl =
+          avatarRes.profilePictureURL ?? avatarRes.url ?? avatarRes.value ?? null;
+        if (avatarUrl) profilePicUrl = avatarUrl;
 
         // Persiste o cache no MessageLog mais recente
         if (last) {
@@ -1160,13 +1231,18 @@ export class WhatsappSessionService {
           null;
 
         const messageObj = (item.message ?? {}) as Record<string, unknown>;
-        const text =
+        const rawText =
           (item.body as string | undefined) ??
           (messageObj.conversation as string | undefined) ??
           ((messageObj.extendedTextMessage as Record<string, unknown> | undefined)?.text as string | undefined) ??
           ((messageObj.imageMessage as Record<string, unknown> | undefined)?.caption as string | undefined) ??
+          ((messageObj.videoMessage as Record<string, unknown> | undefined)?.caption as string | undefined) ??
+          ((messageObj.documentMessage as Record<string, unknown> | undefined)?.caption as string | undefined) ??
           '';
-        if (!text) continue;
+
+        const media = this.detectMedia(item, messageObj);
+        const text = rawText || media?.placeholder || '';
+        if (!text && !media) continue;
 
         if (externalId) {
           const existing = await this.prisma.messageLog.findFirst({
@@ -1207,6 +1283,13 @@ export class WhatsappSessionService {
               participant,
               participantName: pushName,
               source: 'webhook',
+              ...(media
+                ? {
+                    mediaType: media.type,
+                    mediaUrl: media.url ?? null,
+                    mediaMimetype: media.mimetype ?? null,
+                  }
+                : {}),
             },
             createdAt,
             ...(fromMe ? { sentAt: createdAt } : { deliveredAt: createdAt }),
@@ -1263,6 +1346,133 @@ export class WhatsappSessionService {
         });
       }
     }
+  }
+
+  /**
+   * Identifica o tipo de mídia anexa numa mensagem do WAHA/Evolution e devolve
+   * placeholder + metadata pra exibição no chat. Retorna null se não houver
+   * mídia detectável (mensagem de texto puro).
+   *
+   * Tipos cobertos: sticker, image, video, audio, document, location, contact.
+   * Para cada tipo, tenta extrair `mediaUrl`/`url` e `mimetype`.
+   */
+  private detectMedia(
+    item: Record<string, unknown>,
+    messageObj: Record<string, unknown>,
+  ): {
+    type: string;
+    placeholder: string;
+    url: string | null;
+    mimetype: string | null;
+  } | null {
+    type AnyRec = Record<string, unknown>;
+    const wahaMedia = (item.media as AnyRec | undefined) ?? null;
+    const wahaType =
+      (((item._data as AnyRec | undefined) ?? {}).type as string | undefined) ??
+      (item.type as string | undefined);
+
+    const pickUrl = (...candidates: (AnyRec | undefined)[]): string | null => {
+      for (const c of candidates) {
+        if (!c) continue;
+        const u = (c.url ?? c.mediaUrl ?? c.directPath) as string | undefined;
+        if (u) return u;
+      }
+      return null;
+    };
+    const pickMime = (...candidates: (AnyRec | undefined)[]): string | null => {
+      for (const c of candidates) {
+        if (!c) continue;
+        const m = c.mimetype as string | undefined;
+        if (m) return m;
+      }
+      return null;
+    };
+
+    const sticker =
+      (messageObj.stickerMessage as AnyRec | undefined) ??
+      (wahaType === 'sticker' ? (wahaMedia ?? {}) : undefined);
+    if (sticker) {
+      return {
+        type: 'sticker',
+        placeholder: '🎟️ Figurinha',
+        url: pickUrl(sticker, wahaMedia ?? undefined),
+        mimetype: pickMime(sticker, wahaMedia ?? undefined) ?? 'image/webp',
+      };
+    }
+
+    const image =
+      (messageObj.imageMessage as AnyRec | undefined) ??
+      (wahaType === 'image' ? (wahaMedia ?? {}) : undefined);
+    if (image) {
+      return {
+        type: 'image',
+        placeholder: '📷 Imagem',
+        url: pickUrl(image, wahaMedia ?? undefined),
+        mimetype: pickMime(image, wahaMedia ?? undefined),
+      };
+    }
+
+    const video =
+      (messageObj.videoMessage as AnyRec | undefined) ??
+      (wahaType === 'video' ? (wahaMedia ?? {}) : undefined);
+    if (video) {
+      return {
+        type: 'video',
+        placeholder: '🎥 Vídeo',
+        url: pickUrl(video, wahaMedia ?? undefined),
+        mimetype: pickMime(video, wahaMedia ?? undefined),
+      };
+    }
+
+    const audio =
+      (messageObj.audioMessage as AnyRec | undefined) ??
+      (messageObj.pttMessage as AnyRec | undefined) ??
+      (wahaType === 'audio' || wahaType === 'ptt' ? (wahaMedia ?? {}) : undefined);
+    if (audio) {
+      const isPtt =
+        (audio.ptt as boolean | undefined) === true || wahaType === 'ptt';
+      return {
+        type: isPtt ? 'ptt' : 'audio',
+        placeholder: isPtt ? '🎙️ Mensagem de voz' : '🎵 Áudio',
+        url: pickUrl(audio, wahaMedia ?? undefined),
+        mimetype: pickMime(audio, wahaMedia ?? undefined),
+      };
+    }
+
+    const doc =
+      (messageObj.documentMessage as AnyRec | undefined) ??
+      (wahaType === 'document' ? (wahaMedia ?? {}) : undefined);
+    if (doc) {
+      const fileName = (doc.fileName as string | undefined) ?? 'arquivo';
+      return {
+        type: 'document',
+        placeholder: `📎 ${fileName}`,
+        url: pickUrl(doc, wahaMedia ?? undefined),
+        mimetype: pickMime(doc, wahaMedia ?? undefined),
+      };
+    }
+
+    const location = messageObj.locationMessage as AnyRec | undefined;
+    if (location) {
+      return { type: 'location', placeholder: '📍 Localização', url: null, mimetype: null };
+    }
+
+    const contact = messageObj.contactMessage as AnyRec | undefined;
+    if (contact) {
+      const name = (contact.displayName as string | undefined) ?? 'Contato';
+      return { type: 'contact', placeholder: `👤 ${name}`, url: null, mimetype: null };
+    }
+
+    if (item.hasMedia === true || wahaMedia) {
+      return {
+        type: wahaType ?? 'media',
+        placeholder: '📎 Anexo',
+        url: pickUrl(wahaMedia ?? undefined),
+        mimetype: pickMime(wahaMedia ?? undefined),
+      };
+    }
+
+    return null;
   }
 
   private mapState(raw: string): WhatsappInstanceStatus {

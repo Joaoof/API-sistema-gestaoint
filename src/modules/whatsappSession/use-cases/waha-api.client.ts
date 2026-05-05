@@ -61,6 +61,7 @@ interface WahaChatRaw {
 export interface WahaContactAvatar {
   url?: string;
   value?: string;
+  profilePictureURL?: string;
 }
 
 export interface WahaContact {
@@ -307,17 +308,23 @@ export class WahaApiClient {
     sessionName: string,
     contactId: string,
   ): Promise<WahaContactAvatar> {
-    try {
-      const qs = new URLSearchParams({ contactId, session: sessionName });
-      return await this.request<WahaContactAvatar>(
-        'GET',
-        `/api/contacts/avatar?${qs}`,
-      );
-    } catch (err) {
-      this.logger.debug(
-        `getContactAvatar falhou: ${err instanceof Error ? err.message : err}`,
-      );
-      return {};
+    const qs = new URLSearchParams({ contactId, session: sessionName });
+    const candidates = [
+      `/api/contacts/profile-picture?${qs}`,
+      `/api/contacts/avatar?${qs}`,
+    ];
+    for (const path of candidates) {
+      try {
+        const res = await this.request<WahaContactAvatar>('GET', path);
+        const url = res?.profilePictureURL ?? res?.url ?? res?.value ?? null;
+        if (url) return { url, profilePictureURL: url };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (!message.includes('404')) {
+          this.logger.debug(`getContactAvatar ${path}: ${message}`);
+        }
+      }
     }
+    return {};
   }
 }

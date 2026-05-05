@@ -33,6 +33,7 @@ export class WhatsappInstanceEntity {
 export class WhatsappConversationEntity {
   @Field() peerNumber!: string;
   @Field(() => String, { nullable: true }) peerName?: string | null;
+  @Field(() => String, { nullable: true }) profilePicUrl?: string | null;
   @Field(() => String, { nullable: true }) customerId?: string | null;
   @Field(() => String, { nullable: true }) lastMessage?: string | null;
   @Field(() => GraphQLISODateTime, { nullable: true })
@@ -80,6 +81,13 @@ export class WhatsappMessageEntity {
   participantNumber?: string | null;
   @Field(() => String, { nullable: true })
   participantName?: string | null;
+  @Field(() => String, {
+    nullable: true,
+    description: 'sticker | image | video | audio | ptt | document | location | contact',
+  })
+  mediaType?: string | null;
+  @Field(() => String, { nullable: true }) mediaUrl?: string | null;
+  @Field(() => String, { nullable: true }) mediaMimetype?: string | null;
   @Field(() => GraphQLISODateTime) createdAt!: Date;
   @Field(() => GraphQLISODateTime, { nullable: true }) sentAt?: Date | null;
   @Field(() => GraphQLISODateTime, { nullable: true })
