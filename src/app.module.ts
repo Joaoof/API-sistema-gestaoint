@@ -41,6 +41,7 @@ import { ContractModule } from './modules/contract/contract.module';
 import { WhatsappModule } from './modules/whatsapp/whatsapp.module';
 import { WhatsappSessionModule } from './modules/whatsappSession/whatsapp-session.module';
 import { TimelineModule } from './modules/timeline/timeline.module';
+import { CompanyReminderModule } from './modules/companyReminder/company-reminder.module';
 
 @Module({
   imports: [
@@ -107,6 +108,7 @@ import { TimelineModule } from './modules/timeline/timeline.module';
     WhatsappModule,
     WhatsappSessionModule,
     TimelineModule,
+    CompanyReminderModule,
   ],
   controllers: [AppController],
   providers: [
