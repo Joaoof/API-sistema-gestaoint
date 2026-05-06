@@ -1607,6 +1607,25 @@ model WhatsappChatbotLog {
   @@index([ruleId])
 }
 
+model CompanyReminder {
+  id          String    @id @default(cuid())
+  companyId   String
+  title       String
+  description String?
+  category    String?
+  priority    String    @default("normal")
+  link        String?
+  dueAt       DateTime
+  doneAt      DateTime?
+  notifiedAt  DateTime?
+  createdBy   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([companyId, dueAt])
+  @@index([companyId, doneAt])
+}
+
 model WhatsappReminder {
   id          String    @id @default(cuid())
   companyId   String
