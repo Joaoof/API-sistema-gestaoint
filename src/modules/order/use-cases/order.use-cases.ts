@@ -103,10 +103,24 @@ export class OrderUseCases {
     private readonly audit: AuditLogService,
   ) {}
 
-  async list(args: { search?: string; status?: OrderStatus; take?: number } = {}): Promise<OrderEntity[]> {
+  async list(args: {
+    search?: string;
+    status?: OrderStatus;
+    take?: number;
+    fromDate?: Date;
+    toDate?: Date;
+  } = {}): Promise<OrderEntity[]> {
     const orders = await this.prisma.order.findMany({
       where: {
         ...(args.status ? { status: args.status } : {}),
+        ...(args.fromDate || args.toDate
+          ? {
+              createdAt: {
+                ...(args.fromDate ? { gte: args.fromDate } : {}),
+                ...(args.toDate ? { lte: args.toDate } : {}),
+              },
+            }
+          : {}),
         ...(args.search
           ? {
               OR: [
@@ -118,7 +132,9 @@ export class OrderUseCases {
       },
       include: { customer: true, items: true },
       orderBy: { createdAt: 'desc' },
-      take: Math.min(args.take ?? 50, 200),
+      // Cap aumentado de 200 → 1000 e default de 50 → 500 pra cobrir mês
+      // inteiro de operação no relatório (eventualmente migrar pra paginação).
+      take: Math.min(args.take ?? 500, 1000),
     });
     return orders.map(toEntity);
   }

@@ -31,12 +31,28 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
     }
 
     if (movement.bankId) {
+      // Permite qualquer usuário da MESMA empresa usar o banco (não só o dono).
+      // Banco é recurso compartilhado da empresa: se a Maria cadastrou e o
+      // João lança movimento, ambos devem conseguir desde que estejam na
+      // mesma empresa.
       const bank = await this.prisma.bank.findUnique({
         where: { id: movement.bankId },
-        select: { id: true, user_id: true },
+        select: { id: true, user: { select: { company_id: true } } },
       });
-      if (!bank || bank.user_id !== movement.user_id) {
-        throw new BadRequestException('Banco inválido.');
+      if (!bank) {
+        throw new BadRequestException('Banco não encontrado.');
+      }
+      const movementUser = await this.prisma.users.findUnique({
+        where: { id: movement.user_id },
+        select: { company_id: true },
+      });
+      if (
+        !movementUser ||
+        bank.user?.company_id !== movementUser.company_id
+      ) {
+        throw new BadRequestException(
+          'Banco pertence a outra empresa — selecione um banco válido.',
+        );
       }
     }
 

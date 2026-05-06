@@ -39,8 +39,11 @@ export class OrderResolver {
   async orders(
     @Args('search', { nullable: true }) search?: string,
     @Args('status', { type: () => OrderStatus, nullable: true }) status?: OrderStatus,
+    @Args('take', { type: () => Int, nullable: true }) take?: number,
+    @Args('fromDate', { nullable: true }) fromDate?: Date,
+    @Args('toDate', { nullable: true }) toDate?: Date,
   ): Promise<OrderEntity[]> {
-    return this.useCases.list({ search, status });
+    return this.useCases.list({ search, status, take, fromDate, toDate });
   }
 
   @Query(() => OrderEntity)
