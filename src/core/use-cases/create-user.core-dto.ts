@@ -29,6 +29,9 @@ export class UserResponseDto {
   @Field(() => Boolean)
   is_active: boolean;
 
+  @Field(() => Boolean)
+  isSuperAdmin: boolean;
+
   @Field(() => [PermissionDto], { nullable: 'items' })
   permissions: PermissionDto[];
 

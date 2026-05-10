@@ -15,6 +15,9 @@ export class AuditAccessGuard implements CanActivate {
     const ctx = GqlExecutionContext.create(context);
     const req = ctx.getContext().req;
 
+    // Super-admins entram direto sem reautenticação — acesso total ao log master.
+    if (req?.user?.isSuperAdmin === true) return true;
+
     const headerToken =
       req?.headers?.['x-audit-token'] ?? req?.headers?.['X-Audit-Token'];
 

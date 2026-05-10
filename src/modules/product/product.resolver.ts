@@ -1,4 +1,4 @@
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { ProductStatus } from '@prisma/client';
 import { GqlAuthGuard } from '../../auth/guards/auth.guard';
@@ -8,6 +8,7 @@ import { TenancyService } from '../construction/shared/tenancy.service';
 import { CreateProductInput } from './dto/create-product.input';
 import { UpdateProductInput } from './dto/update-product.input';
 import { ProductEntity } from './entities/product.entity';
+import { AdjustInventoryUseCase } from './use-cases/adjust-inventory.use-case';
 import { CreateProductUseCase } from './use-cases/create-product.use-case';
 import { DeleteProductUseCase } from './use-cases/delete-product.use-case';
 import { ListProductsUseCase } from './use-cases/list-products.use-case';
@@ -21,6 +22,7 @@ export class ProductResolver {
     private readonly listProducts: ListProductsUseCase,
     private readonly deleteProduct: DeleteProductUseCase,
     private readonly updateProduct: UpdateProductUseCase,
+    private readonly adjustInventory: AdjustInventoryUseCase,
     private readonly tenancy: TenancyService,
   ) {}
 
@@ -72,5 +74,36 @@ export class ProductResolver {
   @Query(() => ProductEntity, { nullable: true })
   async product(@Args('id') id: string): Promise<ProductEntity | null> {
     return this.listProducts.findById(id);
+  }
+
+  /** Entrada rápida (relatório de produção): incrementa o estoque do produto. */
+  @Mutation(() => ProductEntity)
+  async quickProductionEntry(
+    @CurrentUser() user: User,
+    @Args('productId') productId: string,
+    @Args('quantity', { type: () => Int }) quantity: number,
+    @Args('notes', { nullable: true }) notes?: string,
+  ): Promise<ProductEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.adjustInventory.productionEntry(
+      { userId: user.id, companyId },
+      { productId, quantity, notes: notes ?? null },
+    );
+  }
+
+  /** Saída rápida: decrementa o estoque com motivo (venda/perda/etc). */
+  @Mutation(() => ProductEntity)
+  async quickProductExit(
+    @CurrentUser() user: User,
+    @Args('productId') productId: string,
+    @Args('quantity', { type: () => Int }) quantity: number,
+    @Args('reason') reason: string,
+    @Args('notes', { nullable: true }) notes?: string,
+  ): Promise<ProductEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.adjustInventory.quickExit(
+      { userId: user.id, companyId },
+      { productId, quantity, reason, notes: notes ?? null },
+    );
   }
 }

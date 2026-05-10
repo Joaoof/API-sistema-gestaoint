@@ -1,5 +1,5 @@
 import { Field, Float, InputType } from '@nestjs/graphql';
-import { AccountStatus } from '@prisma/client';
+import { AccountStatus, MovementTypePayment } from '@prisma/client';
 import {
   IsDateString,
   IsEnum,
@@ -9,6 +9,7 @@ import {
   IsString,
   MaxLength,
 } from 'class-validator';
+import { MovementTypePayments } from '../../../infra/graphql/enum/CashMovementTypePayement.enum';
 
 @InputType()
 export class UpdateAccountPayableInput {
@@ -69,4 +70,14 @@ export class UpdateAccountPayableInput {
   @IsString()
   @MaxLength(1000)
   notes?: string | null;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  bankId?: string | null;
+
+  @Field(() => MovementTypePayments, { nullable: true })
+  @IsOptional()
+  @IsEnum(MovementTypePayments)
+  paymentMethod?: MovementTypePayment;
 }

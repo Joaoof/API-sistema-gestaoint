@@ -190,9 +190,8 @@ export class AccountReceivableUseCases {
     });
 
     // Auto-cria CashMovement de entrada quando AR passa pra PAID — só uma vez
-    // (dedupe por accountReceivableId). Se ainda existe movimento p/ esse AR
-    // pula. Se faltam paymentMethod/bankId, fica COMPLETED com paymentMethod
-    // OTHER (usuário pode editar depois).
+    // (dedupe por accountReceivableId). Banco/método vêm do input quando
+    // disponíveis; senão cai em OTHER e o usuário edita depois.
     const transitionedToPaid =
       existing.status !== AccountStatus.PAID &&
       updated.status === AccountStatus.PAID;
@@ -211,7 +210,8 @@ export class AccountReceivableUseCases {
               ? `Recebimento de ${customerName} — ${updated.description}`
               : `Recebimento — ${updated.description}`,
             user_id: actor.userId,
-            typePayment: 'OTHER',
+            typePayment: input.paymentMethod ?? 'OTHER',
+            bankId: input.bankId ?? null,
             status: 'COMPLETED',
             referenceCode: `AR-${updated.id.slice(0, 8)}`,
             counterpartyName: customerName,
@@ -220,6 +220,7 @@ export class AccountReceivableUseCases {
             orderId: updated.orderId ?? null,
             customerId: updated.customerId,
             paidAt: updated.paidAt ?? new Date(),
+            date: updated.paidAt ?? new Date(),
           },
         });
 

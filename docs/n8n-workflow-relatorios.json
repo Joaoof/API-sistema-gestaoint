@@ -1,0 +1,326 @@
+{
+  "name": "GestãoInt — Relatórios via WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 18 * * 1-6"
+            }
+          ]
+        }
+      },
+      "id": "trigger-daily",
+      "name": "Diário 18h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 240]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "trigger-weekly",
+      "name": "Semanal Seg 8h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 440]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "id": "trigger-alerts",
+      "name": "Alertas 30min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 640]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evolution-inbound",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "trigger-inbound",
+      "name": "Webhook Evolution",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 840],
+      "webhookId": "evolution-inbound"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.GESTAOINT_API_URL }}/api/reports/daily",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "http-daily",
+      "name": "GET /reports/daily",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 240],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "GESTAOINT_API_KEY",
+          "name": "GestãoInt API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.GESTAOINT_API_URL }}/api/reports/weekly",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "http-weekly",
+      "name": "GET /reports/weekly",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 440],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "GESTAOINT_API_KEY",
+          "name": "GestãoInt API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.GESTAOINT_API_URL }}/api/reports/alerts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "http-alerts",
+      "name": "GET /reports/alerts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 640],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "GESTAOINT_API_KEY",
+          "name": "GestãoInt API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.hasAlerts }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "if-has-alerts",
+      "name": "Tem alertas?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 640]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "string": [
+            {
+              "value1": "={{ $json.body.data.message.conversation || $json.body.data.message.extendedTextMessage.text || '' }}",
+              "operation": "contains",
+              "value2": "relatorio"
+            }
+          ]
+        }
+      },
+      "id": "if-keyword",
+      "name": "Pediu relatório?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [480, 840]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.GESTAOINT_API_URL }}/api/reports/daily",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "http-on-demand",
+      "name": "GET /reports/daily (sob demanda)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 840],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "GESTAOINT_API_KEY",
+          "name": "GestãoInt API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_URL }}/message/sendText/{{ $env.EVOLUTION_INSTANCE }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $env.RECIPIENT_PHONE }}\",\n  \"text\": {{ JSON.stringify($json.text) }}\n}",
+        "options": {}
+      },
+      "id": "send-daily",
+      "name": "Evolution: enviar diário",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 240]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_URL }}/message/sendText/{{ $env.EVOLUTION_INSTANCE }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $env.RECIPIENT_PHONE }}\",\n  \"text\": {{ JSON.stringify($json.text) }}\n}",
+        "options": {}
+      },
+      "id": "send-weekly",
+      "name": "Evolution: enviar semanal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 440]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_URL }}/message/sendText/{{ $env.EVOLUTION_INSTANCE }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $env.RECIPIENT_PHONE }}\",\n  \"text\": {{ JSON.stringify($json.text) }}\n}",
+        "options": {}
+      },
+      "id": "send-alerts",
+      "name": "Evolution: enviar alertas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 600]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_URL }}/message/sendText/{{ $env.EVOLUTION_INSTANCE }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('Webhook Evolution').first().json.body.data.key.remoteJid }}\",\n  \"text\": {{ JSON.stringify($json.text) }}\n}",
+        "options": {}
+      },
+      "id": "send-on-demand",
+      "name": "Evolution: responder sob demanda",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 840]
+    }
+  ],
+  "connections": {
+    "Diário 18h": {
+      "main": [[{ "node": "GET /reports/daily", "type": "main", "index": 0 }]]
+    },
+    "Semanal Seg 8h": {
+      "main": [[{ "node": "GET /reports/weekly", "type": "main", "index": 0 }]]
+    },
+    "Alertas 30min": {
+      "main": [[{ "node": "GET /reports/alerts", "type": "main", "index": 0 }]]
+    },
+    "Webhook Evolution": {
+      "main": [[{ "node": "Pediu relatório?", "type": "main", "index": 0 }]]
+    },
+    "GET /reports/daily": {
+      "main": [[{ "node": "Evolution: enviar diário", "type": "main", "index": 0 }]]
+    },
+    "GET /reports/weekly": {
+      "main": [[{ "node": "Evolution: enviar semanal", "type": "main", "index": 0 }]]
+    },
+    "GET /reports/alerts": {
+      "main": [[{ "node": "Tem alertas?", "type": "main", "index": 0 }]]
+    },
+    "Tem alertas?": {
+      "main": [
+        [{ "node": "Evolution: enviar alertas", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Pediu relatório?": {
+      "main": [
+        [{ "node": "GET /reports/daily (sob demanda)", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "GET /reports/daily (sob demanda)": {
+      "main": [[{ "node": "Evolution: responder sob demanda", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["gestaoint", "relatorios"]
+}

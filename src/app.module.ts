@@ -42,6 +42,11 @@ import { WhatsappModule } from './modules/whatsapp/whatsapp.module';
 import { WhatsappSessionModule } from './modules/whatsappSession/whatsapp-session.module';
 import { TimelineModule } from './modules/timeline/timeline.module';
 import { CompanyReminderModule } from './modules/companyReminder/company-reminder.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { RecurringBillModule } from './modules/recurringBill/recurring-bill.module';
+import { BankTransferModule } from './modules/bankTransfer/bank-transfer.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { AiModule } from './modules/ai/ai.module';
 
 @Module({
   imports: [
@@ -109,6 +114,11 @@ import { CompanyReminderModule } from './modules/companyReminder/company-reminde
     WhatsappSessionModule,
     TimelineModule,
     CompanyReminderModule,
+    ReportsModule,
+    RecurringBillModule,
+    BankTransferModule,
+    AdminModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [

@@ -5,7 +5,6 @@ generator client {
 datasource db {
   provider     = "postgresql"
   url          = env("BANCO_URL")
-  directUrl    = env("BANCO_URL_DIRECT")
   relationMode = "prisma"
 }
 
@@ -212,6 +211,7 @@ model Driver {
 model Delivery {
   id             String         @id @default(uuid())
   orderId        String         @unique
+  kind           DeliveryKind   @default(DELIVERY)
   driverId       String?
   driver         String?
   driverPhotoUrl String?
@@ -232,6 +232,7 @@ model Delivery {
   @@index([driverId])
   @@index([status])
   @@index([scheduledDate])
+  @@index([kind])
 }
 
 model AccountReceivable {
@@ -307,6 +308,64 @@ model Inventory {
   @@index([quantity])
 }
 
+model RecurringBill {
+  id               String   @id @default(uuid())
+  supplierName     String
+  description      String
+  amount           Decimal
+  dayOfMonth       Int
+  interestRate     Decimal  @default(0.033)
+  notes            String?
+  active           Boolean  @default(true)
+  lastGeneratedFor String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([active])
+}
+
+model AiConversation {
+  id        String      @id @default(uuid())
+  userId    String
+  title     String?
+  model     String      @default("gpt-4o-mini")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  messages  AiMessage[]
+
+  @@index([userId, updatedAt(sort: Desc)])
+}
+
+model AiMessage {
+  id             String         @id @default(uuid())
+  conversationId String
+  role           String // 'system' | 'user' | 'assistant' | 'tool'
+  content        String         @db.Text
+  toolCalls      Json? // OpenAI tool_calls payload
+  toolCallId     String? // when role='tool'
+  toolName       String?
+  createdAt      DateTime       @default(now())
+  conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+model AiPendingAction {
+  id             String    @id @default(uuid())
+  userId         String
+  conversationId String?
+  tool           String // ex: 'createAccountPayable'
+  params         Json
+  description    String // resumo legível pra confirmação
+  status         String    @default("PENDING") // PENDING | EXECUTED | CANCELED | FAILED
+  result         Json?
+  error          String?
+  createdAt      DateTime  @default(now())
+  resolvedAt     DateTime?
+
+  @@index([userId, status, createdAt(sort: Desc)])
+}
+
 model Company {
   id                    String                 @id @default(cuid())
   name                  String                 @unique
@@ -364,6 +423,7 @@ model Users {
   company_id              String
   role                    String
   is_active               Boolean
+  isSuperAdmin            Boolean               @default(false)
   createdAt               DateTime              @default(now())
   company                 Company?              @relation(fields: [company_id], references: [id])
   Product                 Product[]
@@ -443,6 +503,8 @@ model CashMovement {
   paidAt               DateTime?
   orderId              String?
   accountReceivableId  String?
+  accountPayableId     String?
+  transferId           String?
   customerId           String?
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
@@ -458,6 +520,8 @@ model CashMovement {
   @@index([bankId])
   @@index([orderId])
   @@index([accountReceivableId])
+  @@index([accountPayableId])
+  @@index([transferId])
   @@index([customerId])
 }
 
@@ -646,6 +710,11 @@ enum DeliveryStatus {
   IN_TRANSIT
   DELIVERED
   CANCELED
+}
+
+enum DeliveryKind {
+  DELIVERY
+  PICKUP
 }
 
 enum CommissionRuleType {

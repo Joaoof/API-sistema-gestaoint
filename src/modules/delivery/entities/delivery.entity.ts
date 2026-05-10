@@ -1,13 +1,15 @@
 import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
-import { DeliveryStatus } from '@prisma/client';
+import { DeliveryKind, DeliveryStatus } from '@prisma/client';
 import { OrderEntity } from '../../order/entities/order.entity';
 
 registerEnumType(DeliveryStatus, { name: 'DeliveryStatus' });
+registerEnumType(DeliveryKind, { name: 'DeliveryKind' });
 
 @ObjectType()
 export class DeliveryEntity {
   @Field(() => ID) id!: string;
   @Field() orderId!: string;
+  @Field(() => DeliveryKind) kind!: DeliveryKind;
   @Field(() => String, { nullable: true }) driverId?: string | null;
   @Field(() => String, { nullable: true }) driver?: string | null;
   @Field(() => String, { nullable: true }) driverPhotoUrl?: string | null;

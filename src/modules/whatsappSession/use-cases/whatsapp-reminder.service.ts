@@ -22,7 +22,10 @@ export class WhatsappReminderService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit() {
-    // checa a cada 30s
+    // Lembretes internos do WhatsApp agora são disparados pelo n8n.
+    // Pra reativar o agendador interno antigo, defina WHATSAPP_INTERNAL_REMINDERS=true.
+    if (process.env.WHATSAPP_INTERNAL_REMINDERS !== 'true') return;
+
     this.timer = setInterval(() => {
       this.fireDueReminders().catch((err) =>
         this.logger.warn(

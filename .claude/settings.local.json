@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(\\(Get-Content C:\\\\Users\\\\douto\\\\API-sistema-gestaoint\\\\src\\\\modules\\\\whatsappSession\\\\use-cases\\\\whatsapp-session.service.ts | Measure-Object -Line\\).Lines; \\(Get-Content C:\\\\Users\\\\douto\\\\API-sistema-gestaoint\\\\src\\\\modules\\\\whatsappSession\\\\whatsapp-session.resolver.ts | Measure-Object -Line\\).Lines)",
+      "Bash(npx prisma *)",
+      "Bash(./node_modules/.bin/prisma generate *)",
+      "PowerShell(npx prisma@6.13.0 generate 2>&1 | Select-Object -Last 10)",
+      "PowerShell(if \\(Test-Path node_modules\\) { \\(Get-ChildItem node_modules -Directory | Measure-Object\\).Count } else { \"no node_modules\" })",
+      "PowerShell(if \\(Test-Path node_modules\\\\.prisma\\\\client\\) { Get-ChildItem node_modules\\\\.prisma\\\\client | Select Name | Format-Table; \"---\"; \\(Get-Content node_modules\\\\.prisma\\\\client\\\\index.d.ts -ErrorAction SilentlyContinue | Select-String 'MovementTypePayment|accountPayableId' | Select-Object -First 10\\) } else { \"no generated client\" })",
+      "PowerShell(New-Item *)"
+    ]
+  }
+}

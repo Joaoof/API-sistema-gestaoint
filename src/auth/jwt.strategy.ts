@@ -9,6 +9,7 @@ export interface JwtPayload {
   password_hash: string;
   role: string;
   company_id: string;
+  isSuperAdmin?: boolean;
 }
 
 // 🔽 Estratégia JWT para autenticação
@@ -34,6 +35,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       password_hash: payload.password_hash,
       role: payload.role,
       company_id: payload.company_id,
+      isSuperAdmin: payload.isSuperAdmin === true,
     };
   }
 }

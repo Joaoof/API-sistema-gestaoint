@@ -5,6 +5,9 @@ export const MovementTypePayments = {
   PIX: 'PIX',
   CREDIT_CARD: 'CREDIT_CARD',
   DEBIT_CARD: 'DEBIT_CARD',
+  BANK_TRANSFER: 'BANK_TRANSFER',
+  BANK_SLIP: 'BANK_SLIP',
+  CHECK: 'CHECK',
   OTHER: 'OTHER',
 } as const;
 

@@ -87,6 +87,7 @@ export class UserResolver {
     response.role = user.role;
     response.company_id = user.company_id;
     response.is_active = user.is_active;
+    response.isSuperAdmin = (user as any).isSuperAdmin === true;
     response.plan = planDto;
     response.permissions = permissions;
 

@@ -16,6 +16,7 @@ function toEntity(raw: RawDelivery): DeliveryEntity {
   return {
     id: raw.id,
     orderId: raw.orderId,
+    kind: raw.kind,
     driverId: raw.driverId,
     driver: raw.driver,
     driverPhotoUrl: raw.driverPhotoUrl,
@@ -138,6 +139,7 @@ export class DeliveryUseCases {
       const c = await tx.delivery.create({
         data: {
           orderId: input.orderId,
+          kind: input.kind ?? 'DELIVERY',
           driverId,
           driver,
           driverPhotoUrl,
@@ -203,6 +205,7 @@ export class DeliveryUseCases {
     if (input.scheduledDate !== undefined)
       data.scheduledDate = input.scheduledDate ? new Date(input.scheduledDate) : null;
     if (input.notes !== undefined) data.notes = input.notes;
+    if (input.kind !== undefined) data.kind = input.kind;
 
     if (input.status !== undefined) {
       data.status = input.status;

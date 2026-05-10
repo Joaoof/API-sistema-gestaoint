@@ -18,6 +18,7 @@ export class CreateTokenService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      isSuperAdmin: (user as any).isSuperAdmin === true,
     };
 
     const secret = process.env.JWT_SECRET;

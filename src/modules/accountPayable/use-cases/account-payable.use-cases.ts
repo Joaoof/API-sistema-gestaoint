@@ -195,6 +195,39 @@ export class AccountPayableUseCases {
       include: { supplier: true, product: { include: { images: true } } },
     });
 
+    // Auto-cria CashMovement de saída quando AP passa pra PAID — só uma vez
+    // (dedupe por accountPayableId). Banco/método vêm do input quando
+    // disponíveis; senão cai em OTHER e o usuário edita depois.
+    const transitionedToPaid =
+      existing.status !== AccountStatus.PAID &&
+      updated.status === AccountStatus.PAID;
+    if (transitionedToPaid && actor.userId) {
+      const already = await this.prisma.cashMovement.findFirst({
+        where: { accountPayableId: updated.id },
+      });
+      if (!already) {
+        const supplierName = updated.supplier?.name ?? updated.supplierName;
+        await this.prisma.cashMovement.create({
+          data: {
+            type: 'EXIT',
+            category: 'PAYMENT',
+            value: updated.amount,
+            description: `Pagamento — ${supplierName} — ${updated.description}`,
+            user_id: actor.userId,
+            typePayment: input.paymentMethod ?? 'OTHER',
+            bankId: input.bankId ?? null,
+            status: 'COMPLETED',
+            referenceCode: `AP-${updated.id.slice(0, 8)}`,
+            counterpartyName: supplierName,
+            counterpartyDocument: null,
+            accountPayableId: updated.id,
+            paidAt: updated.paidAt ?? new Date(),
+            date: updated.paidAt ?? new Date(),
+          },
+        });
+      }
+    }
+
     await this.audit.log({
       companyId: actor.companyId,
       userId: actor.userId,

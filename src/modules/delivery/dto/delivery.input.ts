@@ -1,5 +1,5 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { DeliveryStatus } from '@prisma/client';
+import { DeliveryKind, DeliveryStatus } from '@prisma/client';
 import { IsDateString, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 
 @InputType()
@@ -7,6 +7,11 @@ export class CreateDeliveryInput {
   @Field()
   @IsString()
   orderId!: string;
+
+  @Field(() => DeliveryKind, { nullable: true, defaultValue: 'DELIVERY' })
+  @IsOptional()
+  @IsEnum(DeliveryKind)
+  kind?: DeliveryKind;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -81,6 +86,11 @@ export class UpdateDeliveryInput {
   @IsOptional()
   @IsEnum(DeliveryStatus)
   status?: DeliveryStatus;
+
+  @Field(() => DeliveryKind, { nullable: true })
+  @IsOptional()
+  @IsEnum(DeliveryKind)
+  kind?: DeliveryKind;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
