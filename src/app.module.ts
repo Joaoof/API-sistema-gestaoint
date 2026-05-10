@@ -48,6 +48,8 @@ import { BankTransferModule } from './modules/bankTransfer/bank-transfer.module'
 import { AdminModule } from './modules/admin/admin.module';
 import { AiModule } from './modules/ai/ai.module';
 import { AiCreditsModule } from './modules/aiCredits/ai-credits.module';
+import { InsightsModule } from './modules/insights/insights.module';
+import { ExportsModule } from './modules/exports/exports.module';
 
 @Module({
   imports: [
@@ -121,6 +123,8 @@ import { AiCreditsModule } from './modules/aiCredits/ai-credits.module';
     AdminModule,
     AiCreditsModule,
     AiModule,
+    InsightsModule,
+    ExportsModule,
   ],
   controllers: [AppController],
   providers: [
