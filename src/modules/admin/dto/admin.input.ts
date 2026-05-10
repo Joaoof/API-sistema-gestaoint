@@ -24,7 +24,7 @@ export class AdminUpdateUserInput {
   @Field() @IsString() id!: string;
   @Field({ nullable: true }) @IsOptional() @IsString() @MaxLength(120) name?: string;
   @Field({ nullable: true }) @IsOptional() @IsEmail() email?: string;
-  @Field({ nullable: true }) @IsOptional() @IsString() phone?: string | null;
+  @Field(() => String, { nullable: true }) @IsOptional() @IsString() phone?: string | null;
   @Field({ nullable: true }) @IsOptional() @IsString() role?: string;
   @Field({ nullable: true }) @IsOptional() @IsString() company_id?: string;
   @Field({ nullable: true }) @IsOptional() @IsBoolean() is_active?: boolean;
@@ -47,7 +47,7 @@ export class AdminCreatePlanInput {
 export class AdminUpdatePlanInput {
   @Field() @IsString() id!: string;
   @Field({ nullable: true }) @IsOptional() @IsString() @MaxLength(80) name?: string;
-  @Field({ nullable: true }) @IsOptional() @IsString() description?: string | null;
+  @Field(() => String, { nullable: true }) @IsOptional() @IsString() description?: string | null;
   @Field({ nullable: true }) @IsOptional() @IsBoolean() isActive?: boolean;
 }
 
