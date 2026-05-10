@@ -12,5 +12,6 @@ export class User {
     public permissions?: string[],
     public is_active?: boolean,
     public created_at?: Date,
+    public isSuperAdmin?: boolean,
   ) {}
 }

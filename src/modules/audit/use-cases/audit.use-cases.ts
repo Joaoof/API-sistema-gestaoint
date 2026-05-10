@@ -42,14 +42,15 @@ export class AuditUseCases {
   constructor(private readonly prisma: PrismaService) {}
 
   async list(
-    companyId: string,
+    companyId: string | null,
     filter: AuditLogFilterInput = {},
   ): Promise<AuditLogPageEntity> {
     const page = filter.page ?? 1;
     const pageSize = filter.pageSize ?? 50;
 
     const where: Prisma.AuditLogWhereInput = {
-      companyId,
+      // companyId=null indica acesso master (super-admin) — sem filtro de empresa.
+      ...(companyId ? { companyId } : {}),
       ...(filter.entity ? { entity: filter.entity } : {}),
       ...(filter.entityId ? { entityId: filter.entityId } : {}),
       ...(filter.userId ? { userId: filter.userId } : {}),

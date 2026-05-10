@@ -53,7 +53,9 @@ export class AuditResolver {
     @CurrentUser() user: AuthUser,
     @Args('filter', { nullable: true }) filter?: AuditLogFilterInput,
   ): Promise<AuditLogPageEntity> {
-    const companyId = await this.tenancy.resolveCompanyId(user);
+    // Super-admin lê de todas as empresas (companyId = null bypassa o filtro).
+    const isSuper = (user as any)?.isSuperAdmin === true;
+    const companyId = isSuper ? null : await this.tenancy.resolveCompanyId(user);
     return this.useCases.list(companyId, filter ?? {});
   }
 

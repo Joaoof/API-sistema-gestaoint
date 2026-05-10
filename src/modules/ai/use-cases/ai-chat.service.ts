@@ -1,7 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service';
+import { AiCreditsService } from '../../aiCredits/use-cases/credits.service';
 import { AiToolsService, ToolContext } from './ai-tools.service';
 import { OpenAiClient, OpenAiMessage } from './openai.client';
+
+// Custo em créditos por turn de IA, por modelo
+const MODEL_COST: Record<string, number> = {
+  'gpt-4o-mini': 1,
+  'gpt-4o': 5,
+  'gpt-4-turbo': 4,
+};
 
 const SYSTEM_PROMPT = `Você é o assistente do GestãoInt, um ERP financeiro/comercial brasileiro.
 
@@ -42,6 +50,7 @@ export class AiChatService {
     private readonly prisma: PrismaService,
     private readonly openai: OpenAiClient,
     private readonly tools: AiToolsService,
+    private readonly credits: AiCreditsService,
   ) {}
 
   async chat(args: {
@@ -52,6 +61,9 @@ export class AiChatService {
     model?: string;
   }): Promise<ChatResult> {
     const model = args.model ?? process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
+
+    // 0) Cobra créditos antes de chamar OpenAI (idempotente por messageId)
+    const cost = MODEL_COST[model] ?? 1;
 
     // 1) Recupera ou cria a conversa
     let conversation = args.conversationId
@@ -83,6 +95,16 @@ export class AiChatService {
       },
     });
     conversation.messages.push(userMsg);
+
+    // 2.5) Debita créditos (lança InsufficientCreditsError se faltar)
+    await this.credits.consume({
+      companyId: args.companyId,
+      amount: cost,
+      description: `Chat IA — ${model}`,
+      userId: args.userId,
+      refType: 'AiMessage',
+      refId: userMsg.id,
+    });
 
     // 3) Monta histórico para OpenAI
     const messages: OpenAiMessage[] = [{ role: 'system', content: SYSTEM_PROMPT }];

@@ -47,6 +47,7 @@ import { RecurringBillModule } from './modules/recurringBill/recurring-bill.modu
 import { BankTransferModule } from './modules/bankTransfer/bank-transfer.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AiModule } from './modules/ai/ai.module';
+import { AiCreditsModule } from './modules/aiCredits/ai-credits.module';
 
 @Module({
   imports: [
@@ -118,6 +119,7 @@ import { AiModule } from './modules/ai/ai.module';
     RecurringBillModule,
     BankTransferModule,
     AdminModule,
+    AiCreditsModule,
     AiModule,
   ],
   controllers: [AppController],

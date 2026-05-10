@@ -366,6 +366,94 @@ model AiPendingAction {
   @@index([userId, status, createdAt(sort: Desc)])
 }
 
+model AiCreditAccount {
+  id              String                @id @default(uuid())
+  companyId       String                @unique
+  balance         Int                   @default(0)
+  lowThreshold    Int                   @default(50)
+  totalPurchased  Int                   @default(0)
+  totalConsumed   Int                   @default(0)
+  lowNotifiedAt   DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  transactions    AiCreditTransaction[]
+  purchases       AiCreditPurchase[]
+}
+
+model AiCreditTransaction {
+  id           String          @id @default(uuid())
+  accountId    String
+  companyId    String
+  kind         String // PURCHASE | CONSUMPTION | BONUS | REFUND | ADJUSTMENT
+  amount       Int // pode ser negativo (consumo)
+  balanceAfter Int
+  refType      String? // ex: 'AiMessage', 'Purchase'
+  refId        String?
+  description  String
+  userId       String?
+  createdAt    DateTime        @default(now())
+  account      AiCreditAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, createdAt(sort: Desc)])
+  @@index([accountId, createdAt(sort: Desc)])
+}
+
+model AiCreditPurchase {
+  id              String          @id @default(uuid())
+  accountId       String
+  companyId       String
+  packageBrl      Int // valor em reais (50, 70, 100)
+  creditsBase     Int
+  creditsBonus    Int             @default(0)
+  creditsTotal    Int // creditsBase + creditsBonus
+  pixKey          String
+  pixCopyPaste    String          @db.Text
+  pixTxid         String          @unique
+  status          String          @default("PENDING") // PENDING | PAID | CANCELED | EXPIRED
+  paidAt          DateTime?
+  paidByUserId    String? // super-admin que confirmou
+  createdByUserId String
+  notes           String?
+  createdAt       DateTime        @default(now())
+  expiresAt       DateTime
+  account         AiCreditAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, status, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+}
+
+model ExportTemplate {
+  id          String   @id @default(uuid())
+  companyId   String
+  userId      String
+  name        String
+  module      String // 'sales' | 'receivables' | 'payables' | 'movements' | 'inventory' | 'orders'
+  format      String // 'CSV' | 'XLSX' | 'PDF'
+  filters     Json
+  columns     Json
+  schedule    String? // ex: 'WEEKLY_MONDAY' | null
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([userId])
+}
+
+model Insight {
+  id                String   @id @default(uuid())
+  companyId         String
+  kind              String // DAILY | WEEKLY | ALERT | MANUAL
+  title             String
+  body              String   @db.Text
+  metricsJson       Json?
+  generatedByModel  String
+  creditsCost       Int      @default(0)
+  deliveredChannels String[] // ['dashboard', 'notification', 'whatsapp', 'email']
+  createdAt         DateTime @default(now())
+
+  @@index([companyId, kind, createdAt(sort: Desc)])
+}
+
 model Company {
   id                    String                 @id @default(cuid())
   name                  String                 @unique

@@ -24,6 +24,22 @@ async function main() {
     const user = await prisma.users.findUnique({ where: { email } });
     if (!user) {
       console.error(`Usuário não encontrado: ${email}`);
+      console.error('');
+      console.error('Usuários existentes (mais recentes):');
+      const recent = await prisma.users.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        select: { email: true, name: true, role: true, is_active: true },
+      });
+      if (recent.length === 0) {
+        console.error('  (nenhum usuário no banco — cadastre um pelo /signup primeiro)');
+      } else {
+        for (const u of recent) {
+          console.error(
+            `  - ${u.email}  (${u.name}, ${u.role}${u.is_active ? '' : ', INATIVO'})`,
+          );
+        }
+      }
       process.exit(1);
     }
 
