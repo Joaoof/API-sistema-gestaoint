@@ -18,7 +18,7 @@ export class AiCreditPackageEntity {
   @Field(() => Int) base!: number;
   @Field(() => Int) bonus!: number;
   @Field(() => Int) total!: number;
-  @Field({ nullable: true }) badge?: string | null;
+  @Field(() => String, { nullable: true }) badge?: string | null;
 }
 
 @ObjectType()
@@ -45,7 +45,7 @@ export class AiCreditTransactionEntity {
   @Field(() => Int) amount!: number;
   @Field(() => Int) balanceAfter!: number;
   @Field() description!: string;
-  @Field({ nullable: true }) refType?: string | null;
-  @Field({ nullable: true }) refId?: string | null;
+  @Field(() => String, { nullable: true }) refType?: string | null;
+  @Field(() => String, { nullable: true }) refId?: string | null;
   @Field() createdAt!: Date;
 }
