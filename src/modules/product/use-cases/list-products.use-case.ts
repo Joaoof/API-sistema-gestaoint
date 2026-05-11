@@ -15,19 +15,20 @@ export interface ListProductsArgs {
 export class ListProductsUseCase {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findById(id: string): Promise<ProductEntity | null> {
+  async findById(companyId: string, id: string): Promise<ProductEntity | null> {
     const product = await this.prisma.product.findFirst({
-      where: { id, deletedAt: null },
+      where: { id, companyId, deletedAt: null },
       include: { images: { orderBy: { order: 'asc' } } },
     });
     return (product as unknown as ProductEntity) ?? null;
   }
 
-  async execute(args: ListProductsArgs = {}): Promise<ProductEntity[]> {
+  async execute(companyId: string, args: ListProductsArgs = {}): Promise<ProductEntity[]> {
     const { status, search, categoryId, take = 50, skip = 0 } = args;
 
     const products = await this.prisma.product.findMany({
       where: {
+        companyId,
         deletedAt: null,
         ...(status ? { status } : {}),
         ...(categoryId ? { categoryId } : {}),

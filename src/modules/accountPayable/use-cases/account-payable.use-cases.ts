@@ -91,12 +91,16 @@ export class AccountPayableUseCases {
     private readonly audit: AuditLogService,
   ) {}
 
-  async list(args: {
-    status?: AccountStatus;
-    search?: string;
-  } = {}): Promise<AccountPayableEntity[]> {
+  async list(
+    companyId: string,
+    args: {
+      status?: AccountStatus;
+      search?: string;
+    } = {},
+  ): Promise<AccountPayableEntity[]> {
     const records = await this.prisma.accountPayable.findMany({
       where: {
+        companyId,
         ...(args.status ? { status: args.status } : {}),
         ...(args.search
           ? {
@@ -113,9 +117,9 @@ export class AccountPayableUseCases {
     return records.map(toEntity);
   }
 
-  async findById(id: string): Promise<AccountPayableEntity> {
-    const record = await this.prisma.accountPayable.findUnique({
-      where: { id },
+  async findById(companyId: string, id: string): Promise<AccountPayableEntity> {
+    const record = await this.prisma.accountPayable.findFirst({
+      where: { id, companyId },
       include: { supplier: true, product: { include: { images: true } } },
     });
     if (!record) throw new NotFoundException('Conta a pagar não encontrada.');
@@ -128,6 +132,7 @@ export class AccountPayableUseCases {
   ): Promise<AccountPayableEntity> {
     const created = await this.prisma.accountPayable.create({
       data: {
+        companyId: actor.companyId,
         supplierId: input.supplierId ?? null,
         productId: input.productId ?? null,
         supplierName: input.supplierName,
@@ -157,8 +162,8 @@ export class AccountPayableUseCases {
     actor: AuditActor,
     input: UpdateAccountPayableInput,
   ): Promise<AccountPayableEntity> {
-    const existing = await this.prisma.accountPayable.findUnique({
-      where: { id: input.id },
+    const existing = await this.prisma.accountPayable.findFirst({
+      where: { id: input.id, companyId: actor.companyId },
       include: { supplier: true, product: { include: { images: true } } },
     });
     if (!existing) throw new NotFoundException('Conta a pagar não encontrada.');
@@ -209,6 +214,7 @@ export class AccountPayableUseCases {
         const supplierName = updated.supplier?.name ?? updated.supplierName;
         await this.prisma.cashMovement.create({
           data: {
+            companyId: actor.companyId,
             type: 'EXIT',
             category: 'PAYMENT',
             value: updated.amount,
@@ -242,8 +248,8 @@ export class AccountPayableUseCases {
   }
 
   async delete(actor: AuditActor, id: string): Promise<boolean> {
-    const existing = await this.prisma.accountPayable.findUnique({
-      where: { id },
+    const existing = await this.prisma.accountPayable.findFirst({
+      where: { id, companyId: actor.companyId },
     });
     if (!existing) throw new NotFoundException('Conta a pagar não encontrada.');
 
@@ -261,14 +267,14 @@ export class AccountPayableUseCases {
     return true;
   }
 
-  async summary(): Promise<{
+  async summary(companyId: string): Promise<{
     total: number;
     pending: number;
     paid: number;
     overdue: number;
     countTotal: number;
   }> {
-    const records = await this.prisma.accountPayable.findMany({});
+    const records = await this.prisma.accountPayable.findMany({ where: { companyId } });
     let total = 0;
     let pending = 0;
     let paid = 0;

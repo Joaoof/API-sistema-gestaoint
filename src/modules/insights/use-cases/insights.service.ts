@@ -74,9 +74,11 @@ export class InsightsService implements OnModuleInit {
   }
 
   async generate(companyId: string, kind: 'DAILY' | 'WEEKLY' | 'MANUAL') {
-    // 1) Coleta métricas
+    // 1) Coleta métricas — tenant-scoped
     const metrics =
-      kind === 'WEEKLY' ? await this.reports.weekly() : await this.reports.daily();
+      kind === 'WEEKLY'
+        ? await this.reports.weekly(companyId)
+        : await this.reports.daily(companyId);
 
     // 2) Cobra créditos antes de chamar OpenAI
     await this.credits.consume({

@@ -29,7 +29,11 @@ export class CreateCashMovementUseCase {
       user_id: actor.userId,
     });
 
-    const movement = CashMovementMapper.toDomain(validatedDto, actor.userId);
+    const movement = CashMovementMapper.toDomain(
+      validatedDto,
+      actor.userId,
+      actor.companyId,
+    );
     await this.cashMovementRepo.create(movement);
 
     await this.audit.log({

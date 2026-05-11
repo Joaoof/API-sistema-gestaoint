@@ -18,15 +18,21 @@ export class DriverResolver {
 
   @Query(() => [DriverEntity])
   async drivers(
+    @CurrentUser() user: AuthUser,
     @Args('search', { nullable: true }) search?: string,
     @Args('activeOnly', { nullable: true }) activeOnly?: boolean,
   ): Promise<DriverEntity[]> {
-    return this.useCases.list({ search, activeOnly });
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.list(companyId, { search, activeOnly });
   }
 
   @Query(() => DriverEntity)
-  async driver(@Args('id') id: string): Promise<DriverEntity> {
-    return this.useCases.findById(id);
+  async driver(
+    @CurrentUser() user: AuthUser,
+    @Args('id') id: string,
+  ): Promise<DriverEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.findById(companyId, id);
   }
 
   @Mutation(() => DriverEntity)

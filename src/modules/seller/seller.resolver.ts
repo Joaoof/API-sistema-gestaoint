@@ -18,15 +18,21 @@ export class SellerResolver {
 
   @Query(() => [SellerEntity])
   async sellers(
+    @CurrentUser() user: AuthUser,
     @Args('search', { nullable: true }) search?: string,
     @Args('activeOnly', { nullable: true }) activeOnly?: boolean,
   ): Promise<SellerEntity[]> {
-    return this.useCases.list({ search, activeOnly });
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.list(companyId, { search, activeOnly });
   }
 
   @Query(() => SellerEntity)
-  async seller(@Args('id') id: string): Promise<SellerEntity> {
-    return this.useCases.findById(id);
+  async seller(
+    @CurrentUser() user: AuthUser,
+    @Args('id') id: string,
+  ): Promise<SellerEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.findById(companyId, id);
   }
 
   @Mutation(() => SellerEntity)

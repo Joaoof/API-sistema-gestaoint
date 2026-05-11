@@ -34,9 +34,13 @@ export class DriverUseCases {
     private readonly audit: AuditLogService,
   ) {}
 
-  async list(args: { search?: string; activeOnly?: boolean } = {}): Promise<DriverEntity[]> {
+  async list(
+    companyId: string,
+    args: { search?: string; activeOnly?: boolean } = {},
+  ): Promise<DriverEntity[]> {
     const drivers = await this.prisma.driver.findMany({
       where: {
+        companyId,
         ...(args.activeOnly ? { active: true } : {}),
         ...(args.search
           ? {
@@ -55,8 +59,8 @@ export class DriverUseCases {
     return drivers.map(toEntity);
   }
 
-  async findById(id: string): Promise<DriverEntity> {
-    const driver = await this.prisma.driver.findUnique({ where: { id } });
+  async findById(companyId: string, id: string): Promise<DriverEntity> {
+    const driver = await this.prisma.driver.findFirst({ where: { id, companyId } });
     if (!driver) throw new NotFoundException('Motorista não encontrado.');
     return toEntity(driver);
   }
@@ -64,6 +68,7 @@ export class DriverUseCases {
   async create(actor: AuditActor, input: CreateDriverInput): Promise<DriverEntity> {
     const driver = await this.prisma.driver.create({
       data: {
+        companyId: actor.companyId,
         name: input.name,
         photoUrl: input.photoUrl ?? null,
         cnh: input.cnh ?? null,
@@ -88,7 +93,9 @@ export class DriverUseCases {
   }
 
   async update(actor: AuditActor, id: string, input: UpdateDriverInput): Promise<DriverEntity> {
-    const existing = await this.prisma.driver.findUnique({ where: { id } });
+    const existing = await this.prisma.driver.findFirst({
+      where: { id, companyId: actor.companyId },
+    });
     if (!existing) throw new NotFoundException('Motorista não encontrado.');
     const driver = await this.prisma.driver.update({
       where: { id },
@@ -118,7 +125,9 @@ export class DriverUseCases {
   }
 
   async remove(actor: AuditActor, id: string): Promise<boolean> {
-    const existing = await this.prisma.driver.findUnique({ where: { id } });
+    const existing = await this.prisma.driver.findFirst({
+      where: { id, companyId: actor.companyId },
+    });
     if (!existing) throw new NotFoundException('Motorista não encontrado.');
 
     const inUse = await this.prisma.delivery.findFirst({

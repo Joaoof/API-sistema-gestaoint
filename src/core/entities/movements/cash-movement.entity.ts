@@ -8,6 +8,7 @@ import {
 
 export interface CashMovementProps {
   id: string;
+  companyId: string;
   type: MovementType;
   category: MovementCategory;
   typePayment: MovementTypePayment | null;
@@ -30,6 +31,7 @@ export interface CashMovementProps {
 
 export class CashMovement {
   public readonly id: string;
+  public readonly companyId: string;
   public type: MovementType;
   public category: MovementCategory;
   public typePayment: MovementTypePayment | null;
@@ -51,6 +53,7 @@ export class CashMovement {
 
   constructor(props: CashMovementProps) {
     this.id = props.id;
+    this.companyId = props.companyId;
     this.type = props.type;
     this.category = props.category;
     this.typePayment = props.typePayment ?? null;
@@ -99,6 +102,7 @@ export class CashMovement {
   static fromPrisma(data: PrismaCashMovement): CashMovement {
     return new CashMovement({
       id: data.id,
+      companyId: (data as any).companyId,
       type: data.type,
       category: data.category,
       typePayment: data.typePayment,
@@ -123,6 +127,7 @@ export class CashMovement {
   toJSON() {
     return {
       id: this.id,
+      companyId: this.companyId,
       type: this.type,
       category: this.category,
       typePayment: this.typePayment,

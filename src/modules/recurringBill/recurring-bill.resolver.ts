@@ -1,6 +1,9 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { GqlAuthGuard } from '../../auth/guards/auth.guard';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { User } from '../../core/entities/user.entity';
+import { TenancyService } from '../construction/shared/tenancy.service';
 import {
   CreateRecurringBillInput,
   UpdateRecurringBillInput,
@@ -11,30 +14,42 @@ import { RecurringBillService } from './use-cases/recurring-bill.service';
 @Resolver(() => RecurringBillEntity)
 @UseGuards(GqlAuthGuard)
 export class RecurringBillResolver {
-  constructor(private readonly service: RecurringBillService) {}
+  constructor(
+    private readonly service: RecurringBillService,
+    private readonly tenancy: TenancyService,
+  ) {}
 
   @Query(() => [RecurringBillEntity])
-  recurringBills(): Promise<RecurringBillEntity[]> {
-    return this.service.list();
+  async recurringBills(@CurrentUser() user: User): Promise<RecurringBillEntity[]> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.list(companyId);
   }
 
   @Mutation(() => RecurringBillEntity)
-  createRecurringBill(
+  async createRecurringBill(
+    @CurrentUser() user: User,
     @Args('input') input: CreateRecurringBillInput,
   ): Promise<RecurringBillEntity> {
-    return this.service.create(input);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.create(companyId, input);
   }
 
   @Mutation(() => RecurringBillEntity)
-  updateRecurringBill(
+  async updateRecurringBill(
+    @CurrentUser() user: User,
     @Args('input') input: UpdateRecurringBillInput,
   ): Promise<RecurringBillEntity> {
-    return this.service.update(input);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.update(companyId, input);
   }
 
   @Mutation(() => Boolean)
-  deleteRecurringBill(@Args('id') id: string): Promise<boolean> {
-    return this.service.remove(id);
+  async deleteRecurringBill(
+    @CurrentUser() user: User,
+    @Args('id') id: string,
+  ): Promise<boolean> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.service.remove(companyId, id);
   }
 
   /** Permite materializar manualmente o mês corrente (botão "Gerar agora"). */

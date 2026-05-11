@@ -65,10 +65,10 @@ export class AiChatService {
     // 0) Cobra créditos antes de chamar OpenAI (idempotente por messageId)
     const cost = MODEL_COST[model] ?? 1;
 
-    // 1) Recupera ou cria a conversa
+    // 1) Recupera ou cria a conversa (tenant-scoped)
     let conversation = args.conversationId
-      ? await this.prisma.aiConversation.findUnique({
-          where: { id: args.conversationId },
+      ? await this.prisma.aiConversation.findFirst({
+          where: { id: args.conversationId, companyId: args.companyId },
           include: { messages: { orderBy: { createdAt: 'asc' } } },
         })
       : null;
@@ -78,6 +78,7 @@ export class AiChatService {
     if (!conversation) {
       conversation = await this.prisma.aiConversation.create({
         data: {
+          companyId: args.companyId,
           userId: args.userId,
           model,
           title: args.userMessage.slice(0, 80),
@@ -165,6 +166,7 @@ export class AiChatService {
           // Cria PendingAction
           const pending = await this.prisma.aiPendingAction.create({
             data: {
+              companyId: args.companyId,
               userId: args.userId,
               conversationId: conversation.id,
               tool: name,
@@ -305,20 +307,20 @@ export class AiChatService {
     return true;
   }
 
-  async listConversations(userId: string) {
+  async listConversations(companyId: string, userId: string) {
     return this.prisma.aiConversation.findMany({
-      where: { userId },
+      where: { companyId, userId },
       orderBy: { updatedAt: 'desc' },
       take: 50,
     });
   }
 
-  async getConversation(userId: string, id: string) {
-    const conv = await this.prisma.aiConversation.findUnique({
-      where: { id },
+  async getConversation(companyId: string, userId: string, id: string) {
+    const conv = await this.prisma.aiConversation.findFirst({
+      where: { id, companyId, userId },
       include: { messages: { orderBy: { createdAt: 'asc' } } },
     });
-    if (!conv || conv.userId !== userId) {
+    if (!conv) {
       throw new NotFoundException('Conversa não encontrada.');
     }
     return conv;

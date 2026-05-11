@@ -42,6 +42,7 @@ export class CreateProductUseCase {
     try {
       const product = await this.prisma.product.create({
         data: {
+          companyId: actor.companyId,
           kind: input.kind,
           sku: input.sku ?? null,
           nameProduct: input.nameProduct,

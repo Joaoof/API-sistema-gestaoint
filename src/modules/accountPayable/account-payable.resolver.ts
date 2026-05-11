@@ -38,23 +38,30 @@ export class AccountPayableResolver {
 
   @Query(() => [AccountPayableEntity])
   async accountsPayable(
+    @CurrentUser() user: User,
     @Args('search', { nullable: true }) search?: string,
     @Args('status', { type: () => AccountStatus, nullable: true })
     status?: AccountStatus,
   ): Promise<AccountPayableEntity[]> {
-    return this.useCases.list({ search, status });
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.list(companyId, { search, status });
   }
 
   @Query(() => AccountPayableEntity)
   async accountPayable(
+    @CurrentUser() user: User,
     @Args('id') id: string,
   ): Promise<AccountPayableEntity> {
-    return this.useCases.findById(id);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.findById(companyId, id);
   }
 
   @Query(() => AccountPayableSummary)
-  async accountsPayableSummary(): Promise<AccountPayableSummary> {
-    return this.useCases.summary();
+  async accountsPayableSummary(
+    @CurrentUser() user: User,
+  ): Promise<AccountPayableSummary> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.summary(companyId);
   }
 
   @Mutation(() => AccountPayableEntity)

@@ -22,7 +22,8 @@ export class BankResolver {
     @Args('search', { nullable: true }) search?: string,
     @Args('activeOnly', { nullable: true }) activeOnly?: boolean,
   ): Promise<BankEntity[]> {
-    return this.useCases.list(user.id, { search, activeOnly });
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.list(companyId, { search, activeOnly });
   }
 
   @Query(() => BankEntity)
@@ -30,7 +31,8 @@ export class BankResolver {
     @CurrentUser() user: User,
     @Args('id') id: string,
   ): Promise<BankEntity> {
-    return this.useCases.findById(user.id, id);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.findById(companyId, id);
   }
 
   @Mutation(() => BankEntity)

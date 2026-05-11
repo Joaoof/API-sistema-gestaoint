@@ -7,9 +7,11 @@ export class CashMovementMapper {
   static toDomain(
     dto: CreateCashMovementParsed,
     userId: string,
+    companyId: string,
   ): CashMovement {
     return new CashMovement({
       id: randomUUID(),
+      companyId,
       type: dto.type,
       category: dto.category,
       typePayment: dto.typePayment ?? null,

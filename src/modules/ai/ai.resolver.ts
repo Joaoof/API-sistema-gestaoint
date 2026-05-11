@@ -66,7 +66,8 @@ export class AiResolver {
 
   @Query(() => [AiConversationEntity])
   async aiConversations(@CurrentUser() user: User): Promise<AiConversationEntity[]> {
-    const rows = await this.chat.listConversations(user.id);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    const rows = await this.chat.listConversations(companyId, user.id);
     return rows.map((r) => ({
       id: r.id,
       title: r.title,
@@ -81,7 +82,8 @@ export class AiResolver {
     @CurrentUser() user: User,
     @Args('id') id: string,
   ): Promise<AiConversationEntity> {
-    const conv = await this.chat.getConversation(user.id, id);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    const conv = await this.chat.getConversation(companyId, user.id, id);
     return {
       id: conv.id,
       title: conv.title,

@@ -21,10 +21,12 @@ model Gift {
 
 model Product {
   id          String              @id @default(uuid())
-  nameProduct String              @unique
+  companyId   String
+  nameProduct String
   kind        ProductKind         @default(PRODUCT)
   quantity    Int                 @default(0)
   costPrice   Decimal             @default(0.0)
+  averageCost Decimal             @default(0.0)
   salePrice   Decimal             @default(0.0)
   status      ProductStatus       @default(ACTIVE)
   categoryId  String?
@@ -47,9 +49,10 @@ model Product {
   payables    AccountPayable[]
   orderItems  OrderItem[]
 
-  @@index([nameProduct])
+  @@unique([companyId, nameProduct])
+  @@index([companyId])
+  @@index([companyId, status])
   @@index([sku])
-  @@index([status])
   @@index([categoryId])
   @@index([supplierId])
   @@index([kind])
@@ -74,6 +77,7 @@ model ProductImage {
 
 model Category {
   id          String         @id @default(uuid())
+  companyId   String
   name        String
   description String?
   color       String         @default("#3B82F6")
@@ -84,24 +88,30 @@ model Category {
   Product     Product[]
   user        Users?         @relation(fields: [userId], references: [id])
 
+  @@index([companyId])
+  @@index([companyId, status])
   @@index([name], map: "idx_category_name")
-  @@index([status], map: "idx_category_status")
 }
 
 model Supplier {
   id         String                @id @default(cuid())
-  name       String                @unique
-  email      String?               @unique
+  companyId  String
+  name       String
+  email      String?
   phone      String?
   address    String?
   createdAt  DateTime              @default(now())
   Product    Product[]
   payables   AccountPayable[]
   transacoes TransacaoFinanceira[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
 }
 
 model Customer {
   id            String              @id @default(uuid())
+  companyId     String
   name          String
   nomeFantasia  String?
   razaoSocial   String?
@@ -124,12 +134,16 @@ model Customer {
   opportunities Opportunity[]
   contracts     Contract[]
 
+  @@index([companyId])
+  @@index([companyId, name])
+  @@index([companyId, document])
   @@index([name])
   @@index([document])
 }
 
 model Order {
   id                   String             @id @default(uuid())
+  companyId            String
   number               Int                @default(autoincrement())
   customerId           String?
   customerName         String?
@@ -159,11 +173,12 @@ model Order {
   delivery             Delivery?
   invoices             Invoice[]
 
+  @@index([companyId])
+  @@index([companyId, createdAt(sort: Desc)])
+  @@index([companyId, status])
   @@index([customerId])
   @@index([sellerId])
   @@index([createdById])
-  @@index([createdAt(sort: Desc)])
-  @@index([status])
   @@index([orderType])
 }
 
@@ -189,6 +204,7 @@ model OrderItem {
 
 model Driver {
   id              String     @id @default(uuid())
+  companyId       String
   name            String
   photoUrl        String?
   cnh             String?
@@ -204,12 +220,14 @@ model Driver {
   updatedAt       DateTime   @updatedAt
   deliveries      Delivery[]
 
-  @@index([active])
+  @@index([companyId])
+  @@index([companyId, active])
   @@index([name])
 }
 
 model Delivery {
   id             String         @id @default(uuid())
+  companyId      String
   orderId        String         @unique
   kind           DeliveryKind   @default(DELIVERY)
   driverId       String?
@@ -228,15 +246,17 @@ model Delivery {
   order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
   driverRef      Driver?        @relation(fields: [driverId], references: [id])
 
+  @@index([companyId])
+  @@index([companyId, status])
+  @@index([companyId, scheduledDate])
   @@index([orderId])
   @@index([driverId])
-  @@index([status])
-  @@index([scheduledDate])
   @@index([kind])
 }
 
 model AccountReceivable {
   id            String                @id @default(uuid())
+  companyId     String
   customerId    String
   productId     String?
   obraId        String?
@@ -244,6 +264,7 @@ model AccountReceivable {
   orderId       String?
   description   String
   amount        Decimal
+  paidAmount    Decimal               @default(0)
   interestRate  Decimal               @default(0.033)
   dueDate       DateTime
   paidAt        DateTime?
@@ -256,18 +277,21 @@ model AccountReceivable {
   obra          Obra?                 @relation(fields: [obraId], references: [id])
   centroCusto   CentroCusto?          @relation(fields: [centroCustoId], references: [id])
   transacoes    TransacaoFinanceira[]
+  payments      PaymentReceipt[]
 
+  @@index([companyId])
+  @@index([companyId, status])
+  @@index([companyId, dueDate])
   @@index([customerId])
   @@index([productId])
   @@index([obraId])
   @@index([centroCustoId])
   @@index([orderId])
-  @@index([dueDate])
-  @@index([status])
 }
 
 model AccountPayable {
   id            String                @id @default(uuid())
+  companyId     String
   supplierId    String?
   productId     String?
   obraId        String?
@@ -275,6 +299,7 @@ model AccountPayable {
   supplierName  String
   description   String
   amount        Decimal
+  paidAmount    Decimal               @default(0)
   interestRate  Decimal               @default(0.033)
   dueDate       DateTime
   paidAt        DateTime?
@@ -287,29 +312,100 @@ model AccountPayable {
   obra          Obra?                 @relation(fields: [obraId], references: [id])
   centroCusto   CentroCusto?          @relation(fields: [centroCustoId], references: [id])
   transacoes    TransacaoFinanceira[]
+  payments      PaymentReceipt[]
 
+  @@index([companyId])
+  @@index([companyId, status])
+  @@index([companyId, dueDate])
   @@index([supplierId])
   @@index([productId])
   @@index([obraId])
   @@index([centroCustoId])
-  @@index([dueDate])
-  @@index([status])
+}
+
+model PaymentReceipt {
+  id                  String              @id @default(uuid())
+  companyId           String
+  accountReceivableId String?
+  accountPayableId    String?
+  amount              Decimal
+  paymentMethod       MovementTypePayment
+  bankId              String?
+  paidAt              DateTime
+  notes               String?
+  cashMovementId      String?
+  createdByUserId     String
+  createdAt           DateTime            @default(now())
+
+  accountReceivable AccountReceivable? @relation(fields: [accountReceivableId], references: [id], onDelete: Cascade)
+  accountPayable    AccountPayable?    @relation(fields: [accountPayableId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([accountReceivableId])
+  @@index([accountPayableId])
+  @@index([cashMovementId])
+}
+
+model Warehouse {
+  id          String      @id @default(uuid())
+  companyId   String
+  name        String
+  code        String?
+  address     String?
+  isMain      Boolean     @default(false)
+  active      Boolean     @default(true)
+  notes       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  inventories Inventory[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@index([companyId, active])
 }
 
 model Inventory {
-  id        String   @id @default(cuid())
-  productId String   @unique
-  quantity  Int      @default(0)
-  minStock  Int      @default(10)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  product   Product  @relation(fields: [productId], references: [id])
+  id          String    @id @default(cuid())
+  companyId   String
+  productId   String
+  warehouseId String
+  quantity    Int       @default(0)
+  minStock    Int       @default(10)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  product     Product   @relation(fields: [productId], references: [id])
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
 
+  @@unique([productId, warehouseId])
+  @@index([companyId])
+  @@index([warehouseId])
+  @@index([productId])
   @@index([quantity])
+}
+
+model InventoryMovement {
+  id           String   @id @default(uuid())
+  companyId    String
+  productId    String
+  warehouseId  String
+  type         String // 'ENTRY' | 'EXIT' | 'TRANSFER_OUT' | 'TRANSFER_IN' | 'ADJUSTMENT'
+  quantity     Int // sempre positivo; o `type` indica direção
+  unitCost     Decimal? // preenchido em ENTRY para alimentar custo médio
+  reason       String?
+  reference    String? // ex: OrderId, AdjustmentId
+  transferId   String? // par ENTRY+EXIT em transferência
+  userId       String
+  createdAt    DateTime @default(now())
+
+  @@index([companyId])
+  @@index([productId, createdAt(sort: Desc)])
+  @@index([warehouseId, createdAt(sort: Desc)])
+  @@index([transferId])
 }
 
 model RecurringBill {
   id               String   @id @default(uuid())
+  companyId        String
   supplierName     String
   description      String
   amount           Decimal
@@ -321,11 +417,13 @@ model RecurringBill {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  @@index([active])
+  @@index([companyId])
+  @@index([companyId, active])
 }
 
 model AiConversation {
   id        String      @id @default(uuid())
+  companyId String
   userId    String
   title     String?
   model     String      @default("gpt-4o-mini")
@@ -333,6 +431,7 @@ model AiConversation {
   updatedAt DateTime    @updatedAt
   messages  AiMessage[]
 
+  @@index([companyId, updatedAt(sort: Desc)])
   @@index([userId, updatedAt(sort: Desc)])
 }
 
@@ -352,6 +451,7 @@ model AiMessage {
 
 model AiPendingAction {
   id             String    @id @default(uuid())
+  companyId      String
   userId         String
   conversationId String?
   tool           String // ex: 'createAccountPayable'
@@ -573,6 +673,7 @@ model CompanyPlan {
 
 model CashMovement {
   id                   String               @id @default(uuid())
+  companyId            String
   type                 MovementType
   category             MovementCategory
   value                Decimal
@@ -599,10 +700,10 @@ model CashMovement {
   user                 Users                @relation(fields: [user_id], references: [id])
   bank                 Bank?                @relation(fields: [bankId], references: [id])
 
+  @@index([companyId, date(sort: Desc)])
+  @@index([companyId, status])
+  @@index([companyId, type])
   @@index([user_id, date(sort: Desc)])
-  @@index([user_id, status])
-  @@index([user_id, category])
-  @@index([user_id, type])
   @@index([date])
   @@index([referenceCode])
   @@index([bankId])
@@ -615,6 +716,7 @@ model CashMovement {
 
 model Bank {
   id            String          @id @default(uuid())
+  companyId     String
   user_id       String
   name          String
   tipo          BankAccountType @default(CHECKING)
@@ -633,8 +735,9 @@ model Bank {
   user          Users           @relation(fields: [user_id], references: [id])
   cashMovements CashMovement[]
 
+  @@index([companyId])
+  @@index([companyId, ativo])
   @@index([user_id])
-  @@index([user_id, ativo])
   @@index([name])
 }
 
@@ -683,8 +786,9 @@ model SalesCatalogProduct {
 
 model Seller {
   id                String   @id @default(uuid())
+  companyId         String
   name              String
-  email             String?  @unique
+  email             String?
   phone             String?
   document          String?
   commissionPercent Decimal  @default(0)
@@ -695,7 +799,8 @@ model Seller {
   updatedAt         DateTime @updatedAt
   orders            Order[]
 
-  @@index([active])
+  @@index([companyId])
+  @@index([companyId, active])
   @@index([name])
 }
 

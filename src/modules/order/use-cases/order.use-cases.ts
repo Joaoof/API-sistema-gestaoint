@@ -103,15 +103,19 @@ export class OrderUseCases {
     private readonly audit: AuditLogService,
   ) {}
 
-  async list(args: {
-    search?: string;
-    status?: OrderStatus;
-    take?: number;
-    fromDate?: Date;
-    toDate?: Date;
-  } = {}): Promise<OrderEntity[]> {
+  async list(
+    companyId: string,
+    args: {
+      search?: string;
+      status?: OrderStatus;
+      take?: number;
+      fromDate?: Date;
+      toDate?: Date;
+    } = {},
+  ): Promise<OrderEntity[]> {
     const orders = await this.prisma.order.findMany({
       where: {
+        companyId,
         ...(args.status ? { status: args.status } : {}),
         ...(args.fromDate || args.toDate
           ? {
@@ -139,9 +143,9 @@ export class OrderUseCases {
     return orders.map(toEntity);
   }
 
-  async findById(id: string): Promise<OrderEntity> {
-    const order = await this.prisma.order.findUnique({
-      where: { id },
+  async findById(companyId: string, id: string): Promise<OrderEntity> {
+    const order = await this.prisma.order.findFirst({
+      where: { id, companyId },
       include: { customer: true, items: true },
     });
     if (!order) throw new NotFoundException('Pedido não encontrado.');
@@ -162,9 +166,10 @@ export class OrderUseCases {
     }
 
     // Carrega produtos com kind/unit/estoque atual.
+    // Tenant-scoped: só produtos da empresa do usuário podem entrar no pedido.
     const productIds = input.items.map((i) => i.productId);
     const products = await this.prisma.product.findMany({
-      where: { id: { in: productIds }, deletedAt: null },
+      where: { id: { in: productIds }, companyId: actor.companyId, deletedAt: null },
     });
     const productMap = new Map(products.map((p) => [p.id, p]));
 
@@ -235,8 +240,8 @@ export class OrderUseCases {
     let customerDocument: string | null = input.customerDocument ?? null;
     let customerPhone: string | null = input.customerPhone ?? null;
     if (input.customerId) {
-      const customer = await this.prisma.customer.findUnique({
-        where: { id: input.customerId },
+      const customer = await this.prisma.customer.findFirst({
+        where: { id: input.customerId, companyId: actor.companyId },
       });
       if (!customer) throw new BadRequestException('Cliente não encontrado.');
       customerName = customerName ?? customer.name;
@@ -256,6 +261,7 @@ export class OrderUseCases {
     let commissionPercent = 0;
     let commissionAmount = 0;
     if (input.sellerId) {
+      // Seller ainda não tem companyId nesta fase — fica pra próxima rodada.
       const seller = await this.prisma.seller.findUnique({
         where: { id: input.sellerId },
       });
@@ -279,6 +285,7 @@ export class OrderUseCases {
     const order = await this.prisma.$transaction(async (tx) => {
       const created = await tx.order.create({
         data: {
+          companyId: actor.companyId,
           customerId: input.customerId ?? null,
           customerName,
           customerDocument,
@@ -342,6 +349,7 @@ export class OrderUseCases {
           new Date(Date.now() + 30 * 86400_000);
         await tx.accountReceivable.create({
           data: {
+            companyId: actor.companyId,
             customerId: input.customerId!,
             orderId: created.id,
             description: `Pedido #${created.number}`,
@@ -362,6 +370,7 @@ export class OrderUseCases {
       ) {
         await tx.cashMovement.create({
           data: {
+            companyId: actor.companyId,
             type: 'ENTRY',
             category: 'SALE',
             value: total,
@@ -398,8 +407,8 @@ export class OrderUseCases {
   }
 
   async cancel(actor: AuditActor, id: string): Promise<OrderEntity> {
-    const order = await this.prisma.order.findUnique({
-      where: { id },
+    const order = await this.prisma.order.findFirst({
+      where: { id, companyId: actor.companyId },
       include: { customer: true, items: true },
     });
     if (!order) throw new NotFoundException('Pedido não encontrado.');
@@ -448,8 +457,8 @@ export class OrderUseCases {
   }
 
   async remove(actor: AuditActor, id: string): Promise<boolean> {
-    const order = await this.prisma.order.findUnique({
-      where: { id },
+    const order = await this.prisma.order.findFirst({
+      where: { id, companyId: actor.companyId },
       include: { customer: true, items: true },
     });
     if (!order) throw new NotFoundException('Pedido não encontrado.');
@@ -498,9 +507,9 @@ export class OrderUseCases {
     return true;
   }
 
-  async findForPrint(id: string): Promise<OrderPrintDto> {
-    const order = await this.prisma.order.findUnique({
-      where: { id },
+  async findForPrint(companyId: string, id: string): Promise<OrderPrintDto> {
+    const order = await this.prisma.order.findFirst({
+      where: { id, companyId },
       include: {
         customer: true,
         createdBy: { include: { company: true } },
@@ -575,7 +584,7 @@ export class OrderUseCases {
     };
   }
 
-  async summary(): Promise<{
+  async summary(companyId: string): Promise<{
     todayCount: number;
     todayTotal: number;
     monthCount: number;
@@ -588,12 +597,14 @@ export class OrderUseCases {
     const [today, month] = await Promise.all([
       this.prisma.order.findMany({
         where: {
+          companyId,
           createdAt: { gte: startOfDay },
           status: { in: [OrderStatus.CONFIRMED, OrderStatus.PAID] },
         },
       }),
       this.prisma.order.findMany({
         where: {
+          companyId,
           createdAt: { gte: startOfMonth },
           status: { in: [OrderStatus.CONFIRMED, OrderStatus.PAID] },
         },
@@ -626,8 +637,8 @@ export class OrderUseCases {
       receivedAmount?: number;
     },
   ): Promise<OrderEntity> {
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, companyId: actor.companyId },
       include: { customer: true, items: true },
     });
     if (!order) throw new NotFoundException('Pedido não encontrado.');
@@ -663,6 +674,7 @@ export class OrderUseCases {
       if (!alreadyMov && totalReceived > 0 && actor.userId) {
         await tx.cashMovement.create({
           data: {
+            companyId: actor.companyId,
             type: 'ENTRY',
             category: 'SALE',
             value: totalReceived,

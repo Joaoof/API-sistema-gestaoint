@@ -27,22 +27,27 @@ export class CategoryResolver {
 
   @Query(() => CategoryListEntity)
   async categories(
+    @CurrentUser() user: User,
     @Args('pagination', { nullable: true }) pagination?: PaginationInput,
     @Args('filters', { nullable: true }) filters?: CategoryFiltersInput,
   ): Promise<CategoryListEntity> {
-    return this.useCases.list(pagination, filters);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.list(companyId, pagination, filters);
   }
 
   @Query(() => [CategoryEntity])
-  async activeCategories(): Promise<CategoryEntity[]> {
-    return this.useCases.listActive();
+  async activeCategories(@CurrentUser() user: User): Promise<CategoryEntity[]> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.listActive(companyId);
   }
 
   @Query(() => CategoryEntity)
   async category(
+    @CurrentUser() user: User,
     @Args('id', { type: () => ID }) id: string,
   ): Promise<CategoryEntity> {
-    return this.useCases.findById(id);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.findById(companyId, id);
   }
 
   @Mutation(() => CategoryEntity)

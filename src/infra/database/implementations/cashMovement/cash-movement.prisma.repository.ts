@@ -59,6 +59,7 @@ export class PrismaCashMovementRepository implements CashMovementRepository {
     await this.prisma.cashMovement.create({
       data: {
         id: movement.id,
+        companyId: movement.companyId,
         type: movement.type,
         category: movement.category,
         typePayment: movement.typePayment ?? undefined,

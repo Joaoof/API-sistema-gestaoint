@@ -3,11 +3,14 @@ import { AuditAction } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { AuditLogService } from '../../audit/use-cases/audit-log.service';
 import { AuditActor } from '../../audit/types/actor';
+import { InventoryService } from '../../warehouse/use-cases/inventory.service';
 import { ProductEntity } from '../entities/product.entity';
 
 interface AdjustArgs {
   productId: string;
   quantity: number; // sempre positivo
+  warehouseId?: string; // se omitido, usa o depósito principal
+  unitCost?: number; // só para entrada
   notes?: string | null;
 }
 
@@ -16,6 +19,7 @@ export class AdjustInventoryUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditLogService,
+    private readonly inventory: InventoryService,
   ) {}
 
   async productionEntry(
@@ -25,7 +29,29 @@ export class AdjustInventoryUseCase {
     if (args.quantity <= 0) {
       throw new BadRequestException('Quantidade deve ser maior que zero.');
     }
-    return this.applyDelta(actor, args.productId, args.quantity, args.notes ?? null, 'PRODUCTION');
+
+    const result = await this.inventory.entry(
+      { userId: actor.userId!, companyId: actor.companyId },
+      {
+        productId: args.productId,
+        warehouseId: args.warehouseId,
+        quantity: args.quantity,
+        unitCost: args.unitCost,
+        reason: args.notes ?? 'Entrada de produção',
+      },
+    );
+
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'Product',
+      entityId: args.productId,
+      action: AuditAction.UPDATE,
+      after: { quantity: result.productQuantity, averageCost: result.averageCost },
+      reason: `Entrada de produção: +${args.quantity}${args.notes ? ` — ${args.notes}` : ''}`,
+    });
+
+    return this.loadProduct(actor.companyId, args.productId);
   }
 
   async quickExit(
@@ -35,61 +61,36 @@ export class AdjustInventoryUseCase {
     if (args.quantity <= 0) {
       throw new BadRequestException('Quantidade deve ser maior que zero.');
     }
-    return this.applyDelta(
-      actor,
-      args.productId,
-      -args.quantity,
-      [args.reason, args.notes].filter(Boolean).join(' — ') || null,
-      'EXIT',
+
+    const result = await this.inventory.exit(
+      { userId: actor.userId!, companyId: actor.companyId },
+      {
+        productId: args.productId,
+        warehouseId: args.warehouseId,
+        quantity: args.quantity,
+        reason: [args.reason, args.notes].filter(Boolean).join(' — '),
+      },
     );
-  }
-
-  private async applyDelta(
-    actor: AuditActor,
-    productId: string,
-    delta: number,
-    note: string | null,
-    kind: 'PRODUCTION' | 'EXIT',
-  ): Promise<ProductEntity> {
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId },
-      include: { inventory: true, images: true, category: true, supplier: true },
-    });
-    if (!product) throw new NotFoundException('Produto não encontrado.');
-
-    const newQuantity = product.quantity + delta;
-    if (newQuantity < 0) {
-      throw new BadRequestException(
-        `Estoque insuficiente. Atual: ${product.quantity}, retirando ${Math.abs(delta)}.`,
-      );
-    }
-
-    const updated = await this.prisma.$transaction(async (tx) => {
-      const p = await tx.product.update({
-        where: { id: productId },
-        data: { quantity: newQuantity },
-        include: { inventory: true, images: true, category: true, supplier: true },
-      });
-      if (p.inventory) {
-        await tx.inventory.update({
-          where: { productId },
-          data: { quantity: newQuantity },
-        });
-      }
-      return p;
-    });
 
     await this.audit.log({
       companyId: actor.companyId,
       userId: actor.userId,
       entity: 'Product',
-      entityId: productId,
+      entityId: args.productId,
       action: AuditAction.UPDATE,
-      before: { quantity: product.quantity },
-      after: { quantity: newQuantity },
-      reason: `${kind === 'PRODUCTION' ? 'Entrada de produção' : 'Saída rápida'}: ${delta > 0 ? '+' : ''}${delta}${note ? ` — ${note}` : ''}`,
+      after: { quantity: result.productQuantity },
+      reason: `Saída rápida: -${args.quantity} — ${args.reason}${args.notes ? ` (${args.notes})` : ''}`,
     });
 
-    return updated as unknown as ProductEntity;
+    return this.loadProduct(actor.companyId, args.productId);
+  }
+
+  private async loadProduct(companyId: string, productId: string): Promise<ProductEntity> {
+    const p = await this.prisma.product.findFirst({
+      where: { id: productId, companyId },
+      include: { inventory: true, images: true, category: true, supplier: true },
+    });
+    if (!p) throw new NotFoundException('Produto não encontrado.');
+    return p as unknown as ProductEntity;
   }
 }

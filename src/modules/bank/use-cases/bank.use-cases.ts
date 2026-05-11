@@ -48,12 +48,12 @@ export class BankUseCases {
   ) {}
 
   async list(
-    userId: string,
+    companyId: string,
     args: { search?: string; activeOnly?: boolean } = {},
   ): Promise<BankEntity[]> {
     const banks = await this.prisma.bank.findMany({
       where: {
-        user_id: userId,
+        companyId,
         ...(args.activeOnly ? { ativo: true } : {}),
         ...(args.search
           ? {
@@ -72,9 +72,9 @@ export class BankUseCases {
     return banks.map(toEntity);
   }
 
-  async findById(userId: string, id: string): Promise<BankEntity> {
-    const bank = await this.prisma.bank.findUnique({ where: { id } });
-    if (!bank || bank.user_id !== userId) {
+  async findById(companyId: string, id: string): Promise<BankEntity> {
+    const bank = await this.prisma.bank.findFirst({ where: { id, companyId } });
+    if (!bank) {
       throw new NotFoundException('Banco não encontrado.');
     }
     return toEntity(bank);
@@ -87,6 +87,7 @@ export class BankUseCases {
 
     const bank = await this.prisma.bank.create({
       data: {
+        companyId: actor.companyId,
         user_id: actor.userId,
         name: input.name.trim(),
         tipo: input.tipo,
@@ -120,8 +121,10 @@ export class BankUseCases {
     id: string,
     input: UpdateBankInput,
   ): Promise<BankEntity> {
-    const existing = await this.prisma.bank.findUnique({ where: { id } });
-    if (!existing || existing.user_id !== actor.userId) {
+    const existing = await this.prisma.bank.findFirst({
+      where: { id, companyId: actor.companyId },
+    });
+    if (!existing) {
       throw new NotFoundException('Banco não encontrado.');
     }
 
@@ -163,8 +166,10 @@ export class BankUseCases {
   }
 
   async remove(actor: AuditActor, id: string): Promise<boolean> {
-    const existing = await this.prisma.bank.findUnique({ where: { id } });
-    if (!existing || existing.user_id !== actor.userId) {
+    const existing = await this.prisma.bank.findFirst({
+      where: { id, companyId: actor.companyId },
+    });
+    if (!existing) {
       throw new NotFoundException('Banco não encontrado.');
     }
 

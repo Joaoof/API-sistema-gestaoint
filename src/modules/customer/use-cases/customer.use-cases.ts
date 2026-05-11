@@ -16,6 +16,7 @@ export class CustomerUseCases {
   async create(actor: AuditActor, input: CreateCustomerInput): Promise<CustomerEntity> {
     const customer = await this.prisma.customer.create({
       data: {
+        companyId: actor.companyId,
         name: input.name,
         nomeFantasia: input.nomeFantasia ?? null,
         razaoSocial: input.razaoSocial ?? null,
@@ -43,7 +44,9 @@ export class CustomerUseCases {
   }
 
   async update(actor: AuditActor, id: string, input: Partial<CreateCustomerInput>): Promise<CustomerEntity> {
-    const existing = await this.prisma.customer.findUnique({ where: { id } });
+    const existing = await this.prisma.customer.findFirst({
+      where: { id, companyId: actor.companyId },
+    });
     if (!existing) throw new NotFoundException('Cliente não encontrado.');
 
     const customer = await this.prisma.customer.update({
@@ -76,25 +79,30 @@ export class CustomerUseCases {
     return customer as unknown as CustomerEntity;
   }
 
-  async list(search?: string): Promise<CustomerEntity[]> {
+  async list(companyId: string, search?: string): Promise<CustomerEntity[]> {
     const customers = await this.prisma.customer.findMany({
-      where: search
-        ? {
-            OR: [
-              { name: { contains: search, mode: 'insensitive' } },
-              { document: { contains: search, mode: 'insensitive' } },
-              { email: { contains: search, mode: 'insensitive' } },
-            ],
-          }
-        : undefined,
+      where: {
+        companyId,
+        ...(search
+          ? {
+              OR: [
+                { name: { contains: search, mode: 'insensitive' } },
+                { document: { contains: search, mode: 'insensitive' } },
+                { email: { contains: search, mode: 'insensitive' } },
+              ],
+            }
+          : {}),
+      },
       orderBy: { name: 'asc' },
       take: 200,
     });
     return customers as unknown as CustomerEntity[];
   }
 
-  async findById(id: string): Promise<CustomerEntity> {
-    const customer = await this.prisma.customer.findUnique({ where: { id } });
+  async findById(companyId: string, id: string): Promise<CustomerEntity> {
+    const customer = await this.prisma.customer.findFirst({
+      where: { id, companyId },
+    });
     if (!customer) throw new NotFoundException('Cliente não encontrado.');
     return customer as unknown as CustomerEntity;
   }

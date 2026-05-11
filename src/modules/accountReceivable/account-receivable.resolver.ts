@@ -29,23 +29,30 @@ export class AccountReceivableResolver {
 
   @Query(() => [AccountReceivableEntity])
   async accountsReceivable(
+    @CurrentUser() user: User,
     @Args('search', { nullable: true }) search?: string,
     @Args('status', { type: () => AccountStatus, nullable: true })
     status?: AccountStatus,
   ): Promise<AccountReceivableEntity[]> {
-    return this.useCases.list({ search, status });
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.list(companyId, { search, status });
   }
 
   @Query(() => AccountReceivableEntity)
   async accountReceivable(
+    @CurrentUser() user: User,
     @Args('id') id: string,
   ): Promise<AccountReceivableEntity> {
-    return this.useCases.findById(id);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.findById(companyId, id);
   }
 
   @Query(() => AccountReceivableSummary)
-  async accountsReceivableSummary(): Promise<AccountReceivableSummary> {
-    return this.useCases.summary();
+  async accountsReceivableSummary(
+    @CurrentUser() user: User,
+  ): Promise<AccountReceivableSummary> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.summary(companyId);
   }
 
   @Mutation(() => AccountReceivableEntity)

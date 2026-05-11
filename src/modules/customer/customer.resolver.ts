@@ -18,14 +18,20 @@ export class CustomerResolver {
 
   @Query(() => [CustomerEntity])
   async customers(
+    @CurrentUser() user: AuthUser,
     @Args('search', { nullable: true }) search?: string,
   ): Promise<CustomerEntity[]> {
-    return this.useCases.list(search);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.list(companyId, search);
   }
 
   @Query(() => CustomerEntity)
-  async customer(@Args('id') id: string): Promise<CustomerEntity> {
-    return this.useCases.findById(id);
+  async customer(
+    @CurrentUser() user: AuthUser,
+    @Args('id') id: string,
+  ): Promise<CustomerEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.findById(companyId, id);
   }
 
   @Mutation(() => CustomerEntity)

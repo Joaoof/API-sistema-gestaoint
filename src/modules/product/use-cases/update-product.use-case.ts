@@ -38,7 +38,7 @@ export class UpdateProductUseCase {
     input: UpdateProductInput,
   ): Promise<ProductEntity> {
     const existing = await this.prisma.product.findFirst({
-      where: { id: input.id, deletedAt: null },
+      where: { id: input.id, companyId: actor.companyId, deletedAt: null },
       include: { images: true },
     });
     if (!existing) {

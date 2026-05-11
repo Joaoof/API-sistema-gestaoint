@@ -38,9 +38,13 @@ export class SellerUseCases {
     private readonly audit: AuditLogService,
   ) {}
 
-  async list(args: { search?: string; activeOnly?: boolean } = {}): Promise<SellerEntity[]> {
+  async list(
+    companyId: string,
+    args: { search?: string; activeOnly?: boolean } = {},
+  ): Promise<SellerEntity[]> {
     const sellers = await this.prisma.seller.findMany({
       where: {
+        companyId,
         ...(args.activeOnly ? { active: true } : {}),
         ...(args.search
           ? {
@@ -58,19 +62,22 @@ export class SellerUseCases {
     return sellers.map(toEntity);
   }
 
-  async findById(id: string): Promise<SellerEntity> {
-    const seller = await this.prisma.seller.findUnique({ where: { id } });
+  async findById(companyId: string, id: string): Promise<SellerEntity> {
+    const seller = await this.prisma.seller.findFirst({ where: { id, companyId } });
     if (!seller) throw new NotFoundException('Vendedor não encontrado.');
     return toEntity(seller);
   }
 
   async create(actor: AuditActor, input: CreateSellerInput): Promise<SellerEntity> {
     if (input.email) {
-      const exists = await this.prisma.seller.findUnique({ where: { email: input.email } });
+      const exists = await this.prisma.seller.findFirst({
+        where: { email: input.email, companyId: actor.companyId },
+      });
       if (exists) throw new BadRequestException('Já existe um vendedor com este e-mail.');
     }
     const seller = await this.prisma.seller.create({
       data: {
+        companyId: actor.companyId,
         name: input.name,
         email: input.email ?? null,
         phone: input.phone ?? null,
@@ -91,12 +98,14 @@ export class SellerUseCases {
   }
 
   async update(actor: AuditActor, id: string, input: UpdateSellerInput): Promise<SellerEntity> {
-    const existing = await this.prisma.seller.findUnique({ where: { id } });
+    const existing = await this.prisma.seller.findFirst({
+      where: { id, companyId: actor.companyId },
+    });
     if (!existing) throw new NotFoundException('Vendedor não encontrado.');
 
     if (input.email && input.email !== existing.email) {
       const taken = await this.prisma.seller.findFirst({
-        where: { email: input.email, NOT: { id } },
+        where: { email: input.email, companyId: actor.companyId, NOT: { id } },
         select: { id: true },
       });
       if (taken) throw new BadRequestException('Já existe um vendedor com este e-mail.');
@@ -128,7 +137,9 @@ export class SellerUseCases {
   }
 
   async remove(actor: AuditActor, id: string): Promise<boolean> {
-    const existing = await this.prisma.seller.findUnique({ where: { id } });
+    const existing = await this.prisma.seller.findFirst({
+      where: { id, companyId: actor.companyId },
+    });
     if (!existing) throw new NotFoundException('Vendedor não encontrado.');
 
     const inUse = await this.prisma.order.findFirst({

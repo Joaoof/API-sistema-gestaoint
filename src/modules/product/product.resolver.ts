@@ -28,6 +28,7 @@ export class ProductResolver {
 
   @Query(() => [ProductEntity])
   async products(
+    @CurrentUser() user: User,
     @Args('search', { nullable: true }) search?: string,
     @Args('categoryId', { nullable: true }) categoryId?: string,
     @Args('status', { type: () => ProductStatus, nullable: true })
@@ -35,7 +36,8 @@ export class ProductResolver {
     @Args('take', { nullable: true, type: () => Number }) take?: number,
     @Args('skip', { nullable: true, type: () => Number }) skip?: number,
   ): Promise<ProductEntity[]> {
-    return this.listProducts.execute({
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.listProducts.execute(companyId, {
       search,
       categoryId,
       status,
@@ -72,8 +74,12 @@ export class ProductResolver {
   }
 
   @Query(() => ProductEntity, { nullable: true })
-  async product(@Args('id') id: string): Promise<ProductEntity | null> {
-    return this.listProducts.findById(id);
+  async product(
+    @CurrentUser() user: User,
+    @Args('id') id: string,
+  ): Promise<ProductEntity | null> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.listProducts.findById(companyId, id);
   }
 
   /** Entrada rápida (relatório de produção): incrementa o estoque do produto. */
@@ -82,12 +88,14 @@ export class ProductResolver {
     @CurrentUser() user: User,
     @Args('productId') productId: string,
     @Args('quantity', { type: () => Int }) quantity: number,
+    @Args('warehouseId', { nullable: true }) warehouseId?: string,
+    @Args('unitCost', { type: () => Number, nullable: true }) unitCost?: number,
     @Args('notes', { nullable: true }) notes?: string,
   ): Promise<ProductEntity> {
     const companyId = await this.tenancy.resolveCompanyId(user);
     return this.adjustInventory.productionEntry(
       { userId: user.id, companyId },
-      { productId, quantity, notes: notes ?? null },
+      { productId, quantity, warehouseId, unitCost, notes: notes ?? null },
     );
   }
 
@@ -98,12 +106,13 @@ export class ProductResolver {
     @Args('productId') productId: string,
     @Args('quantity', { type: () => Int }) quantity: number,
     @Args('reason') reason: string,
+    @Args('warehouseId', { nullable: true }) warehouseId?: string,
     @Args('notes', { nullable: true }) notes?: string,
   ): Promise<ProductEntity> {
     const companyId = await this.tenancy.resolveCompanyId(user);
     return this.adjustInventory.quickExit(
       { userId: user.id, companyId },
-      { productId, quantity, reason, notes: notes ?? null },
+      { productId, quantity, warehouseId, reason, notes: notes ?? null },
     );
   }
 }

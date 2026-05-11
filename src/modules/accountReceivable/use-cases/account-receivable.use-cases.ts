@@ -85,12 +85,16 @@ export class AccountReceivableUseCases {
     private readonly audit: AuditLogService,
   ) {}
 
-  async list(args: {
-    status?: AccountStatus;
-    search?: string;
-  } = {}): Promise<AccountReceivableEntity[]> {
+  async list(
+    companyId: string,
+    args: {
+      status?: AccountStatus;
+      search?: string;
+    } = {},
+  ): Promise<AccountReceivableEntity[]> {
     const records = await this.prisma.accountReceivable.findMany({
       where: {
+        companyId,
         ...(args.status ? { status: args.status } : {}),
         ...(args.search
           ? {
@@ -112,9 +116,9 @@ export class AccountReceivableUseCases {
     return records.map(toEntity);
   }
 
-  async findById(id: string): Promise<AccountReceivableEntity> {
-    const record = await this.prisma.accountReceivable.findUnique({
-      where: { id },
+  async findById(companyId: string, id: string): Promise<AccountReceivableEntity> {
+    const record = await this.prisma.accountReceivable.findFirst({
+      where: { id, companyId },
       include: { customer: true, product: { include: { images: true } } },
     });
     if (!record) throw new NotFoundException('Conta a receber não encontrada.');
@@ -125,8 +129,16 @@ export class AccountReceivableUseCases {
     actor: AuditActor,
     input: CreateAccountReceivableInput,
   ): Promise<AccountReceivableEntity> {
+    // Garante que o customer pertence à mesma empresa (defesa contra IDOR via input)
+    const customer = await this.prisma.customer.findFirst({
+      where: { id: input.customerId, companyId: actor.companyId },
+      select: { id: true },
+    });
+    if (!customer) throw new NotFoundException('Cliente não encontrado.');
+
     const created = await this.prisma.accountReceivable.create({
       data: {
+        companyId: actor.companyId,
         customerId: input.customerId,
         productId: input.productId ?? null,
         description: input.description,
@@ -155,8 +167,8 @@ export class AccountReceivableUseCases {
     actor: AuditActor,
     input: UpdateAccountReceivableInput,
   ): Promise<AccountReceivableEntity> {
-    const existing = await this.prisma.accountReceivable.findUnique({
-      where: { id: input.id },
+    const existing = await this.prisma.accountReceivable.findFirst({
+      where: { id: input.id, companyId: actor.companyId },
       include: { customer: true, product: { include: { images: true } } },
     });
     if (!existing) throw new NotFoundException('Conta a receber não encontrada.');
@@ -203,6 +215,7 @@ export class AccountReceivableUseCases {
         const customerName = updated.customer?.name ?? null;
         await this.prisma.cashMovement.create({
           data: {
+            companyId: actor.companyId,
             type: 'ENTRY',
             category: 'SALE',
             value: updated.amount,
@@ -248,8 +261,8 @@ export class AccountReceivableUseCases {
   }
 
   async delete(actor: AuditActor, id: string): Promise<boolean> {
-    const existing = await this.prisma.accountReceivable.findUnique({
-      where: { id },
+    const existing = await this.prisma.accountReceivable.findFirst({
+      where: { id, companyId: actor.companyId },
     });
     if (!existing) throw new NotFoundException('Conta a receber não encontrada.');
 
@@ -267,14 +280,14 @@ export class AccountReceivableUseCases {
     return true;
   }
 
-  async summary(): Promise<{
+  async summary(companyId: string): Promise<{
     total: number;
     pending: number;
     paid: number;
     overdue: number;
     countTotal: number;
   }> {
-    const records = await this.prisma.accountReceivable.findMany({});
+    const records = await this.prisma.accountReceivable.findMany({ where: { companyId } });
     let total = 0;
     let pending = 0;
     let paid = 0;

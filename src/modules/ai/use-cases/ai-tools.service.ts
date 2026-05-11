@@ -87,8 +87,8 @@ export class AiToolsService {
           },
         },
       },
-      exec: async (args) => {
-        return this.reports.daily(args?.date ? new Date(args.date) : undefined);
+      exec: async (args, ctx) => {
+        return this.reports.daily(ctx.companyId, args?.date ? new Date(args.date) : undefined);
       },
     },
 
@@ -102,7 +102,7 @@ export class AiToolsService {
           parameters: { type: 'object', properties: {} },
         },
       },
-      exec: async () => this.reports.weekly(),
+      exec: async (_args, ctx) => this.reports.weekly(ctx.companyId),
     },
 
     getAlerts: {
@@ -116,7 +116,7 @@ export class AiToolsService {
           parameters: { type: 'object', properties: {} },
         },
       },
-      exec: async () => this.reports.alerts(),
+      exec: async (_args, ctx) => this.reports.alerts(ctx.companyId),
     },
 
     searchProducts: {
@@ -136,10 +136,11 @@ export class AiToolsService {
           },
         },
       },
-      exec: async (args) => {
+      exec: async (args, ctx) => {
         const limit = Math.min(args.limit ?? 10, 50);
         const rows = await this.prisma.product.findMany({
           where: {
+            companyId: ctx.companyId,
             deletedAt: null,
             nameProduct: { contains: args.query, mode: 'insensitive' },
           },
@@ -178,10 +179,11 @@ export class AiToolsService {
           },
         },
       },
-      exec: async (args) => {
+      exec: async (args, ctx) => {
         const limit = Math.min(args.limit ?? 10, 50);
         const rows = await this.prisma.customer.findMany({
           where: {
+            companyId: ctx.companyId,
             OR: [
               { name: { contains: args.query, mode: 'insensitive' } },
               { document: { contains: args.query } },
@@ -210,12 +212,15 @@ export class AiToolsService {
           },
         },
       },
-      exec: async (args) => {
+      exec: async (args, ctx) => {
         const today = new Date();
         const rows = await this.prisma.accountReceivable.findMany({
-          where: args.onlyOverdue
-            ? { status: { in: ['PENDING', 'OVERDUE'] }, dueDate: { lt: today } }
-            : { status: { in: ['PENDING', 'OVERDUE'] } },
+          where: {
+            companyId: ctx.companyId,
+            ...(args.onlyOverdue
+              ? { status: { in: ['PENDING', 'OVERDUE'] }, dueDate: { lt: today } }
+              : { status: { in: ['PENDING', 'OVERDUE'] } }),
+          },
           include: { customer: { select: { name: true } } },
           orderBy: { dueDate: 'asc' },
           take: Math.min(args.limit ?? 20, 50),
@@ -256,9 +261,10 @@ export class AiToolsService {
       },
       describe: (args) =>
         `Criar conta a pagar para "${args.supplierName}" — ${args.description} — R$ ${Number(args.amount).toFixed(2)} (venc. ${args.dueDate})`,
-      exec: async (args) =>
+      exec: async (args, ctx) =>
         this.prisma.accountPayable.create({
           data: {
+            companyId: ctx.companyId,
             supplierName: args.supplierName,
             description: args.description,
             amount: args.amount,
@@ -298,8 +304,15 @@ export class AiToolsService {
       },
       describe: (args) =>
         `Marcar conta a receber ${args.receivableId.slice(0, 8)}… como PAGA${args.paymentMethod ? ` (${args.paymentMethod})` : ''}`,
-      exec: async (args, ctx) =>
-        this.prisma.accountReceivable.update({
+      exec: async (args, ctx) => {
+        // Defesa contra IDOR: confirma que a conta pertence ao tenant do user
+        const found = await this.prisma.accountReceivable.findFirst({
+          where: { id: args.receivableId, companyId: ctx.companyId },
+          select: { id: true },
+        });
+        if (!found) throw new BadRequestException('Conta a receber não encontrada.');
+
+        return this.prisma.accountReceivable.update({
           where: { id: args.receivableId },
           data: {
             status: 'PAID',
@@ -318,6 +331,7 @@ export class AiToolsService {
             });
             await this.prisma.cashMovement.create({
               data: {
+                companyId: ctx.companyId,
                 type: 'ENTRY',
                 category: 'SALE',
                 value: ar!.amount,
@@ -336,7 +350,8 @@ export class AiToolsService {
             });
           }
           return updated;
-        }),
+        });
+      },
     },
 
     productionEntry: {
@@ -360,8 +375,10 @@ export class AiToolsService {
       },
       describe: (args) =>
         `Lançar +${args.quantity} unidade(s) no estoque do produto ${args.productId.slice(0, 8)}…`,
-      exec: async (args) => {
-        const p = await this.prisma.product.findUnique({ where: { id: args.productId } });
+      exec: async (args, ctx) => {
+        const p = await this.prisma.product.findFirst({
+          where: { id: args.productId, companyId: ctx.companyId },
+        });
         if (!p) throw new BadRequestException('Produto não encontrado.');
         const next = p.quantity + Number(args.quantity);
         return this.prisma.product.update({

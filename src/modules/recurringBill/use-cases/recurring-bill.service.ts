@@ -41,16 +41,18 @@ export class RecurringBillService implements OnModuleInit {
     this.logger.log('Materializador de contas fixas agendado (00:05 diário).');
   }
 
-  async list(): Promise<RecurringBillEntity[]> {
+  async list(companyId: string): Promise<RecurringBillEntity[]> {
     const rows = await this.prisma.recurringBill.findMany({
+      where: { companyId },
       orderBy: [{ active: 'desc' }, { dayOfMonth: 'asc' }],
     });
     return rows.map(toEntity);
   }
 
-  async create(input: CreateRecurringBillInput): Promise<RecurringBillEntity> {
+  async create(companyId: string, input: CreateRecurringBillInput): Promise<RecurringBillEntity> {
     const created = await this.prisma.recurringBill.create({
       data: {
+        companyId,
         supplierName: input.supplierName,
         description: input.description,
         amount: input.amount,
@@ -62,9 +64,9 @@ export class RecurringBillService implements OnModuleInit {
     return toEntity(created);
   }
 
-  async update(input: UpdateRecurringBillInput): Promise<RecurringBillEntity> {
-    const existing = await this.prisma.recurringBill.findUnique({
-      where: { id: input.id },
+  async update(companyId: string, input: UpdateRecurringBillInput): Promise<RecurringBillEntity> {
+    const existing = await this.prisma.recurringBill.findFirst({
+      where: { id: input.id, companyId },
     });
     if (!existing) throw new NotFoundException('Conta fixa não encontrada.');
 
@@ -83,7 +85,11 @@ export class RecurringBillService implements OnModuleInit {
     return toEntity(updated);
   }
 
-  async remove(id: string): Promise<boolean> {
+  async remove(companyId: string, id: string): Promise<boolean> {
+    const existing = await this.prisma.recurringBill.findFirst({
+      where: { id, companyId },
+    });
+    if (!existing) throw new NotFoundException('Conta fixa não encontrada.');
     await this.prisma.recurringBill.delete({ where: { id } });
     return true;
   }
@@ -108,6 +114,7 @@ export class RecurringBillService implements OnModuleInit {
 
       await this.prisma.accountPayable.create({
         data: {
+          companyId: b.companyId,
           supplierName: b.supplierName,
           description: `${b.description} (recorrente ${ym})`,
           amount: b.amount,

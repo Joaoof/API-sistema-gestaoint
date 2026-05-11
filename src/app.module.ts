@@ -50,6 +50,8 @@ import { AiModule } from './modules/ai/ai.module';
 import { AiCreditsModule } from './modules/aiCredits/ai-credits.module';
 import { InsightsModule } from './modules/insights/insights.module';
 import { ExportsModule } from './modules/exports/exports.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { WarehouseModule } from './modules/warehouse/warehouse.module';
 
 @Module({
   imports: [
@@ -125,6 +127,8 @@ import { ExportsModule } from './modules/exports/exports.module';
     AiModule,
     InsightsModule,
     ExportsModule,
+    PaymentsModule,
+    WarehouseModule,
   ],
   controllers: [AppController],
   providers: [

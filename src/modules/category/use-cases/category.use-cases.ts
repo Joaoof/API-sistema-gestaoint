@@ -37,6 +37,7 @@ export class CategoryUseCases {
   ) {}
 
   async list(
+    companyId: string,
     pagination?: PaginationInput,
     filters?: CategoryFiltersInput,
   ): Promise<CategoryListEntity> {
@@ -45,6 +46,7 @@ export class CategoryUseCases {
     const skip = (page - 1) * limit;
 
     const where: Prisma.CategoryWhereInput = {
+      companyId,
       ...(filters?.search
         ? { name: { contains: filters.search, mode: 'insensitive' } }
         : {}),
@@ -76,16 +78,18 @@ export class CategoryUseCases {
     };
   }
 
-  async listActive(): Promise<CategoryEntity[]> {
+  async listActive(companyId: string): Promise<CategoryEntity[]> {
     const rows = await this.prisma.category.findMany({
-      where: { status: CategoryStatus.ACTIVE },
+      where: { companyId, status: CategoryStatus.ACTIVE },
       orderBy: { name: 'asc' },
     });
     return rows.map(toEntity);
   }
 
-  async findById(id: string): Promise<CategoryEntity> {
-    const found = await this.prisma.category.findUnique({ where: { id } });
+  async findById(companyId: string, id: string): Promise<CategoryEntity> {
+    const found = await this.prisma.category.findFirst({
+      where: { id, companyId },
+    });
     if (!found) throw new NotFoundException('Categoria não encontrada.');
     return toEntity(found);
   }
@@ -97,6 +101,7 @@ export class CategoryUseCases {
     try {
       const created = await this.prisma.category.create({
         data: {
+          companyId: actor.companyId,
           name: input.name,
           description: input.description ?? null,
           color: input.color,
@@ -130,7 +135,9 @@ export class CategoryUseCases {
     id: string,
     input: UpdateCategoryInput,
   ): Promise<CategoryEntity> {
-    const existing = await this.prisma.category.findUnique({ where: { id } });
+    const existing = await this.prisma.category.findFirst({
+      where: { id, companyId: actor.companyId },
+    });
     if (!existing) throw new NotFoundException('Categoria não encontrada.');
 
     const data: Prisma.CategoryUpdateInput = {};
@@ -160,7 +167,9 @@ export class CategoryUseCases {
     actor: AuditActor,
     id: string,
   ): Promise<DeleteCategoryResult> {
-    const existing = await this.prisma.category.findUnique({ where: { id } });
+    const existing = await this.prisma.category.findFirst({
+      where: { id, companyId: actor.companyId },
+    });
     if (!existing) {
       return { success: false, message: 'Categoria não encontrada.' };
     }
@@ -189,7 +198,9 @@ export class CategoryUseCases {
     actor: AuditActor,
     id: string,
   ): Promise<CategoryEntity> {
-    const existing = await this.prisma.category.findUnique({ where: { id } });
+    const existing = await this.prisma.category.findFirst({
+      where: { id, companyId: actor.companyId },
+    });
     if (!existing) throw new NotFoundException('Categoria não encontrada.');
     const updated = await this.prisma.category.update({
       where: { id },

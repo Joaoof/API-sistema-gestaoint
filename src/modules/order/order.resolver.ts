@@ -37,28 +37,39 @@ export class OrderResolver {
 
   @Query(() => [OrderEntity])
   async orders(
+    @CurrentUser() user: User,
     @Args('search', { nullable: true }) search?: string,
     @Args('status', { type: () => OrderStatus, nullable: true }) status?: OrderStatus,
     @Args('take', { type: () => Int, nullable: true }) take?: number,
     @Args('fromDate', { nullable: true }) fromDate?: Date,
     @Args('toDate', { nullable: true }) toDate?: Date,
   ): Promise<OrderEntity[]> {
-    return this.useCases.list({ search, status, take, fromDate, toDate });
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.list(companyId, { search, status, take, fromDate, toDate });
   }
 
   @Query(() => OrderEntity)
-  async order(@Args('id') id: string): Promise<OrderEntity> {
-    return this.useCases.findById(id);
+  async order(
+    @CurrentUser() user: User,
+    @Args('id') id: string,
+  ): Promise<OrderEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.findById(companyId, id);
   }
 
   @Query(() => OrderSummary)
-  async ordersSummary(): Promise<OrderSummary> {
-    return this.useCases.summary();
+  async ordersSummary(@CurrentUser() user: User): Promise<OrderSummary> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.summary(companyId);
   }
 
   @Query(() => OrderPrintDto)
-  async orderForPrint(@Args('id') id: string): Promise<OrderPrintDto> {
-    return this.useCases.findForPrint(id);
+  async orderForPrint(
+    @CurrentUser() user: User,
+    @Args('id') id: string,
+  ): Promise<OrderPrintDto> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.findForPrint(companyId, id);
   }
 
   @Mutation(() => OrderEntity)

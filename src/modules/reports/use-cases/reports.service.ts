@@ -89,21 +89,23 @@ const PAYMENT_LABELS: Record<string, string> = {
 export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async daily(reference?: Date): Promise<DailyReport> {
+  async daily(companyId?: string | null, reference?: Date): Promise<DailyReport> {
     const ref = reference ?? new Date();
     const from = startOfDay(ref);
     const to = endOfDay(ref);
+    // companyId opcional: undefined/null = todas (uso do n8n cron, virá depois).
+    const cs = companyId ? { companyId } : {};
 
     const [movements, pendingAR, pendingAP] = await Promise.all([
       this.prisma.cashMovement.findMany({
-        where: { date: { gte: from, lte: to }, status: 'COMPLETED' },
+        where: { ...cs, date: { gte: from, lte: to }, status: 'COMPLETED' },
       }),
       this.prisma.accountReceivable.aggregate({
-        where: { status: { in: ['PENDING', 'OVERDUE'] } },
+        where: { ...cs, status: { in: ['PENDING', 'OVERDUE'] } },
         _sum: { amount: true },
       }),
       this.prisma.accountPayable.aggregate({
-        where: { status: { in: ['PENDING', 'OVERDUE'] } },
+        where: { ...cs, status: { in: ['PENDING', 'OVERDUE'] } },
         _sum: { amount: true },
       }),
     ]);
@@ -164,7 +166,7 @@ export class ReportsService {
     };
   }
 
-  async weekly(reference?: Date): Promise<WeeklyReport> {
+  async weekly(companyId?: string | null, reference?: Date): Promise<WeeklyReport> {
     const ref = reference ?? new Date();
     const day = ref.getDay(); // 0 = domingo
     const monday = new Date(ref);
@@ -175,13 +177,14 @@ export class ReportsService {
 
     const from = startOfDay(monday);
     const to = endOfDay(sunday);
+    const cs = companyId ? { companyId } : {};
 
     const [movements, ordersWithCustomer] = await Promise.all([
       this.prisma.cashMovement.findMany({
-        where: { date: { gte: from, lte: to }, status: 'COMPLETED' },
+        where: { ...cs, date: { gte: from, lte: to }, status: 'COMPLETED' },
       }),
       this.prisma.order.findMany({
-        where: { createdAt: { gte: from, lte: to } },
+        where: { ...cs, createdAt: { gte: from, lte: to } },
         include: {
           customer: { select: { name: true } },
           items: {
@@ -272,14 +275,16 @@ export class ReportsService {
     };
   }
 
-  async alerts(): Promise<AlertsReport> {
+  async alerts(companyId?: string | null): Promise<AlertsReport> {
     const today = startOfDay(new Date());
     const in3days = new Date(today);
     in3days.setDate(today.getDate() + 3);
+    const cs = companyId ? { companyId } : {};
 
     const [overdueAR, upcomingAP, lowStock] = await Promise.all([
       this.prisma.accountReceivable.findMany({
         where: {
+          ...cs,
           status: { in: ['PENDING', 'OVERDUE'] },
           dueDate: { lt: today },
         },
@@ -289,6 +294,7 @@ export class ReportsService {
       }),
       this.prisma.accountPayable.findMany({
         where: {
+          ...cs,
           status: 'PENDING',
           dueDate: { gte: today, lte: in3days },
         },
@@ -296,7 +302,7 @@ export class ReportsService {
         take: 20,
       }),
       this.prisma.inventory.findMany({
-        where: { quantity: { lte: 5 } },
+        where: { ...cs, quantity: { lte: 5 } },
         include: { product: { select: { nameProduct: true } } },
         orderBy: { quantity: 'asc' },
         take: 20,
