@@ -7,7 +7,9 @@
       "PowerShell(npx prisma@6.13.0 generate 2>&1 | Select-Object -Last 10)",
       "PowerShell(if \\(Test-Path node_modules\\) { \\(Get-ChildItem node_modules -Directory | Measure-Object\\).Count } else { \"no node_modules\" })",
       "PowerShell(if \\(Test-Path node_modules\\\\.prisma\\\\client\\) { Get-ChildItem node_modules\\\\.prisma\\\\client | Select Name | Format-Table; \"---\"; \\(Get-Content node_modules\\\\.prisma\\\\client\\\\index.d.ts -ErrorAction SilentlyContinue | Select-String 'MovementTypePayment|accountPayableId' | Select-Object -First 10\\) } else { \"no generated client\" })",
-      "PowerShell(New-Item *)"
+      "PowerShell(New-Item *)",
+      "Bash(grep -Pzo \"\\(?s\\)@Field\\\\\\(\\\\{\\\\s*nullable:\\\\s*true\\\\s*\\\\}\\\\\\)[^\\\\n]*\\\\n\\(?:[^\\\\n]*\\\\n\\){0,3}?[^\\\\n]*\\\\?:\\\\s*\\\\w+\\\\s*\\\\|\\\\s*null\" C:/Users/douto/API-sistema-gestaoint/src/modules/admin/dto/admin.input.ts C:/Users/douto/API-sistema-gestaoint/src/modules/bankTransfer/dto/bank-transfer.input.ts C:/Users/douto/API-sistema-gestaoint/src/modules/accountPayable/dto/update-account-payable.input.ts C:/Users/douto/API-sistema-gestaoint/src/modules/accountReceivable/dto/update-account-receivable.input.ts)",
+      "Bash(grep -v \"^--$\")"
     ]
   }
 }

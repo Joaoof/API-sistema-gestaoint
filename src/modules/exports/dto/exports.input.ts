@@ -21,7 +21,7 @@ export class CreateExportTemplateInput {
 
   @Field(() => [String]) @IsArray() columns!: string[];
 
-  @Field({ nullable: true }) @IsOptional() @IsString() schedule?: string | null;
+  @Field(() => String, { nullable: true }) @IsOptional() @IsString() schedule?: string | null;
 }
 
 @InputType()
@@ -32,5 +32,5 @@ export class UpdateExportTemplateInput {
   @Field({ nullable: true }) @IsOptional() @IsString() format?: string;
   @Field({ nullable: true }) @IsOptional() @IsString() filtersJson?: string;
   @Field(() => [String], { nullable: true }) @IsOptional() @IsArray() columns?: string[];
-  @Field({ nullable: true }) @IsOptional() @IsString() schedule?: string | null;
+  @Field(() => String, { nullable: true }) @IsOptional() @IsString() schedule?: string | null;
 }

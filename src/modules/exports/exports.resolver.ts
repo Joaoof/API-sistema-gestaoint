@@ -18,7 +18,7 @@ export class ExportTemplateEntity {
   @Field() format!: string;
   @Field() filtersJson!: string;
   @Field(() => [String]) columns!: string[];
-  @Field({ nullable: true }) schedule?: string | null;
+  @Field(() => String, { nullable: true }) schedule?: string | null;
   @Field() createdAt!: Date;
   @Field() updatedAt!: Date;
 }

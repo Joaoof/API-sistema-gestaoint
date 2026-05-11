@@ -31,7 +31,7 @@ export class AiCreditPurchaseEntity {
   @Field() pixCopyPaste!: string;
   @Field() pixTxid!: string;
   @Field() status!: string;
-  @Field({ nullable: true }) paidAt?: Date | null;
+  @Field(() => Date, { nullable: true }) paidAt?: Date | null;
   @Field() createdAt!: Date;
   @Field() expiresAt!: Date;
   @Field(() => String, { nullable: true }) companyName?: string | null;
