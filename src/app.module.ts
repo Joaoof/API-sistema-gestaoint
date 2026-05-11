@@ -59,6 +59,7 @@ import { BankIntegrationsModule } from './modules/bankIntegrations/bank-integrat
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { InvitationsModule } from './modules/invitations/invitations.module';
 import { EmailModule } from './modules/email/email.module';
+import { SuperAdminModule } from './modules/superAdmin/super-admin.module';
 
 @Module({
   imports: [
@@ -143,6 +144,7 @@ import { EmailModule } from './modules/email/email.module';
     DashboardModule,
     InvitationsModule,
     EmailModule,
+    SuperAdminModule,
   ],
   controllers: [AppController],
   providers: [
