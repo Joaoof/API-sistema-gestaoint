@@ -323,6 +323,26 @@ model AccountPayable {
   @@index([centroCustoId])
 }
 
+model Invitation {
+  id              String    @id @default(uuid())
+  email           String
+  role            String    @default("user")
+  companyId       String? // se null, super-admin pode escolher na aceitação
+  planId          String? // plano sugerido (super-admin define)
+  invitedBy       String // userId do convidante
+  token           String    @unique
+  message         String?
+  acceptedAt      DateTime?
+  acceptedByUserId String?
+  revokedAt       DateTime?
+  expiresAt       DateTime
+  createdAt       DateTime  @default(now())
+
+  @@index([email])
+  @@index([companyId])
+  @@index([token])
+}
+
 model BankConnection {
   id              String    @id @default(uuid())
   companyId       String

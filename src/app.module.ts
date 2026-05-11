@@ -57,6 +57,8 @@ import { ReconciliationModule } from './modules/reconciliation/reconciliation.mo
 import { BoletosModule } from './modules/boletos/boletos.module';
 import { BankIntegrationsModule } from './modules/bankIntegrations/bank-integrations.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { InvitationsModule } from './modules/invitations/invitations.module';
+import { EmailModule } from './modules/email/email.module';
 
 @Module({
   imports: [
@@ -139,6 +141,8 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     BoletosModule,
     BankIntegrationsModule,
     DashboardModule,
+    InvitationsModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [
