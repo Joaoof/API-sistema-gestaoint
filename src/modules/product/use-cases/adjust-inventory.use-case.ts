@@ -88,7 +88,7 @@ export class AdjustInventoryUseCase {
   private async loadProduct(companyId: string, productId: string): Promise<ProductEntity> {
     const p = await this.prisma.product.findFirst({
       where: { id: productId, companyId },
-      include: { inventory: true, images: true, category: true, supplier: true },
+      include: { inventories: true, images: true, category: true, supplier: true },
     });
     if (!p) throw new NotFoundException('Produto não encontrado.');
     return p as unknown as ProductEntity;

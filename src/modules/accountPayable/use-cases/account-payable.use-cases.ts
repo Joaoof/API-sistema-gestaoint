@@ -200,17 +200,23 @@ export class AccountPayableUseCases {
       include: { supplier: true, product: { include: { images: true } } },
     });
 
-    // Auto-cria CashMovement de saída quando AP passa pra PAID — só uma vez
-    // (dedupe por accountPayableId). Banco/método vêm do input quando
-    // disponíveis; senão cai em OTHER e o usuário edita depois.
+    // Auto-cria CashMovement de saída quando AP passa pra PAID — fallback
+    // pro fluxo antigo. Se já existe PaymentReceipt, o pagamento foi feito
+    // via PaymentsService — não cria movimento aqui (evita dupla contagem).
     const transitionedToPaid =
       existing.status !== AccountStatus.PAID &&
       updated.status === AccountStatus.PAID;
     if (transitionedToPaid && actor.userId) {
-      const already = await this.prisma.cashMovement.findFirst({
-        where: { accountPayableId: updated.id },
-      });
-      if (!already) {
+      const [already, hasReceipt] = await Promise.all([
+        this.prisma.cashMovement.findFirst({
+          where: { accountPayableId: updated.id },
+        }),
+        this.prisma.paymentReceipt.findFirst({
+          where: { accountPayableId: updated.id },
+          select: { id: true },
+        }),
+      ]);
+      if (!already && !hasReceipt) {
         const supplierName = updated.supplier?.name ?? updated.supplierName;
         await this.prisma.cashMovement.create({
           data: {

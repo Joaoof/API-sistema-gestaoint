@@ -44,7 +44,7 @@ model Product {
   supplier    Supplier?           @relation(fields: [supplierId], references: [id])
   createdBy   Users?              @relation(fields: [createdById], references: [id])
   images      ProductImage[]
-  inventory   Inventory?
+  inventories Inventory[]
   receivables AccountReceivable[]
   payables    AccountPayable[]
   orderItems  OrderItem[]
@@ -321,6 +321,91 @@ model AccountPayable {
   @@index([productId])
   @@index([obraId])
   @@index([centroCustoId])
+}
+
+model Boleto {
+  id                  String         @id @default(uuid())
+  companyId           String
+  accountReceivableId String?
+  customerId          String?
+  bankId              String
+  provider            String // MOCK | ITAU | SICREDI | BRADESCO ...
+  providerBoletoId    String? // ID retornado pelo banco
+  nossoNumero         String? // identificador do título no banco
+  barcode             String?
+  digitableLine       String?
+  pdfUrl              String?
+  amount              Decimal
+  dueDate             DateTime
+  status              String         @default("DRAFT") // DRAFT | REGISTERED | PAID | CANCELED | EXPIRED | ERROR
+  errorMessage        String?
+  payerName           String
+  payerDocument       String
+  instructions        String?
+  registeredAt        DateTime?
+  paidAt              DateTime?
+  canceledAt          DateTime?
+  createdByUserId     String
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  events              BoletoEvent[]
+
+  @@index([companyId])
+  @@index([companyId, status])
+  @@index([accountReceivableId])
+  @@index([providerBoletoId])
+}
+
+model BoletoEvent {
+  id        String   @id @default(uuid())
+  boletoId  String
+  companyId String
+  kind      String // REQUESTED | REGISTERED | PAID | CANCELED | WEBHOOK | ERROR
+  payload   Json
+  createdAt DateTime @default(now())
+  boleto    Boleto   @relation(fields: [boletoId], references: [id], onDelete: Cascade)
+
+  @@index([boletoId, createdAt(sort: Desc)])
+}
+
+model BankStatementImport {
+  id           String                    @id @default(uuid())
+  companyId    String
+  bankId       String
+  fileName     String
+  format       String                    @default("OFX") // OFX | CSV
+  rangeStart   DateTime
+  rangeEnd     DateTime
+  totalItems   Int                       @default(0)
+  matchedItems Int                       @default(0)
+  importedBy   String
+  createdAt    DateTime                  @default(now())
+  items        BankStatementItem[]
+
+  @@index([companyId])
+  @@index([bankId, createdAt(sort: Desc)])
+}
+
+model BankStatementItem {
+  id              String              @id @default(uuid())
+  importId        String
+  companyId       String
+  bankId          String
+  fitId           String? // ID único da transação no banco (idempotência)
+  trnType         String // CREDIT | DEBIT | etc
+  postedAt        DateTime
+  amount          Decimal
+  memo            String?
+  checkNum        String?
+  matchedStatus   String              @default("UNMATCHED") // UNMATCHED | AUTO | MANUAL | IGNORED | CREATED
+  cashMovementId  String?
+  createdAt       DateTime            @default(now())
+  import          BankStatementImport @relation(fields: [importId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([importId])
+  @@index([bankId, fitId])
+  @@index([matchedStatus])
 }
 
 model PaymentReceipt {

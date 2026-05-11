@@ -10,6 +10,7 @@ import {
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { AuditLogService } from '../../audit/use-cases/audit-log.service';
 import { AuditActor } from '../../audit/types/actor';
+import { InventoryService } from '../../warehouse/use-cases/inventory.service';
 import { CreateOrderInput } from '../dto/create-order.input';
 import { OrderEntity } from '../entities/order.entity';
 import { OrderPrintDto } from '../dto/order-print.dto';
@@ -101,6 +102,7 @@ export class OrderUseCases {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditLogService,
+    private readonly inventory: InventoryService,
   ) {}
 
   async list(
@@ -174,8 +176,9 @@ export class OrderUseCases {
     const productMap = new Map(products.map((p) => [p.id, p]));
 
     // Valida estoque (apenas para PRODUCT em pedidos STANDARD) e calcula totais.
+    // A baixa real é feita via InventoryService.exitInTx (multi-warehouse).
     const itemsToCreate: Prisma.OrderItemCreateWithoutOrderInput[] = [];
-    const stockMovements: Array<{ productId: string; quantity: number }> = [];
+    const stockMovements: Array<{ productId: string; quantity: number; productName: string }> = [];
     let subtotal = 0;
 
     for (const item of input.items) {
@@ -220,7 +223,7 @@ export class OrderUseCases {
 
       // Estoque só é decrementado para PRODUCT em pedidos STANDARD.
       if (!isStockless && !isCustomOrder) {
-        stockMovements.push({ productId: product.id, quantity });
+        stockMovements.push({ productId: product.id, quantity, productName: product.nameProduct });
       }
     }
 
@@ -314,10 +317,14 @@ export class OrderUseCases {
         finalStatus === OrderStatus.CONFIRMED ||
         finalStatus === OrderStatus.PAID
       ) {
+        // Baixa estoque via InventoryService.exitInTx — registra
+        // InventoryMovement e usa o depósito principal por padrão.
         for (const move of stockMovements) {
-          await tx.product.update({
-            where: { id: move.productId },
-            data: { quantity: { decrement: move.quantity } },
+          await this.inventory.exitInTx(tx, { userId: actor.userId!, companyId: actor.companyId }, {
+            productId: move.productId,
+            quantity: move.quantity,
+            reason: `Venda — Pedido #${created.number}`,
+            reference: created.id,
           });
         }
       }

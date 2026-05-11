@@ -52,6 +52,9 @@ import { InsightsModule } from './modules/insights/insights.module';
 import { ExportsModule } from './modules/exports/exports.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { WarehouseModule } from './modules/warehouse/warehouse.module';
+import { FinancialsModule } from './modules/financials/financials.module';
+import { ReconciliationModule } from './modules/reconciliation/reconciliation.module';
+import { BoletosModule } from './modules/boletos/boletos.module';
 
 @Module({
   imports: [
@@ -129,6 +132,9 @@ import { WarehouseModule } from './modules/warehouse/warehouse.module';
     ExportsModule,
     PaymentsModule,
     WarehouseModule,
+    FinancialsModule,
+    ReconciliationModule,
+    BoletosModule,
   ],
   controllers: [AppController],
   providers: [
