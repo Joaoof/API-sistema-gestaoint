@@ -23,7 +23,7 @@ import { WarehouseService } from './use-cases/warehouse.service';
 @UseGuards(GqlAuthGuard)
 export class WarehouseResolver {
   constructor(
-    private readonly warehouses: WarehouseService,
+    private readonly warehouseService: WarehouseService,
     private readonly inventory: InventoryService,
     private readonly tenancy: TenancyService,
   ) {}
@@ -36,7 +36,7 @@ export class WarehouseResolver {
     @Args('activeOnly', { nullable: true }) activeOnly?: boolean,
   ): Promise<WarehouseEntity[]> {
     const companyId = await this.tenancy.resolveCompanyId(user);
-    const rows = await this.warehouses.list(companyId, activeOnly === true);
+    const rows = await this.warehouseService.list(companyId, activeOnly === true);
     return rows.map((r) => ({ ...r }));
   }
 
@@ -46,7 +46,7 @@ export class WarehouseResolver {
     @Args('input') input: CreateWarehouseInput,
   ): Promise<WarehouseEntity> {
     const companyId = await this.tenancy.resolveCompanyId(user);
-    return this.warehouses.create(
+    return this.warehouseService.create(
       { userId: user.id, companyId },
       input,
     ) as any;
@@ -58,7 +58,7 @@ export class WarehouseResolver {
     @Args('input') input: UpdateWarehouseInput,
   ): Promise<WarehouseEntity> {
     const companyId = await this.tenancy.resolveCompanyId(user);
-    return this.warehouses.update(
+    return this.warehouseService.update(
       { userId: user.id, companyId },
       input.id,
       input,
@@ -71,7 +71,7 @@ export class WarehouseResolver {
     @Args('id') id: string,
   ): Promise<boolean> {
     const companyId = await this.tenancy.resolveCompanyId(user);
-    await this.warehouses.deactivate({ userId: user.id, companyId }, id);
+    await this.warehouseService.deactivate({ userId: user.id, companyId }, id);
     return true;
   }
 

@@ -323,6 +323,45 @@ model AccountPayable {
   @@index([centroCustoId])
 }
 
+model BankConnection {
+  id              String    @id @default(uuid())
+  companyId       String
+  bankId          String?
+  provider        String // PLUGGY | BELVO | DIRECT_ITAU | DIRECT_BB
+  externalItemId  String
+  externalAccount String?
+  institutionName String?
+  status          String    @default("PENDING")
+  lastSyncAt      DateTime?
+  lastErrorAt     DateTime?
+  lastErrorMsg    String?
+  metadata        Json?
+  createdByUserId String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([provider, externalItemId])
+  @@index([companyId])
+  @@index([companyId, status])
+}
+
+model WebhookLog {
+  id          String    @id @default(uuid())
+  provider    String
+  event       String
+  signature   String?
+  payload     Json
+  processed   Boolean   @default(false)
+  errorMsg    String?
+  refType     String?
+  refId       String?
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+
+  @@index([provider, createdAt(sort: Desc)])
+  @@index([processed, createdAt])
+}
+
 model Boleto {
   id                  String         @id @default(uuid())
   companyId           String

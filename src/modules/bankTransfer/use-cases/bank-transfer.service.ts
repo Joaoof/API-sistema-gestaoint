@@ -7,7 +7,7 @@ import { BankTransferInput } from '../dto/bank-transfer.input';
 export class BankTransferService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async transfer(input: BankTransferInput, userId: string): Promise<string> {
+  async transfer(input: BankTransferInput, userId: string, companyId: string): Promise<string> {
     if (input.fromBankId === input.toBankId) {
       throw new BadRequestException(
         'Banco de origem e destino devem ser diferentes.',
@@ -18,8 +18,8 @@ export class BankTransferService {
     }
 
     const [from, to] = await Promise.all([
-      this.prisma.bank.findUnique({ where: { id: input.fromBankId } }),
-      this.prisma.bank.findUnique({ where: { id: input.toBankId } }),
+      this.prisma.bank.findFirst({ where: { id: input.fromBankId, companyId } }),
+      this.prisma.bank.findFirst({ where: { id: input.toBankId, companyId } }),
     ]);
     if (!from) throw new NotFoundException('Banco de origem não encontrado.');
     if (!to) throw new NotFoundException('Banco de destino não encontrado.');
@@ -31,6 +31,7 @@ export class BankTransferService {
     await this.prisma.$transaction([
       this.prisma.cashMovement.create({
         data: {
+          companyId: from.companyId,
           type: 'EXIT',
           category: 'EXPENSE',
           value: input.value,
@@ -49,6 +50,7 @@ export class BankTransferService {
       }),
       this.prisma.cashMovement.create({
         data: {
+          companyId: to.companyId,
           type: 'ENTRY',
           category: 'OTHER_IN',
           value: input.value,

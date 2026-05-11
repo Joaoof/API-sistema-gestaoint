@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { BancoBrasilBoletoProvider } from './bb-boleto.provider';
 import { BoletoProvider } from './boleto-provider.interface';
 import { ItauBoletoProvider } from './itau-boleto.provider';
 import { MockBoletoProvider } from './mock-boleto.provider';
@@ -15,10 +16,12 @@ export class BoletoProviderRegistry {
   constructor(
     private readonly mock: MockBoletoProvider,
     private readonly itau: ItauBoletoProvider,
+    private readonly bb: BancoBrasilBoletoProvider,
   ) {
     this.providers = new Map<string, BoletoProvider>([
       [this.mock.name, this.mock],
       [this.itau.name, this.itau],
+      [this.bb.name, this.bb],
     ]);
   }
 

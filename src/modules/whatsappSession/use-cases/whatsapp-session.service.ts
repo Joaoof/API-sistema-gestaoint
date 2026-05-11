@@ -1295,12 +1295,13 @@ export class WhatsappSessionService {
 
     let customer = phone
       ? await this.prisma.customer.findFirst({
-          where: { phone: { contains: phone.slice(-9) } },
+          where: { companyId, phone: { contains: phone.slice(-9) } },
         })
       : null;
     if (!customer) {
       customer = await this.prisma.customer.create({
         data: {
+          companyId,
           name,
           phone,
           email: overrides?.email?.trim() || null,

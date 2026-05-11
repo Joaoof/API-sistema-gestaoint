@@ -27,7 +27,7 @@ export class CategoryResolver {
 
   @Query(() => CategoryListEntity)
   async categories(
-    @CurrentUser() user: User,
+    @CurrentUser() user: AuthUser,
     @Args('pagination', { nullable: true }) pagination?: PaginationInput,
     @Args('filters', { nullable: true }) filters?: CategoryFiltersInput,
   ): Promise<CategoryListEntity> {
@@ -36,14 +36,14 @@ export class CategoryResolver {
   }
 
   @Query(() => [CategoryEntity])
-  async activeCategories(@CurrentUser() user: User): Promise<CategoryEntity[]> {
+  async activeCategories(@CurrentUser() user: AuthUser): Promise<CategoryEntity[]> {
     const companyId = await this.tenancy.resolveCompanyId(user);
     return this.useCases.listActive(companyId);
   }
 
   @Query(() => CategoryEntity)
   async category(
-    @CurrentUser() user: User,
+    @CurrentUser() user: AuthUser,
     @Args('id', { type: () => ID }) id: string,
   ): Promise<CategoryEntity> {
     const companyId = await this.tenancy.resolveCompanyId(user);

@@ -20,9 +20,12 @@ import {
   ImportResult,
 } from '../../core/use-cases/cashMovement/import-cash-movements.use-case';
 import { CashMovement } from '../../core/entities/movements/cash-movement.entity';
+import { TenancyService } from '../construction/shared/tenancy.service';
 
 interface AuthUser {
   id: string;
+  company_id?: string;
+  companyId?: string;
 }
 
 @Controller('api/cash-movements')
@@ -31,6 +34,7 @@ export class CashMovementController {
   constructor(
     private readonly findAll: FindAllCashMovementUseCase,
     private readonly importer: ImportCashMovementsUseCase,
+    private readonly tenancy: TenancyService,
   ) {}
 
   @Post('import')
@@ -52,7 +56,8 @@ export class CashMovementController {
       throw new BadRequestException('CSV maior que 5 MB.');
     }
 
-    return this.importer.execute(user.id, csv);
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.importer.execute(user.id, companyId, csv);
   }
 
   @Get('export')

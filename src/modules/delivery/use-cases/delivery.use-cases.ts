@@ -138,6 +138,7 @@ export class DeliveryUseCases {
     const created = await this.prisma.$transaction(async (tx) => {
       const c = await tx.delivery.create({
         data: {
+          companyId: order.companyId,
           orderId: input.orderId,
           kind: input.kind ?? 'DELIVERY',
           driverId,
@@ -171,7 +172,7 @@ export class DeliveryUseCases {
       );
       return c;
     });
-    return toEntity(created);
+    return toEntity(created as RawDelivery);
   }
 
   async update(actor: AuditActor, input: UpdateDeliveryInput): Promise<DeliveryEntity> {

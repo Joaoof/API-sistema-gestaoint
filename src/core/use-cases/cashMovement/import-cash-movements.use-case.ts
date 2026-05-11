@@ -35,7 +35,7 @@ export class ImportCashMovementsUseCase {
     private readonly prisma: PrismaService,
   ) {}
 
-  async execute(userId: string, csv: string): Promise<ImportResult> {
+  async execute(userId: string, companyId: string, csv: string): Promise<ImportResult> {
     const { rows, errors } = parseCsv(csv);
     const total = rows.length + errors.length;
 
@@ -45,6 +45,7 @@ export class ImportCashMovementsUseCase {
 
     const data = rows.map((r) => ({
       ...(r.id ? { id: r.id } : {}),
+      companyId,
       type: r.type,
       category: r.category,
       typePayment: r.typePayment,

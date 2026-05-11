@@ -55,6 +55,7 @@ import { WarehouseModule } from './modules/warehouse/warehouse.module';
 import { FinancialsModule } from './modules/financials/financials.module';
 import { ReconciliationModule } from './modules/reconciliation/reconciliation.module';
 import { BoletosModule } from './modules/boletos/boletos.module';
+import { BankIntegrationsModule } from './modules/bankIntegrations/bank-integrations.module';
 
 @Module({
   imports: [
@@ -135,6 +136,7 @@ import { BoletosModule } from './modules/boletos/boletos.module';
     FinancialsModule,
     ReconciliationModule,
     BoletosModule,
+    BankIntegrationsModule,
   ],
   controllers: [AppController],
   providers: [
