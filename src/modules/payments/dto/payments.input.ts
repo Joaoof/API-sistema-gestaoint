@@ -21,7 +21,7 @@ export class RecordPaymentInput {
   @IsEnum(MovementTypePayments)
   paymentMethod!: MovementTypePayment;
 
-  @Field({ nullable: true }) @IsOptional() @IsString() bankId?: string | null;
+  @Field(() => String, { nullable: true }) @IsOptional() @IsString() bankId?: string | null;
 
   @Field({ nullable: true }) @IsOptional() @IsDateString() paidAt?: string;
 
