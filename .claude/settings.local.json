@@ -10,7 +10,10 @@
       "PowerShell(New-Item *)",
       "Bash(grep -Pzo \"\\(?s\\)@Field\\\\\\(\\\\{\\\\s*nullable:\\\\s*true\\\\s*\\\\}\\\\\\)[^\\\\n]*\\\\n\\(?:[^\\\\n]*\\\\n\\){0,3}?[^\\\\n]*\\\\?:\\\\s*\\\\w+\\\\s*\\\\|\\\\s*null\" C:/Users/douto/API-sistema-gestaoint/src/modules/admin/dto/admin.input.ts C:/Users/douto/API-sistema-gestaoint/src/modules/bankTransfer/dto/bank-transfer.input.ts C:/Users/douto/API-sistema-gestaoint/src/modules/accountPayable/dto/update-account-payable.input.ts C:/Users/douto/API-sistema-gestaoint/src/modules/accountReceivable/dto/update-account-receivable.input.ts)",
       "Bash(grep -v \"^--$\")",
-      "Bash(awk ' *)"
+      "Bash(awk ' *)",
+      "Bash(node -e \"process.env.NODE_ENV='development'; require\\('reflect-metadata'\\);\")",
+      "Bash(npx nest *)",
+      "Bash(npx tsc *)"
     ]
   }
 }

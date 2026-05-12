@@ -20,7 +20,7 @@ export class SuperAdminOverviewKpis {
 @ObjectType()
 export class HealthStatus {
   @Field() service!: string;
-  @Field() status!: 'ok' | 'warn' | 'down';
+  @Field(() => String) status!: 'ok' | 'warn' | 'down';
   @Field({ nullable: true }) detail?: string;
 }
 
@@ -72,7 +72,7 @@ export class CompanyAdminDto {
 @InputType()
 export class ListCompaniesInput {
   @Field({ nullable: true }) search?: string;
-  @Field({ nullable: true }) status?: 'ACTIVE' | 'SUSPENDED' | 'ALL';
+  @Field(() => String, { nullable: true }) status?: 'ACTIVE' | 'SUSPENDED' | 'ALL';
   @Field(() => Int, { nullable: true }) take?: number;
   @Field(() => Int, { nullable: true }) skip?: number;
 }
