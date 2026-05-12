@@ -1,4 +1,4 @@
-import { Field, Float, InputType, Int, ObjectType, registerEnumType } from '@nestjs/graphql';
+import { Field, Float, GraphQLISODateTime, InputType, Int, ObjectType, registerEnumType } from '@nestjs/graphql';
 
 // =========================================================================
 // OVERVIEW (visão geral)
@@ -57,16 +57,16 @@ export class SuperAdminOverview {
 export class CompanyAdminDto {
   @Field() id!: string;
   @Field() name!: string;
-  @Field({ nullable: true }) cnpj?: string | null;
-  @Field({ nullable: true }) email?: string | null;
-  @Field({ nullable: true }) phone?: string | null;
-  @Field({ nullable: true }) logoUrl?: string | null;
+  @Field(() => String, { nullable: true }) cnpj?: string | null;
+  @Field(() => String, { nullable: true }) email?: string | null;
+  @Field(() => String, { nullable: true }) phone?: string | null;
+  @Field(() => String, { nullable: true }) logoUrl?: string | null;
   @Field() isActive!: boolean;
-  @Field({ nullable: true }) plan?: string | null;
+  @Field(() => String, { nullable: true }) plan?: string | null;
   @Field(() => Int) usersCount!: number;
   @Field(() => Float) revenue30d!: number;
   @Field() createdAt!: Date;
-  @Field({ nullable: true }) lastActivityAt?: Date | null;
+  @Field(() => GraphQLISODateTime, { nullable: true }) lastActivityAt?: Date | null;
 }
 
 @InputType()
@@ -99,9 +99,9 @@ export class UserAdminDto {
   @Field() role!: string;
   @Field() isActive!: boolean;
   @Field() isSuperAdmin!: boolean;
-  @Field({ nullable: true }) companyId?: string | null;
-  @Field({ nullable: true }) companyName?: string | null;
-  @Field({ nullable: true }) plan?: string | null;
+  @Field(() => String, { nullable: true }) companyId?: string | null;
+  @Field(() => String, { nullable: true }) companyName?: string | null;
+  @Field(() => String, { nullable: true }) plan?: string | null;
   @Field() createdAt!: Date;
 }
 
@@ -123,7 +123,7 @@ export class ModuleAdminDto {
   @Field() id!: string;
   @Field() name!: string;
   @Field() module_key!: string;
-  @Field({ nullable: true }) description?: string | null;
+  @Field(() => String, { nullable: true }) description?: string | null;
 }
 
 @ObjectType()
@@ -140,7 +140,7 @@ export class PlanModuleAdminDto {
 export class PlanAdminDto {
   @Field() id!: string;
   @Field() name!: string;
-  @Field({ nullable: true }) description?: string | null;
+  @Field(() => String, { nullable: true }) description?: string | null;
   @Field() isActive!: boolean;
   @Field() createdAt!: Date;
   @Field(() => Int) companiesCount!: number;
@@ -184,14 +184,14 @@ export class AiCompanyConsumption {
 export class AiPurchaseAdminDto {
   @Field() id!: string;
   @Field() companyId!: string;
-  @Field({ nullable: true }) companyName?: string | null;
-  @Field({ nullable: true }) userId?: string | null;
-  @Field({ nullable: true }) userName?: string | null;
+  @Field(() => String, { nullable: true }) companyName?: string | null;
+  @Field(() => String, { nullable: true }) userId?: string | null;
+  @Field(() => String, { nullable: true }) userName?: string | null;
   @Field(() => Int) packageBrl!: number;
   @Field(() => Int) creditsTotal!: number;
   @Field() pixTxid!: string;
   @Field() status!: string; // PENDING | PAID | CANCELED | EXPIRED
-  @Field({ nullable: true }) paidAt?: Date | null;
+  @Field(() => GraphQLISODateTime, { nullable: true }) paidAt?: Date | null;
   @Field() createdAt!: Date;
   @Field() expiresAt!: Date;
 }
@@ -200,7 +200,7 @@ export class AiPurchaseAdminDto {
 export class AiTransactionAdminDto {
   @Field() id!: string;
   @Field() companyId!: string;
-  @Field({ nullable: true }) companyName?: string | null;
+  @Field(() => String, { nullable: true }) companyName?: string | null;
   @Field() kind!: string;
   @Field(() => Int) amount!: number;
   @Field(() => Int) balanceAfter!: number;
@@ -222,13 +222,13 @@ export class AiOverview {
 export class WebhookConnectionDto {
   @Field() id!: string;
   @Field() provider!: string;
-  @Field({ nullable: true }) bankId?: string | null;
+  @Field(() => String, { nullable: true }) bankId?: string | null;
   @Field() companyId!: string;
-  @Field({ nullable: true }) companyName?: string | null;
+  @Field(() => String, { nullable: true }) companyName?: string | null;
   @Field() status!: string;
-  @Field({ nullable: true }) lastSyncAt?: Date | null;
-  @Field({ nullable: true }) lastErrorAt?: Date | null;
-  @Field({ nullable: true }) lastErrorMsg?: string | null;
+  @Field(() => GraphQLISODateTime, { nullable: true }) lastSyncAt?: Date | null;
+  @Field(() => GraphQLISODateTime, { nullable: true }) lastErrorAt?: Date | null;
+  @Field(() => String, { nullable: true }) lastErrorMsg?: string | null;
   @Field(() => Int) eventsToday!: number;
   @Field() createdAt!: Date;
 }
@@ -239,9 +239,9 @@ export class WebhookEventDto {
   @Field() provider!: string;
   @Field() event!: string;
   @Field() processed!: boolean;
-  @Field({ nullable: true }) errorMsg?: string | null;
-  @Field({ nullable: true }) refType?: string | null;
-  @Field({ nullable: true }) refId?: string | null;
+  @Field(() => String, { nullable: true }) errorMsg?: string | null;
+  @Field(() => String, { nullable: true }) refType?: string | null;
+  @Field(() => String, { nullable: true }) refId?: string | null;
   @Field({ nullable: true }) payloadJson?: string; // JSON.stringify(payload)
   @Field() createdAt!: Date;
 }
@@ -273,11 +273,11 @@ export class LogEntryDto {
   @Field() action!: string;
   @Field() entity!: string;
   @Field() entityId!: string;
-  @Field({ nullable: true }) companyId?: string | null;
-  @Field({ nullable: true }) companyName?: string | null;
-  @Field({ nullable: true }) userId?: string | null;
-  @Field({ nullable: true }) userName?: string | null;
-  @Field({ nullable: true }) reason?: string | null;
+  @Field(() => String, { nullable: true }) companyId?: string | null;
+  @Field(() => String, { nullable: true }) companyName?: string | null;
+  @Field(() => String, { nullable: true }) userId?: string | null;
+  @Field(() => String, { nullable: true }) userName?: string | null;
+  @Field(() => String, { nullable: true }) reason?: string | null;
   @Field() createdAt!: Date;
 }
 

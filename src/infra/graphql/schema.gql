@@ -2,6 +2,375 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type AccountPayableEntity {
+  amount: Float!
+  createdAt: DateTime!
+  daysOverdue: Float!
+  description: String!
+  dueDate: DateTime!
+  finalAmount: Float!
+  id: ID!
+  interestAccrued: Float!
+  interestRate: Float!
+  notes: String
+  paidAt: DateTime
+  product: ProductEntity
+  productId: String
+  status: AccountStatus!
+  supplier: SupplierMiniEntity
+  supplierId: String
+  supplierName: String!
+  updatedAt: DateTime!
+}
+
+type AccountPayableSummary {
+  countTotal: Int!
+  overdue: Float!
+  paid: Float!
+  pending: Float!
+  total: Float!
+}
+
+type AccountReceivableEntity {
+  amount: Float!
+  createdAt: DateTime!
+  customer: CustomerEntity
+  customerId: String!
+  daysOverdue: Float!
+  description: String!
+  dueDate: DateTime!
+  finalAmount: Float!
+  id: ID!
+  interestAccrued: Float!
+  interestRate: Float!
+  notes: String
+  paidAt: DateTime
+  product: ProductEntity
+  productId: String
+  status: AccountStatus!
+  updatedAt: DateTime!
+}
+
+type AccountReceivableSummary {
+  countTotal: Int!
+  overdue: Float!
+  paid: Float!
+  pending: Float!
+  total: Float!
+}
+
+enum AccountStatus {
+  CANCELED
+  OVERDUE
+  PAID
+  PENDING
+}
+
+type ActivityItem {
+  action: String!
+  at: DateTime!
+  companyName: String
+  id: String!
+  target: String
+  who: String!
+}
+
+input AddItensOrcamentoInput {
+  itens: [ItemOrcamentoInput!]!
+  versaoId: String!
+}
+
+input AdminAssignPlanInput {
+  companyId: String!
+  planId: String!
+}
+
+type AdminCompanyEntity {
+  currentPlanId: String
+  currentPlanName: String
+  email: String
+  id: ID!
+  name: String!
+  userCount: Int!
+}
+
+input AdminCreateModuleInput {
+  description: String
+  module_key: String!
+  name: String!
+}
+
+input AdminCreatePlanInput {
+  description: String
+  name: String!
+}
+
+input AdminCreateUserInput {
+  company_id: String!
+  email: String!
+  isSuperAdmin: Boolean = false
+  name: String!
+  password: String!
+  phone: String
+  role: String!
+}
+
+type AdminModuleEntity {
+  description: String
+  id: ID!
+  module_key: String!
+  name: String!
+}
+
+type AdminPlanEntity {
+  description: String
+  id: ID!
+  isActive: Boolean!
+  modules: [AdminPlanModuleEntity!]!
+  name: String!
+}
+
+type AdminPlanModuleEntity {
+  id: ID!
+  isActive: Boolean!
+  module: AdminModuleEntity
+  moduleId: String!
+  permission: [String!]!
+  planId: String!
+}
+
+input AdminResetPasswordInput {
+  newPassword: String!
+  userId: String!
+}
+
+input AdminUpdatePlanInput {
+  description: String
+  id: String!
+  isActive: Boolean
+  name: String
+}
+
+input AdminUpdateUserInput {
+  company_id: String
+  email: String
+  id: String!
+  isSuperAdmin: Boolean
+  is_active: Boolean
+  name: String
+  phone: String
+  role: String
+}
+
+input AdminUpsertPlanModuleInput {
+  isActive: Boolean = true
+  moduleId: String!
+  permission: [String!]!
+  planId: String!
+}
+
+type AdminUserEntity {
+  companyName: String
+  company_id: String
+  createdAt: DateTime!
+  email: String!
+  id: ID!
+  isSuperAdmin: Boolean!
+  is_active: Boolean!
+  name: String!
+  phone: String
+  role: String!
+}
+
+type AiActionExecutionResult {
+  ok: Boolean!
+  resultJson: String
+}
+
+type AiAssistantMessageEntity {
+  content: String!
+  createdAt: DateTime!
+  id: ID!
+}
+
+type AiChatResultEntity {
+  assistantMessage: AiAssistantMessageEntity!
+  conversationId: String!
+  pendingActions: [AiPendingActionEntity!]!
+}
+
+type AiCompanyConsumption {
+  balance: Int!
+  companyId: String!
+  companyName: String!
+  consumed30d: Int!
+}
+
+type AiConversationEntity {
+  createdAt: DateTime!
+  id: ID!
+  messages: [AiMessageEntity!]
+  model: String!
+  title: String
+  updatedAt: DateTime!
+}
+
+type AiCreditAccountEntity {
+  balance: Int!
+  companyId: String!
+  id: ID!
+  isEmpty: Boolean!
+  isLow: Boolean!
+  lowThreshold: Int!
+  totalConsumed: Int!
+  totalPurchased: Int!
+}
+
+type AiCreditPackageEntity {
+  badge: String
+  base: Int!
+  bonus: Int!
+  brl: Int!
+  total: Int!
+}
+
+type AiCreditPurchaseEntity {
+  companyId: String!
+  companyName: String
+  createdAt: DateTime!
+  createdByName: String
+  creditsTotal: Int!
+  expiresAt: DateTime!
+  id: ID!
+  packageBrl: Int!
+  paidAt: DateTime
+  pixCopyPaste: String!
+  pixKey: String!
+  pixTxid: String!
+  status: String!
+}
+
+type AiCreditTransactionEntity {
+  amount: Int!
+  balanceAfter: Int!
+  createdAt: DateTime!
+  description: String!
+  id: ID!
+  kind: String!
+  refId: String
+  refType: String
+}
+
+type AiMessageEntity {
+  content: String!
+  createdAt: DateTime!
+  id: ID!
+  role: String!
+  toolName: String
+}
+
+type AiOverview {
+  kpis: AiOverviewKpis!
+  topConsumers: [AiCompanyConsumption!]!
+}
+
+type AiOverviewKpis {
+  conversationsToday: Int!
+  creditsSold30d: Int!
+  pendingPurchases: Int!
+  revenue30d: Float!
+}
+
+type AiPendingActionEntity {
+  description: String!
+  id: ID!
+
+  """JSON string com os parâmetros que serão executados"""
+  paramsJson: String!
+  tool: String!
+}
+
+type AiPurchaseAdminDto {
+  companyId: String!
+  companyName: String
+  createdAt: DateTime!
+  creditsTotal: Int!
+  expiresAt: DateTime!
+  id: String!
+  packageBrl: Int!
+  paidAt: DateTime
+  pixTxid: String!
+  status: String!
+  userId: String
+  userName: String
+}
+
+type AiTransactionAdminDto {
+  amount: Int!
+  balanceAfter: Int!
+  companyId: String!
+  companyName: String
+  createdAt: DateTime!
+  description: String!
+  id: String!
+  kind: String!
+}
+
+type AuditAccessTokenEntity {
+  expiresIn: Int!
+  token: String!
+}
+
+enum AuditAction {
+  ACTIVATE
+  CONFIRM
+  CREATE
+  DELETE
+  FREEZE
+  REVERT
+  SOFT_DELETE
+  UPDATE
+}
+
+type AuditLogEntity {
+  action: AuditAction!
+
+  """JSON serializado do estado posterior"""
+  afterJson: String
+
+  """JSON serializado do estado anterior"""
+  beforeJson: String
+  companyId: String!
+  createdAt: DateTime!
+  entity: String!
+  entityId: String!
+  id: ID!
+  reason: String
+  userEmail: String
+  userId: String
+  userName: String
+}
+
+input AuditLogFilterInput {
+  action: AuditAction
+  entity: String
+  entityId: String
+  from: DateTime
+  page: Int = 1
+  pageSize: Int = 50
+  search: String
+  to: DateTime
+  userId: String
+  userName: String
+}
+
+type AuditLogPageEntity {
+  items: [AuditLogEntity!]!
+  page: Int!
+  pageSize: Int!
+  total: Int!
+}
+
 type AuthPayload {
   accessToken: String!
   company: CompanyDto!
@@ -9,6 +378,131 @@ type AuthPayload {
   module: ModuleDto
   plan: PlanDto
   user: UserDto!
+}
+
+type AutoMatchResult {
+  matched: Int!
+  total: Int!
+}
+
+enum BankAccountType {
+  CHECKING
+  INVESTMENT
+  OTHER
+  SAVINGS
+  WALLET
+}
+
+type BankEntity {
+  agencia: String
+  ativo: Boolean!
+  conta: String
+  corHex: String!
+  createdAt: DateTime!
+  digito: String
+  documento: String
+  id: ID!
+  name: String!
+  observacoes: String
+  pixKey: String
+  saldoInicial: Float!
+  tipo: BankAccountType!
+  titular: String
+  updatedAt: DateTime!
+  user_id: String!
+}
+
+type BankIntegrationStatus {
+  boletoWebhookUrl: String!
+  configured: Boolean!
+  credentials: [IntegrationCredentialItem!]!
+  environment: String!
+  label: String!
+  lastErrorAt: DateTime
+  lastErrorMsg: String
+  lastWebhookAt: DateTime
+  pixWebhookUrl: String!
+  processedWebhooks: Int!
+  provider: String!
+  recentEvents: [WebhookLogEntity!]!
+  totalWebhooks: Int!
+}
+
+input BankTransferInput {
+  date: String
+  fromBankId: String!
+  notes: String
+  toBankId: String!
+  value: Float!
+}
+
+enum BillingCycle {
+  ANNUAL
+  MONTHLY
+  ONCE
+  QUARTERLY
+  WEEKLY
+}
+
+type BoletoEntity {
+  accountReceivableId: String
+  amount: Float!
+  bankId: String!
+  barcode: String
+  companyId: String!
+  createdAt: DateTime!
+  digitableLine: String
+  dueDate: DateTime!
+  errorMessage: String
+  id: ID!
+  nossoNumero: String
+  paidAt: DateTime
+  payerDocument: String!
+  payerName: String!
+  pdfUrl: String
+  provider: String!
+  providerBoletoId: String
+  registeredAt: DateTime
+  status: String!
+}
+
+input BuildWhatsappLinkInput {
+  """Texto bruto. Se omitido, usa templateKey."""
+  body: String
+  customerId: String
+
+  """Cria MessageLog (PENDING/SENT) ao construir o link."""
+  log: Boolean! = true
+
+  """Chave de template (canal=WHATSAPP) a renderizar."""
+  templateKey: String
+
+  """Telefone destino com DDI (ex.: 5571999998888)"""
+  toPhone: String!
+
+  """JSON serializado de variáveis do template."""
+  varsJson: String
+}
+
+input CancelInvoiceInput {
+  invoiceId: String!
+  motivo: String!
+}
+
+type CashFlowDay {
+  cumulativeBalance: Float!
+  date: String!
+  expectedIn: Float!
+  expectedOut: Float!
+  netForDay: Float!
+}
+
+type CashFlowProjectionEntity {
+  days: [CashFlowDay!]!
+  finalBalance: Float!
+  startBalance: Float!
+  totalIn: Float!
+  totalOut: Float!
 }
 
 enum CashMovementCategory {
@@ -20,21 +514,128 @@ enum CashMovementCategory {
   WITHDRAWAL
 }
 
-type CashMovementGraphQL {
+type CashMovementCategoryBreakdown {
   category: CashMovementCategory!
+  count: Int!
+  total: Float!
+}
+
+type CashMovementGraphQL {
+  attachmentUrl: String
+  bankId: String
+  category: CashMovementCategory!
+  counterpartyDocument: String
+  counterpartyName: String
+  createdAt: DateTime
   date: DateTime
   description: String!
+  dueDate: DateTime
   id: String!
   message: String
+  notes: String
+  paidAt: DateTime
+  referenceCode: String
+  status: CashMovementStatus!
   type: CashMovementType!
-  typePayment: MovementTypePayment!
+  typePayment: MovementTypePayment
+  updatedAt: DateTime
   user_id: String!
   value: Float!
+}
+
+type CashMovementPage {
+  items: [CashMovementGraphQL!]!
+  page: Int!
+  pageSize: Int!
+  summary: CashMovementSummary!
+  total: Int!
+  totalPages: Int!
+}
+
+enum CashMovementSortField {
+  CREATED_AT
+  DATE
+  DUE_DATE
+  VALUE
+}
+
+enum CashMovementStatus {
+  CANCELED
+  COMPLETED
+  OVERDUE
+  PENDING
+  SCHEDULED
+}
+
+type CashMovementSummary {
+  balance: Float!
+  byCategory: [CashMovementCategoryBreakdown!]!
+  overdueTotal: Float!
+  pendingTotal: Float!
+  totalCount: Int!
+  totalEntries: Float!
+  totalExits: Float!
 }
 
 enum CashMovementType {
   ENTRY
   EXIT
+}
+
+type CategoriaConstrucaoEntity {
+  ativo: Boolean!
+  codigo: String!
+  companyId: String!
+  createdAt: DateTime!
+  id: ID!
+  nome: String!
+  parentId: String
+  tipo: CategoriaConstrucaoTipo!
+  updatedAt: DateTime!
+}
+
+enum CategoriaConstrucaoTipo {
+  ADMINISTRATIVO
+  EQUIPAMENTO
+  IMPOSTO
+  MAO_DE_OBRA
+  MATERIAL
+  OUTRO
+  SERVICO_TERCEIRO
+}
+
+type CategoryEntity {
+  active: Boolean!
+  color: String!
+  createdAt: DateTime!
+  description: String
+  id: ID!
+  name: String!
+  updatedAt: DateTime!
+}
+
+input CategoryFiltersInput {
+  active: Boolean
+  search: String
+}
+
+type CategoryListEntity {
+  items: [CategoryEntity!]!
+  limit: Int!
+  page: Int!
+  total: Int!
+  totalPages: Int!
+}
+
+type CentroCustoEntity {
+  ativo: Boolean!
+  codigo: String!
+  companyId: String!
+  createdAt: DateTime!
+  descricao: String
+  id: ID!
+  nome: String!
+  updatedAt: DateTime!
 }
 
 input ChangePasswordInput {
@@ -43,22 +644,472 @@ input ChangePasswordInput {
   newPassword: String!
 }
 
-type CompanyDto {
-  address: String
+type CompanyAdminDto {
+  cnpj: String
+  createdAt: DateTime!
   email: String
   id: String!
+  isActive: Boolean!
+  lastActivityAt: DateTime
   logoUrl: String
-  name: String
+  name: String!
   phone: String
+  plan: String
+  revenue30d: Float!
+  usersCount: Int!
+}
+
+type CompanyDto {
+  address: String
+  bairro: String
+  cep: String
+  cidade: String
+  cnpj: String
+  email: String
+  estado: String
+  id: String!
+  inscricaoEstadual: String
+  latitude: Float
+  logoUrl: String
+  longitude: Float
+  name: String
+  nomeFantasia: String
+  phone: String
+  razaoSocial: String
+}
+
+type CompanyFiscalConfigEntity {
+  ambiente: FiscalEnvironment!
+  ativo: Boolean!
+  bairro: String
+  cep: String
+  certificadoValidoAte: DateTime
+  cidade: String
+  cnpj: String!
+  codigoMunicipioIbge: String
+  companyId: String!
+  complemento: String
+  createdAt: DateTime!
+  cscIdNfce: String
+  endereco: String
+  hasCertificado: Boolean!
+  hasProviderToken: Boolean!
+  id: ID!
+  inscricaoEstadual: String
+  inscricaoMunicipal: String
+  nomeFantasia: String
+  numero: String
+  providerCnpjReference: String
+  providerName: String
+  proximoNumeroNfce: Int!
+  proximoNumeroNfe: Int!
+  proximoNumeroNfse: Int!
+  razaoSocial: String
+  regimeTributario: TaxRegime!
+  serieNfce: Int!
+  serieNfe: Int!
+  serieNfse: Int!
+  uf: String
+  updatedAt: DateTime!
+}
+
+type CompanyReminderEntity {
+  """fiscal | financeiro | comercial | operacional | rh | outros"""
+  category: String
+  createdAt: DateTime!
+  createdBy: String
+  description: String
+  doneAt: DateTime
+  dueAt: DateTime!
+  id: ID!
+  link: String
+  notifiedAt: DateTime
+
+  """low | normal | high | critical"""
+  priority: String!
+  title: String!
+}
+
+type CompanySettingsEntity {
+  companyId: String!
+  companyWhatsappName: String
+  companyWhatsappNumber: String
+  createdAt: DateTime!
+  currency: String!
+  dateFormat: String!
+  defaultPageSize: Int!
+  fiscalYearStartMonth: Int!
+  id: ID!
+  locale: String!
+  numberDecimalSep: String!
+  numberDecimals: Int!
+  numberThousandSep: String!
+  timeFormat: String!
+  timezone: String!
+  updatedAt: DateTime!
+  weekStartsOn: Int!
+}
+
+type ComparacaoItemEntity {
+  categoriaId: String
+  descricao: String!
+  diferencaAbs: Float!
+  diferencaPct: Float
+  etapaId: String
+  valorAlvo: Float!
+  valorBase: Float!
+}
+
+type ComparacaoVersoesEntity {
+  diferencaAbs: Float!
+  diferencaPct: Float
+  porCategoria: [ComparacaoItemEntity!]!
+  porEtapa: [ComparacaoItemEntity!]!
+  totalAlvo: Float!
+  totalBase: Float!
+  versaoAlvoId: String!
+  versaoBaseId: String!
+}
+
+input CompararVersoesInput {
+  versaoAlvoId: String!
+  versaoBaseId: String!
+}
+
+input ConfirmarTransacaoInput {
+  dataReal: DateTime!
+  id: String!
+}
+
+type ContractEntity {
+  autoRenew: Boolean!
+  billingCycle: BillingCycle!
+  companyId: String!
+  createdAt: DateTime!
+  customerId: String!
+  description: String
+  endDate: DateTime
+  id: ID!
+  number: String!
+  sellerId: String
+  serviceLevels: [ServiceLevelEntity!]
+  startDate: DateTime
+  status: ContractStatus!
+  terms: String
+  title: String!
+  updatedAt: DateTime!
+  value: Float!
+}
+
+type ContractEventEntity {
+  contractId: String!
+  createdAt: DateTime!
+  createdById: String
+  id: ID!
+  notes: String
+  occurredAt: DateTime!
+  type: ContractEventType!
+}
+
+enum ContractEventType {
+  ACTIVATED
+  AMENDED
+  BREACH_REGISTERED
+  CREATED
+  EXPIRED
+  NOTE
+  RENEWED
+  RESUMED
+  SUSPENDED
+  TERMINATED
+}
+
+input ContractFilterInput {
+  activeOnly: Boolean
+  customerId: String
+  search: String
+  status: ContractStatus
+}
+
+enum ContractStatus {
+  ACTIVE
+  DRAFT
+  EXPIRED
+  SUSPENDED
+  TERMINATED
+}
+
+input CreateAccountPayableInput {
+  amount: Float!
+  description: String!
+  dueDate: String!
+  interestRate: Float! = 0.033
+  notes: String
+  productId: String
+  status: AccountStatus! = PENDING
+  supplierId: String
+  supplierName: String!
+}
+
+input CreateAccountReceivableInput {
+  amount: Float!
+  customerId: String!
+  description: String!
+  dueDate: String!
+  interestRate: Float! = 0.033
+  notes: String
+  productId: String
+  status: AccountStatus! = PENDING
+}
+
+input CreateActivityInput {
+  assignedToUserId: String
+  description: String
+  dueDate: DateTime
+  title: String!
+  type: OpportunityActivityType!
+}
+
+input CreateBankInput {
+  agencia: String
+  ativo: Boolean! = true
+  conta: String
+  corHex: String! = "#3B82F6"
+  digito: String
+  documento: String
+  name: String!
+  observacoes: String
+  pixKey: String
+  saldoInicial: Float! = 0
+  tipo: BankAccountType! = CHECKING
+  titular: String
 }
 
 input CreateCashMovementInput {
-  category: String!
+  attachmentUrl: String
+  bankId: String
+  category: CashMovementCategory!
+  counterpartyDocument: String
+  counterpartyName: String
   date: DateTime
   description: String!
-  type: String!
-  typePayment: String!
+  dueDate: DateTime
+  notes: String
+  paidAt: DateTime
+  referenceCode: String
+  status: CashMovementStatus
+  type: CashMovementType!
+  typePayment: MovementTypePayment
   value: Float!
+}
+
+input CreateCategoriaConstrucaoInput {
+  codigo: String!
+  nome: String!
+  parentId: String
+  tipo: CategoriaConstrucaoTipo!
+}
+
+input CreateCategoryInput {
+  active: Boolean! = true
+  color: String! = "#3B82F6"
+  description: String
+  name: String!
+}
+
+input CreateCentroCustoInput {
+  codigo: String!
+  descricao: String
+  nome: String!
+}
+
+input CreateCompanyAdminInput {
+  adminEmail: String
+  cnpj: String
+  email: String
+  name: String!
+  phone: String
+  planId: String
+}
+
+input CreateContractInput {
+  autoRenew: Boolean! = false
+  billingCycle: BillingCycle! = ONCE
+  customerId: String!
+  description: String
+  endDate: DateTime
+  number: String!
+  sellerId: String
+  startDate: DateTime
+  status: ContractStatus! = DRAFT
+  terms: String
+  title: String!
+  value: Float! = 0
+}
+
+type CreateCustomerFromWaResult {
+  customerId: String!
+  linkedMessages: Int!
+}
+
+input CreateCustomerInput {
+  address: String
+  bairro: String
+  cep: String
+  cidade: String
+  document: String
+  email: String
+  estado: String
+  latitude: Float
+  longitude: Float
+  name: String!
+  nomeFantasia: String
+  phone: String
+  razaoSocial: String
+}
+
+input CreateDeliveryInput {
+  destination: String
+  driver: String
+  driverId: String
+  kind: DeliveryKind = DELIVERY
+  notes: String
+  orderId: String!
+  scheduledDate: String
+  vehicle: String
+}
+
+input CreateDriverInput {
+  active: Boolean! = true
+  cnh: String
+  cnhCategory: String
+  document: String
+  name: String!
+  notes: String
+  phone: String
+  photoUrl: String
+  vehicle: String
+  vehiclePlate: String
+}
+
+input CreateEtapaInput {
+  codigo: String!
+  descricao: String
+  nome: String!
+  obraId: String!
+  ordem: Int! = 0
+}
+
+input CreateExportTemplateInput {
+  columns: [String!]!
+
+  """JSON string com filtros"""
+  filtersJson: String!
+  format: String!
+  module: String!
+  name: String!
+  schedule: String
+}
+
+input CreateFinancialAccountInput {
+  active: Boolean! = true
+  code: String!
+  description: String
+  name: String!
+  parentId: String
+  type: FinancialAccountType!
+}
+
+input CreateInvitationInput {
+  companyId: String
+  email: String!
+  expiresInDays: Int
+  message: String
+  planId: String
+  role: String
+}
+
+input CreateItemWbsInput {
+  codigo: String!
+  descricao: String
+  etapaId: String!
+  nome: String!
+  ordem: Int! = 0
+  quantidadeRef: Float
+  subetapaId: String
+  unidade: String! = "UN"
+}
+
+input CreateNotificationTemplateInput {
+  active: Boolean! = true
+  body: String!
+  channel: NotificationChannel!
+  key: String!
+  name: String!
+  subject: String
+}
+
+input CreateObraInput {
+  cep: String
+  cidade: String
+  codigo: String!
+  customerId: String
+  dataFimPrev: DateTime
+  dataInicio: DateTime
+  descricao: String
+  endereco: String
+  estado: String
+  latitude: Float
+  longitude: Float
+  nome: String!
+  status: ObraStatus! = PLANEJAMENTO
+  valorContrato: Float
+}
+
+input CreateOpportunityInput {
+  customerEmail: String
+  customerId: String
+  customerName: String
+  customerPhone: String
+  expectedCloseDate: DateTime
+  notes: String
+  ownerUserId: String
+  probability: Int! = 50
+  sellerId: String
+  source: String
+  stage: OpportunityStage! = NEW
+  title: String!
+  value: Float! = 0
+}
+
+input CreateOrderInput {
+  commissionPercent: Float
+  customerDocument: String
+  customerId: String
+  customerName: String
+  customerPhone: String
+  depositAmount: Float! = 0
+  discount: Float! = 0
+  expectedDeliveryDate: DateTime
+  items: [CreateOrderItemInput!]!
+  notes: String
+  orderType: OrderType! = STANDARD
+  paymentMethod: OrderPaymentMethod! = CASH
+  sellerId: String
+  status: OrderStatus! = CONFIRMED
+}
+
+input CreateOrderItemInput {
+  description: String
+  discount: Float! = 0
+  productId: String!
+  quantity: Int! = 1
+  unitPrice: Float!
+}
+
+input CreatePlanInput {
+  description: String
+  name: String!
 }
 
 input CreateProductInput {
@@ -67,6 +1118,7 @@ input CreateProductInput {
   costPrice: Float!
   description: String
   images: [ProductImageInput!]! = []
+  kind: ProductKind! = PRODUCT
   minStock: Int! = 0
   nameProduct: String!
   quantity: Int! = 0
@@ -75,6 +1127,151 @@ input CreateProductInput {
   supplierId: String
   unit: String! = "UN"
   weight: Float
+}
+
+input CreateRecurringBillInput {
+  amount: Float!
+  dayOfMonth: Int!
+  description: String!
+  interestRate: Float
+  notes: String
+  supplierName: String!
+}
+
+input CreateSellerInput {
+  active: Boolean! = true
+  commissionPercent: Float! = 0
+  document: String
+  email: String
+  name: String!
+  phone: String
+}
+
+input CreateServiceLevelEventInput {
+  measuredValue: Float!
+  met: Boolean!
+  notes: String
+}
+
+input CreateServiceLevelInput {
+  active: Boolean! = true
+  description: String
+  kind: ServiceLevelKind!
+  name: String!
+  penaltyPercent: Float! = 0
+  targetValue: Float!
+  unit: String!
+}
+
+input CreateSubetapaInput {
+  codigo: String!
+  descricao: String
+  etapaId: String!
+  nome: String!
+  ordem: Int! = 0
+}
+
+input CreateTransacaoInput {
+  accountPayableId: String
+  accountReceivableId: String
+  categoriaId: String!
+  centroCustoId: String!
+  dataCompetencia: DateTime!
+  dataPrevistaPgto: DateTime
+  dataReal: DateTime
+  descricao: String!
+  documento: String
+  etapaId: String
+  itemWbsId: String
+  obraId: String!
+  observacoes: String
+  status: StatusTransacao! = PENDENTE
+  subetapaId: String
+  supplierId: String
+  tipo: TipoTransacao!
+  valor: Float!
+}
+
+input CreateVersaoOrcamentoInput {
+  baseVersaoId: String
+  descricao: String
+  itens: [ItemOrcamentoInput!]! = []
+  nome: String!
+  obraId: String!
+}
+
+input CreateWarehouseInput {
+  address: String
+  code: String
+  isMain: Boolean
+  name: String!
+}
+
+type CreatedInvitation {
+  acceptUrl: String!
+  invitation: InvitationEntity!
+}
+
+type CustomerEntity {
+  address: String
+  bairro: String
+  cep: String
+  cidade: String
+  createdAt: DateTime!
+  document: String
+  email: String
+  estado: String
+  id: ID!
+  latitude: Float
+  longitude: Float
+  name: String!
+  nomeFantasia: String
+  phone: String
+  razaoSocial: String
+  updatedAt: DateTime!
+}
+
+type DREEntity {
+  from: String!
+  months: [DREMonthRow!]!
+  to: String!
+  totals: DRETotals!
+}
+
+type DREMonthRow {
+  cogs: Float!
+  expenses: Float!
+  grossProfit: Float!
+  month: String!
+  netIncome: Float!
+  revenue: Float!
+}
+
+type DRETotals {
+  cogs: Float!
+  expenses: Float!
+  grossProfit: Float!
+  netIncome: Float!
+  revenue: Float!
+}
+
+type DailyKpi {
+  cost: Float!
+  ordersCount: Int!
+  profit: Float!
+  sales: Float!
+}
+
+type DashboardOverviewEntity {
+  daily: DailyKpi!
+  expensesByCategory: [ExpenseCategory!]!
+  inventory: InventorySummary!
+  margin: Float!
+  monthly: MonthlyKpi!
+  revenueVsExpenses6m: [RevExpMonth!]!
+  sales30Days: [SalesDay!]!
+  topCategoriesByRevenue: [TopCategory!]!
+  topProducts: [TopProduct!]!
 }
 
 type DashboardStats {
@@ -94,17 +1291,587 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+type DeleteCategoryResult {
+  message: String!
+  success: Boolean!
+}
+
+type DeliverableOrder {
+  createdAt: DateTime!
+  customer: DeliverableOrderCustomer
+  customerName: String
+  id: ID!
+  number: Int!
+  total: Float!
+}
+
+type DeliverableOrderCustomer {
+  address: String
+  bairro: String
+  cep: String
+  cidade: String
+  document: String
+  estado: String
+  id: ID!
+  latitude: Float
+  longitude: Float
+  name: String!
+  phone: String
+}
+
+type DeliveryEntity {
+  createdAt: DateTime!
+  deliveredAt: DateTime
+  destination: String
+  driver: String
+  driverId: String
+  driverPhone: String
+  driverPhotoUrl: String
+  id: ID!
+  kind: DeliveryKind!
+  notes: String
+  order: OrderEntity
+  orderId: String!
+  scheduledDate: DateTime
+  startedAt: DateTime
+  status: DeliveryStatus!
+  updatedAt: DateTime!
+  vehicle: String
+}
+
+enum DeliveryKind {
+  DELIVERY
+  PICKUP
+}
+
+enum DeliveryStatus {
+  CANCELED
+  DELIVERED
+  IN_TRANSIT
+  PENDING
+}
+
+type DeliverySummary {
+  canceled: Int!
+  delivered: Int!
+  inTransit: Int!
+  pending: Int!
+  todayDelivered: Int!
+}
+
+type DriverEntity {
+  active: Boolean!
+  cnh: String
+  cnhCategory: String
+  createdAt: DateTime!
+  document: String
+  id: ID!
+  name: String!
+  notes: String
+  phone: String
+  photoUrl: String
+  totalDeliveries: Int!
+  updatedAt: DateTime!
+  vehicle: String
+  vehiclePlate: String
+}
+
+input EstornarTransacaoInput {
+  id: String!
+  motivo: String!
+}
+
+type ExpenseCategory {
+  amount: Float!
+  category: String!
+}
+
+type ExportRunResult {
+  content: String!
+  filename: String!
+  mimeType: String!
+}
+
+type ExportTemplateEntity {
+  columns: [String!]!
+  createdAt: DateTime!
+  filtersJson: String!
+  format: String!
+  id: ID!
+  module: String!
+  name: String!
+  schedule: String
+  updatedAt: DateTime!
+}
+
+type FinancialAccountEntity {
+  active: Boolean!
+  code: String!
+  companyId: String!
+  createdAt: DateTime!
+  description: String
+  id: ID!
+  name: String!
+  parentId: String
+  type: FinancialAccountType!
+  updatedAt: DateTime!
+}
+
+input FinancialAccountFilterInput {
+  activeOnly: Boolean
+  search: String
+  type: FinancialAccountType
+}
+
+type FinancialAccountTreeNode {
+  account: FinancialAccountEntity!
+  children: [FinancialAccountTreeNode!]!
+}
+
+enum FinancialAccountType {
+  ASSET
+  EQUITY
+  EXPENSE
+  INCOME
+  LIABILITY
+}
+
 input FindAllCashMovementInput {
-  date: DateTime
-  description: String!
-  type: String
-  typePayment: String!
-  value: Float!
+  bankId: String
+  categories: [CashMovementCategory!]
+  counterparty: String
+  endDate: DateTime
+  maxValue: Float
+  minValue: Float
+  page: Int
+  pageSize: Int
+  paymentMethods: [MovementTypePayment!]
+  referenceCode: String
+  search: String
+  sortBy: CashMovementSortField
+  sortDirection: SortDirection
+  startDate: DateTime
+  statuses: [CashMovementStatus!]
+  type: CashMovementType
+}
+
+enum FiscalEnvironment {
+  HOMOLOG
+  PRODUCTION
+}
+
+enum GranularidadeFluxo {
+  DIA
+  MES
+  SEMANA
+}
+
+type GrowthPoint {
+  companies: Int!
+  label: String!
+  users: Int!
+}
+
+type HealthStatus {
+  detail: String
+  service: String!
+  status: String!
+}
+
+type ImportOfxResult {
+  duplicatesSkipped: Int!
+  import: StatementImportEntity!
+  itemsCreated: Int!
+}
+
+type InsightEntity {
+  body: String!
+  createdAt: DateTime!
+  creditsCost: Int!
+  deliveredChannels: [String!]!
+  generatedByModel: String!
+  id: ID!
+  kind: String!
+  title: String!
+}
+
+type IntegrationCredentialItem {
+  filled: Boolean!
+  key: String!
+  label: String!
+}
+
+input InventoryAdjustInput {
+  productId: String!
+  quantity: Int!
+  reason: String
+  unitCost: Float
+  warehouseId: String
+}
+
+type InventoryAdjustmentResult {
+  averageCost: Float
+  productId: String!
+  productQuantity: Int!
+  warehouseId: String!
+}
+
+type InventorySummary {
+  lowStockCount: Int!
+  lowStockItems: [LowStockItem!]!
+  totalProducts: Int!
+  totalStockValue: Float!
+}
+
+input InventoryTransferInput {
+  fromWarehouseId: String!
+  productId: String!
+  quantity: Int!
+  reason: String
+  toWarehouseId: String!
+}
+
+type InventoryTransferResult {
+  from: String!
+  quantity: Int!
+  to: String!
+  transferId: String!
+}
+
+type InvitationEntity {
+  acceptedAt: DateTime
+  companyId: String
+  createdAt: DateTime!
+  email: String!
+  expiresAt: DateTime!
+  id: ID!
+  invitedBy: String!
+  message: String
+  planId: String
+  revokedAt: DateTime
+  role: String!
+  token: String!
+}
+
+type InvoiceEntity {
+  ambiente: FiscalEnvironment!
+  chaveAcesso: String
+  companyId: String!
+  createdAt: DateTime!
+  danfeUrl: String
+  dataAutorizacao: DateTime
+  dataCancelamento: DateTime
+  dataEmissao: DateTime
+  errorCode: String
+  errorMessage: String
+  id: ID!
+  items: [InvoiceItemEntity!]!
+  motivoCancelamento: String
+  naturezaOperacao: String!
+  numero: Int
+  observacoes: String
+  orderId: String
+  paymentMethod: String
+  protocoloAutorizacao: String
+  protocoloCancelamento: String
+  providerName: String
+  providerRef: String
+  recipientAddress: String
+  recipientCity: String
+  recipientDocument: String
+  recipientEmail: String
+  recipientName: String!
+  recipientUf: String
+  recipientZip: String
+  serie: Int
+  status: InvoiceStatus!
+  type: InvoiceType!
+  updatedAt: DateTime!
+  userId: String
+  valorDesconto: Float!
+  valorFrete: Float!
+  valorProdutos: Float!
+  valorTotal: Float!
+  xmlUrl: String
+}
+
+type InvoiceItemEntity {
+  aliquotaIcms: Float
+  cest: String
+  cfop: String
+  codigo: String!
+  csosn: String
+  cstIcms: String
+  descricao: String!
+  id: ID!
+  ncm: String
+  ordem: Int!
+  origemMercadoria: String
+  productId: String
+  quantidade: Float!
+  unidade: String!
+  valorDesconto: Float!
+  valorTotal: Float!
+  valorUnitario: Float!
+}
+
+enum InvoiceStatus {
+  AUTHORIZED
+  CANCELED
+  ERROR
+  PENDING
+  PROCESSING
+  REJECTED
+}
+
+enum InvoiceType {
+  NFCE
+  NFE
+  NFSE
+}
+
+input IssueBoletoInput {
+  accountReceivableId: String
+  amount: Float!
+  bankId: String!
+  customerId: String
+  dueDate: String!
+  instructions: String
+  payerDocument: String!
+  payerName: String!
+  provider: String
+}
+
+input IssueInvoiceInput {
+  items: [IssueInvoiceItemInput!]!
+  naturezaOperacao: String! = "Venda de mercadoria"
+  observacoes: String
+  orderId: String
+  paymentMethod: String
+  recipientAddress: String
+  recipientCity: String
+  recipientDocument: String
+  recipientEmail: String
+  recipientName: String!
+  recipientUf: String
+  recipientZip: String
+  type: InvoiceType! = NFE
+  valorDesconto: Float! = 0
+  valorFrete: Float! = 0
+}
+
+input IssueInvoiceItemInput {
+  aliquotaIcms: Float
+  cest: String
+  cfop: String
+  codigo: String!
+  csosn: String
+  cstIcms: String
+  descricao: String!
+  ncm: String
+  ordem: Int! = 0
+  origemMercadoria: String
+  productId: String
+  quantidade: Float!
+  unidade: String! = "UN"
+  valorDesconto: Float! = 0
+  valorTotal: Float!
+  valorUnitario: Float!
+}
+
+type ItemOrcamentoEntity {
+  categoriaId: String
+  centroCustoId: String
+  descricao: String!
+  etapaId: String
+  id: ID!
+  itemWbsId: String
+  notas: String
+  ordem: Int!
+  quantidade: Float!
+  subetapaId: String
+  unidade: String!
+  valorTotal: Float!
+  valorUnitario: Float!
+  versaoId: String!
+}
+
+input ItemOrcamentoInput {
+  categoriaId: String
+  centroCustoId: String
+  descricao: String!
+  etapaId: String
+  itemWbsId: String
+  notas: String
+  ordem: Int! = 0
+  quantidade: Float!
+  subetapaId: String
+  unidade: String! = "UN"
+  valorUnitario: Float!
+}
+
+type LinhaDesvio {
+  chaveId: String
+  chaveNome: String!
+  desvioAbs: Float!
+  desvioPct: Float
+  previsto: Float!
+  realizado: Float!
+}
+
+type LinhaPrevistoVsRealizado {
+  chaveId: String
+  chaveNome: String!
+  pendente: Float!
+  percentExecutado: Float
+  previsto: Float!
+  realizado: Float!
+  saldo: Float!
+}
+
+type LinhaQuebraCustos {
+  id: ID!
+  nome: String!
+  percentTotal: Float!
+  valor: Float!
+}
+
+input ListCompaniesInput {
+  search: String
+  skip: Int
+  status: String
+  take: Int
+}
+
+input ListInvoicesInput {
+  orderId: String
+  search: String
+  skip: Int! = 0
+  status: String
+  take: Int! = 50
+  type: InvoiceType
+}
+
+input ListLogsInput {
+  companyId: String
+  from: DateTime
+  search: String
+  severity: LogSeverity
+  skip: Int
+  take: Int
+  to: DateTime
+}
+
+input ListTransacoesFilterInput {
+  categoriaId: String
+  centroCustoId: String
+  dataFim: DateTime
+  dataInicio: DateTime
+  obraId: String
+  status: StatusTransacao
+  tipo: TipoTransacao
+  tipoData: TipoData! = COMPETENCIA
+}
+
+input ListUsersInput {
+  companyId: String
+  role: String
+  search: String
+  skip: Int
+  take: Int
+}
+
+type LogEntryDto {
+  action: String!
+  companyId: String
+  companyName: String
+  createdAt: DateTime!
+  entity: String!
+  entityId: String!
+  id: String!
+  reason: String
+  severity: LogSeverity!
+  userId: String
+  userName: String
+}
+
+enum LogSeverity {
+  CRITICAL
+  ERROR
+  INFO
+  WARN
 }
 
 input LoginUserInput {
   email: String!
   password_hash: String!
+}
+
+type LowStockItem {
+  id: String!
+  minStock: Int!
+  name: String!
+  quantity: Int!
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+type MessageLogEntity {
+  body: String!
+  channel: NotificationChannel!
+  companyId: String!
+  createdAt: DateTime!
+  customerId: String
+  customerName: String
+  deliveredAt: DateTime
+  direction: MessageDirection!
+  errorMessage: String
+  externalId: String
+  fromAddress: String
+  id: ID!
+  readAt: DateTime
+  sentAt: DateTime
+  status: MessageStatus!
+  subject: String
+  templateKey: String
+  toAddress: String!
+}
+
+input MessageLogFilterInput {
+  channel: NotificationChannel
+  customerId: String
+  direction: MessageDirection
+  from: DateTime
+  page: Int = 1
+  pageSize: Int = 50
+  search: String
+  status: MessageStatus
+  to: DateTime
+}
+
+type MessageLogPageEntity {
+  items: [MessageLogEntity!]!
+  page: Int!
+  pageSize: Int!
+  total: Int!
+}
+
+enum MessageStatus {
+  DELIVERED
+  FAILED
+  PENDING
+  READ
+  SENT
+}
+
+type ModuleAdminDto {
+  description: String
+  id: String!
+  module_key: String!
+  name: String!
 }
 
 type ModuleDto {
@@ -115,8 +1882,18 @@ type ModuleDto {
   permission: [String!]!
 }
 
+type MonthlyKpi {
+  cost: Float!
+  expenses: Float!
+  profit: Float!
+  sales: Float!
+}
+
 enum MovementTypePayment {
+  BANK_SLIP
+  BANK_TRANSFER
   CASH
+  CHECK
   CREDIT_CARD
   DEBIT_CARD
   OTHER
@@ -124,13 +1901,549 @@ enum MovementTypePayment {
 }
 
 type Mutation {
+  activateContract(id: String!): ContractEntity!
+  addItensOrcamento(input: AddItensOrcamentoInput!): VersaoOrcamentoEntity!
+  addOpportunityActivity(input: CreateActivityInput!, opportunityId: String!): OpportunityActivityEntity!
+  addServiceLevel(contractId: String!, input: CreateServiceLevelInput!): ServiceLevelEntity!
+  adminAssignPlanToCompany(input: AdminAssignPlanInput!): Boolean!
+  adminCreateModule(input: AdminCreateModuleInput!): AdminModuleEntity!
+  adminCreatePlan(input: AdminCreatePlanInput!): AdminPlanEntity!
+  adminCreateUser(input: AdminCreateUserInput!): AdminUserEntity!
+  adminDeactivateUser(id: String!): Boolean!
+  adminDeletePlan(id: String!): Boolean!
+  adminRemovePlanModule(moduleId: String!, planId: String!): Boolean!
+  adminResetUserPassword(input: AdminResetPasswordInput!): Boolean!
+  adminUpdatePlan(input: AdminUpdatePlanInput!): AdminPlanEntity!
+  adminUpdateUser(input: AdminUpdateUserInput!): AdminUserEntity!
+  adminUpsertPlanModule(input: AdminUpsertPlanModuleInput!): Boolean!
+  archiveWhatsappChat(archive: Boolean!, peerNumber: String!): Boolean!
+  ativarVersaoOrcamento(id: String!): VersaoOrcamentoEntity!
+  autoMatchStatement(importId: String!): AutoMatchResult!
+  blockWhatsappContact(block: Boolean!, peerNumber: String!): Boolean!
+  buildWhatsappLink(input: BuildWhatsappLinkInput!): WhatsappLinkEntity!
+  cancelAiAction(actionId: String!): Boolean!
+  cancelAiCreditPurchase(purchaseId: String!): Boolean!
+  cancelBoleto(id: String!): BoletoEntity!
+  cancelDelivery(id: String!): DeliveryEntity!
+  cancelInvoice(input: CancelInvoiceInput!): InvoiceEntity!
+  cancelOrder(id: String!): OrderEntity!
+  cancelarTransacaoPendente(id: String!, motivo: String): Boolean!
   cashMovementDelete(movementId: String!): Boolean!
   cashMovementUpdate(movementId: String!, movementUpdateCash: UpdateCashMovementInput!): Boolean!
   changePassword(input: ChangePasswordInput!): String!
+  chatWithAi(conversationId: String, message: String!, model: String): AiChatResultEntity!
+  completeDelivery(id: String!, notes: String): DeliveryEntity!
+  confirmAiCreditPurchase(purchaseId: String!): AiCreditPurchaseEntity!
+  confirmarTransacao(input: ConfirmarTransacaoInput!): TransacaoFinanceiraEntity!
+  connectWhatsapp: WhatsappInstanceEntity!
+  createAccountPayable(input: CreateAccountPayableInput!): AccountPayableEntity!
+  createAccountReceivable(input: CreateAccountReceivableInput!): AccountReceivableEntity!
+  createBank(input: CreateBankInput!): BankEntity!
   createCashMovement(input: CreateCashMovementInput!): CashMovementGraphQL!
+  createCategoriaConstrucao(input: CreateCategoriaConstrucaoInput!): CategoriaConstrucaoEntity!
+  createCategory(input: CreateCategoryInput!): CategoryEntity!
+  createCentroCusto(input: CreateCentroCustoInput!): CentroCustoEntity!
+  createCompanyReminder(category: String, description: String, dueAt: DateTime!, link: String, priority: String, title: String!): CompanyReminderEntity!
+  createContract(input: CreateContractInput!): ContractEntity!
+  createCustomer(input: CreateCustomerInput!): CustomerEntity!
+  createCustomerFromWhatsappContact(document: String, email: String, name: String, peerNumber: String!): CreateCustomerFromWaResult!
+  createDelivery(input: CreateDeliveryInput!): DeliveryEntity!
+  createDriver(input: CreateDriverInput!): DriverEntity!
+  createExportTemplate(input: CreateExportTemplateInput!): ExportTemplateEntity!
+  createFinancialAccount(input: CreateFinancialAccountInput!): FinancialAccountEntity!
+  createInvitation(input: CreateInvitationInput!): CreatedInvitation!
+  createMovementFromStatementItem(itemId: String!): Boolean!
+  createNotificationTemplate(input: CreateNotificationTemplateInput!): NotificationTemplateEntity!
+  createObra(input: CreateObraInput!): ObraEntity!
+  createObraEtapa(input: CreateEtapaInput!): ObraEtapaEntity!
+  createObraItemWbs(input: CreateItemWbsInput!): ObraItemWBSEntity!
+  createObraSubetapa(input: CreateSubetapaInput!): ObraSubetapaEntity!
+  createOpportunity(input: CreateOpportunityInput!): OpportunityEntity!
+  createOrder(input: CreateOrderInput!): OrderEntity!
   createProductMutation(input: CreateProductInput!): ProductEntity!
+  createRecurringBill(input: CreateRecurringBillInput!): RecurringBillEntity!
+  createSeller(input: CreateSellerInput!): SellerEntity!
+  createTransacao(input: CreateTransacaoInput!): TransacaoFinanceiraEntity!
+  createVersaoOrcamento(input: CreateVersaoOrcamentoInput!): VersaoOrcamentoEntity!
+  createWarehouse(input: CreateWarehouseInput!): WarehouseEntity!
+  createWhatsappChatbotRule(input: WhatsappChatbotRuleInput!): WhatsappChatbotRuleEntity!
+  createWhatsappReminder(description: String, dueAt: DateTime!, peerNumber: String!, tag: String, title: String!): WhatsappReminderEntity!
+  deactivateWarehouse(id: String!): Boolean!
+  deleteAccountPayable(id: String!): Boolean!
+  deleteAccountReceivable(id: String!): Boolean!
+  deleteBank(id: String!): Boolean!
+  deleteCategory(id: ID!): DeleteCategoryResult!
+  deleteCentroCusto(id: String!): Boolean!
+  deleteCompanyFiscalConfig: Boolean!
+  deleteCompanyReminder(id: String!): Boolean!
+  deleteContract(id: String!): Boolean!
+  deleteDriver(id: String!): Boolean!
+  deleteExportTemplate(id: String!): Boolean!
+  deleteFinancialAccount(id: String!): Boolean!
+  deleteNotificationTemplate(id: String!): Boolean!
+  deleteObra(id: String!, reason: String): Boolean!
+  deleteOpportunity(id: String!): Boolean!
+  deleteOpportunityActivity(id: String!): Boolean!
+  deleteOrder(id: String!): Boolean!
   deleteProductMutation(id: String!): Boolean!
+  deleteRecurringBill(id: String!): Boolean!
+  deleteSeller(id: String!): Boolean!
+  deleteServiceLevel(id: String!): Boolean!
+  deleteWhatsappChatbotRule(id: String!): Boolean!
+  deleteWhatsappMessage(messageId: String!): Boolean!
+  deleteWhatsappReminder(id: String!): Boolean!
+  disconnectWhatsapp: WhatsappInstanceEntity!
+  dismissNotification(id: String!): Boolean!
+  editWhatsappMessage(messageId: String!, newBody: String!): WhatsappMessageEntity!
+  estornarTransacao(input: EstornarTransacaoInput!): TransacaoFinanceiraEntity!
+  executeAiAction(actionId: String!): AiActionExecutionResult!
+  forwardWhatsappMessage(messageId: String!, toPeerNumber: String!): WhatsappMessageEntity!
+  generateInsightNow: InsightEntity!
+  ignoreStatementItem(itemId: String!): Boolean!
+  importOfxStatement(bankId: String!, content: String!, fileName: String!): ImportOfxResult!
+  inventoryEntry(input: InventoryAdjustInput!): InventoryAdjustmentResult!
+  inventoryExit(input: InventoryAdjustInput!): InventoryAdjustmentResult!
+  inventoryTransfer(input: InventoryTransferInput!): InventoryTransferResult!
+  issueBoleto(input: IssueBoletoInput!): BoletoEntity!
+  issueInvoice(input: IssueInvoiceInput!): InvoiceEntity!
+  linkCustomerToWhatsappContact(customerId: String!, peerNumber: String!): Int!
   login(loginUserInput: LoginUserInput!): AuthPayload!
+  manualMatchStatementItem(cashMovementId: String!, itemId: String!): StatementItemEntity!
+  markAllNotificationsRead: Int!
+  markBoletoPaid(id: String!, paidAt: String): BoletoEntity!
+  markNotificationRead(id: String!): NotificationEntity!
+  markWhatsappConversationRead(peerNumber: String!): Int!
+  markWhatsappLinkOpened(messageLogId: String!): Boolean!
+  markWhatsappReminderDone(done: Boolean!, id: String!): Boolean!
+  materializeRecurringBills: Int!
+  moveOpportunityStage(id: String!, stage: OpportunityStage!): OpportunityEntity!
+  payOrderShortcut(bankId: String, orderId: String!, paymentMethod: String, receivedAmount: Float): OrderEntity!
+  pinWhatsappMessage(messageId: String!, pin: Boolean!): Boolean!
+  quickProductExit(notes: String, productId: String!, quantity: Int!, reason: String!, warehouseId: String): ProductEntity!
+  quickProductionEntry(notes: String, productId: String!, quantity: Int!, unitCost: Float, warehouseId: String): ProductEntity!
+  reactToWhatsappMessage(messageId: String!, reaction: String!): Boolean!
+  reconfigureWhatsappWebhook: WebhookConfigResult!
+  recordPayablePayment(input: RecordPaymentInput!): RecordPaymentResult!
+  recordReceivablePayment(input: RecordPaymentInput!): RecordPaymentResult!
+  recordServiceLevelEvent(input: CreateServiceLevelEventInput!, serviceLevelId: String!): ServiceLevelEventEntity!
+  renewContract(id: String!, newEndDate: DateTime!): ContractEntity!
+  requestAiCreditPurchase(packageBrl: Int!): AiCreditPurchaseEntity!
+  resumeContract(id: String!): ContractEntity!
+  resyncInvoice(id: String!): InvoiceEntity!
+  revokeInvitation(id: String!): Boolean!
+  runExportTemplate(id: String!): ExportRunResult!
+  seedDefaultFinancialAccounts: [FinancialAccountEntity!]!
+  sendWhatsappFile(caption: String, customerId: String, file: WhatsappMediaInput!, replyTo: String, to: String!): WhatsappMessageEntity!
+  sendWhatsappImage(caption: String, customerId: String, file: WhatsappMediaInput!, replyTo: String, to: String!): WhatsappMessageEntity!
+  sendWhatsappLocation(latitude: Float!, longitude: Float!, title: String, to: String!): WhatsappMessageEntity!
+  sendWhatsappMessage(body: String!, customerId: String, mentions: [String!], replyTo: String, to: String!): WhatsappMessageEntity!
+  sendWhatsappVideo(caption: String, customerId: String, file: WhatsappMediaInput!, replyTo: String, to: String!): WhatsappMessageEntity!
+  sendWhatsappVoice(customerId: String, file: WhatsappMediaInput!, replyTo: String, to: String!): WhatsappMessageEntity!
+  setWhatsappTyping(peerNumber: String!, typing: Boolean!): Boolean!
+  snoozeCompanyReminder(id: String!, minutes: Int!): Boolean!
+  starWhatsappMessage(messageId: String!, star: Boolean!): Boolean!
+  superAdminConfirmAiPurchase(purchaseId: ID!): Boolean!
+  superAdminCreateCompany(input: CreateCompanyAdminInput!): CompanyAdminDto!
+  superAdminCreatePlan(input: CreatePlanInput!): PlanAdminDto!
+  superAdminDeletePlan(planId: ID!): Boolean!
+  superAdminSetCompanyActive(id: ID!, isActive: Boolean!): Boolean!
+  superAdminSetPlanActive(isActive: Boolean!, planId: ID!): Boolean!
+  superAdminSetUserActive(id: ID!, isActive: Boolean!): Boolean!
+  superAdminUpsertPlanModule(input: UpsertPlanModuleInput!): Boolean!
+  suspendContract(id: String!, reason: String): ContractEntity!
+  syncWhatsappContacts: Int!
+  syncWhatsappFromEvolution: Int!
+  syncWhatsappMessagesForPeer(limit: Int, peerNumber: String!): Int!
+  terminateContract(id: String!, reason: String): ContractEntity!
+  toggleCategoryStatus(id: ID!): CategoryEntity!
+  toggleCompanyReminderDone(done: Boolean!, id: String!): Boolean!
+
+  """Retorna o transferId que liga os dois CashMovements criados."""
+  transferBetweenBanks(input: BankTransferInput!): String!
+  unlinkCustomerFromWhatsappContact(peerNumber: String!): Int!
+  updateAccountPayable(input: UpdateAccountPayableInput!): AccountPayableEntity!
+  updateAccountReceivable(input: UpdateAccountReceivableInput!): AccountReceivableEntity!
+  updateBank(id: String!, input: UpdateBankInput!): BankEntity!
+  updateCategoriaConstrucao(id: String!, input: UpdateCategoriaConstrucaoInput!): CategoriaConstrucaoEntity!
+  updateCategory(id: ID!, input: UpdateCategoryInput!): CategoryEntity!
+  updateCentroCusto(id: String!, input: UpdateCentroCustoInput!): CentroCustoEntity!
+  updateCompany(id: String!, input: UpdateCompanyInput!): CompanyDto!
+  updateContract(id: String!, input: UpdateContractInput!): ContractEntity!
+  updateCustomer(id: String!, input: CreateCustomerInput!): CustomerEntity!
+  updateDelivery(input: UpdateDeliveryInput!): DeliveryEntity!
+  updateDriver(id: String!, input: UpdateDriverInput!): DriverEntity!
+  updateExportTemplate(input: UpdateExportTemplateInput!): ExportTemplateEntity!
+  updateFinancialAccount(id: String!, input: UpdateFinancialAccountInput!): FinancialAccountEntity!
+  updateMyProfile(input: UpdateProfileInput!): UserResponseDto!
+  updateNotificationTemplate(id: String!, input: UpdateNotificationTemplateInput!): NotificationTemplateEntity!
+  updateObra(id: String!, input: UpdateObraInput!): ObraEntity!
+  updateOpportunity(id: String!, input: UpdateOpportunityInput!): OpportunityEntity!
+  updateOpportunityActivity(id: String!, input: UpdateActivityInput!): OpportunityActivityEntity!
+  updateProductMutation(input: UpdateProductInput!): ProductEntity!
+  updateRecurringBill(input: UpdateRecurringBillInput!): RecurringBillEntity!
+  updateSeller(id: String!, input: UpdateSellerInput!): SellerEntity!
+  updateServiceLevel(id: String!, input: UpdateServiceLevelInput!): ServiceLevelEntity!
+  updateWarehouse(input: UpdateWarehouseInput!): WarehouseEntity!
+  updateWhatsappChatbotRule(id: String!, patch: WhatsappChatbotRulePatchInput!): WhatsappChatbotRuleEntity!
+  updateWhatsappContactCrm(patch: WhatsappCrmInput!, peerNumber: String!): Boolean!
+  upsertCompanyFiscalConfig(input: UpsertCompanyFiscalConfigInput!): CompanyFiscalConfigEntity!
+  upsertCompanySettings(input: UpsertCompanySettingsInput!): CompanySettingsEntity!
+  verifyAuditAccess(password: String!): AuditAccessTokenEntity!
+}
+
+enum NotificationChannel {
+  EMAIL
+  IN_APP
+  PUSH
+  SMS
+  WHATSAPP
+}
+
+type NotificationEntity {
+  companyId: String!
+  createdAt: DateTime!
+  entity: String
+  entityId: String
+  expiresAt: DateTime
+  href: String
+  id: ID!
+  message: String!
+
+  """JSON serializado"""
+  metadataJson: String
+  readAt: DateTime
+  severity: NotificationSeverity!
+  title: String!
+  type: NotificationType!
+  userId: String
+}
+
+input NotificationFilterInput {
+  from: DateTime
+  page: Int = 1
+  pageSize: Int = 50
+  search: String
+  severity: NotificationSeverity
+  to: DateTime
+  type: NotificationType
+  unreadOnly: Boolean
+}
+
+type NotificationPageEntity {
+  items: [NotificationEntity!]!
+  page: Int!
+  pageSize: Int!
+  total: Int!
+  unreadCount: Int!
+}
+
+enum NotificationSeverity {
+  CRITICAL
+  INFO
+  WARNING
+}
+
+type NotificationTemplateEntity {
+  active: Boolean!
+  body: String!
+  channel: NotificationChannel!
+  companyId: String!
+  createdAt: DateTime!
+  id: ID!
+  key: String!
+  name: String!
+  subject: String
+  updatedAt: DateTime!
+}
+
+enum NotificationType {
+  CUSTOM
+  DELIVERY_COMPLETED
+  DELIVERY_SCHEDULED
+  INFO
+  INVOICE_DUE
+  INVOICE_OVERDUE
+  ORDER_PENDING
+  PAYMENT_FAILED
+  PAYMENT_RECEIVED
+  STOCK_LOW
+}
+
+type ObraEntity {
+  cep: String
+  cidade: String
+  codigo: String!
+  companyId: String!
+  createdAt: DateTime!
+  customerId: String
+  dataFimPrev: DateTime
+  dataFimReal: DateTime
+  dataInicio: DateTime
+  descricao: String
+  endereco: String
+  estado: String
+  etapas: [ObraEtapaEntity!]
+  id: ID!
+  latitude: Float
+  longitude: Float
+  nome: String!
+  status: ObraStatus!
+  updatedAt: DateTime!
+  valorContrato: Float
+}
+
+type ObraEtapaEntity {
+  codigo: String!
+  descricao: String
+  id: ID!
+  itens: [ObraItemWBSEntity!]
+  nome: String!
+  obraId: String!
+  ordem: Int!
+  subetapas: [ObraSubetapaEntity!]
+}
+
+type ObraItemWBSEntity {
+  codigo: String!
+  descricao: String
+  etapaId: String!
+  id: ID!
+  nome: String!
+  ordem: Int!
+  quantidadeRef: Float
+  subetapaId: String
+  unidade: String!
+}
+
+enum ObraStatus {
+  CANCELADA
+  CONCLUIDA
+  EM_EXECUCAO
+  PAUSADA
+  PLANEJAMENTO
+}
+
+type ObraSubetapaEntity {
+  codigo: String!
+  descricao: String
+  etapaId: String!
+  id: ID!
+  itens: [ObraItemWBSEntity!]
+  nome: String!
+  ordem: Int!
+}
+
+type OpportunityActivityEntity {
+  assignedToUserId: String
+  completedAt: DateTime
+  createdAt: DateTime!
+  description: String
+  dueDate: DateTime
+  id: ID!
+  opportunityId: String!
+  status: OpportunityActivityStatus!
+  title: String!
+  type: OpportunityActivityType!
+  updatedAt: DateTime!
+}
+
+enum OpportunityActivityStatus {
+  CANCELED
+  COMPLETED
+  PENDING
+}
+
+enum OpportunityActivityType {
+  CALL
+  EMAIL
+  MEETING
+  NOTE
+  TASK
+}
+
+type OpportunityEntity {
+  closedAt: DateTime
+  companyId: String!
+  createdAt: DateTime!
+  customerEmail: String
+  customerId: String
+  customerName: String
+  customerPhone: String
+  expectedCloseDate: DateTime
+  id: ID!
+  lostReason: String
+  notes: String
+  ownerUserId: String
+  probability: Int!
+  sellerId: String
+  source: String
+  stage: OpportunityStage!
+  title: String!
+  updatedAt: DateTime!
+  value: Float!
+}
+
+input OpportunityFilterInput {
+  customerId: String
+  ownerUserId: String
+  search: String
+  stage: OpportunityStage
+}
+
+enum OpportunityStage {
+  LOST
+  NEGOTIATION
+  NEW
+  PROPOSAL
+  QUALIFIED
+  WON
+}
+
+type OrderEntity {
+  commissionAmount: Float!
+  commissionPercent: Float!
+  createdAt: DateTime!
+  customer: CustomerEntity
+  customerDocument: String
+  customerId: String
+  customerName: String
+  customerPhone: String
+  depositAmount: Float!
+  discount: Float!
+  expectedDeliveryDate: DateTime
+  id: ID!
+  items: [OrderItemEntity!]!
+  notes: String
+  number: Int!
+  orderType: OrderType!
+  paymentMethod: OrderPaymentMethod!
+  sellerId: String
+  sellerName: String
+  status: OrderStatus!
+  subtotal: Float!
+  total: Float!
+  updatedAt: DateTime!
+}
+
+type OrderItemEntity {
+  description: String
+  discount: Float!
+  id: ID!
+  itemKind: ProductKind!
+  itemUnit: String!
+  productId: String!
+  productName: String!
+  quantity: Int!
+  total: Float!
+  unitPrice: Float!
+}
+
+enum OrderPaymentMethod {
+  BOLETO
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  OTHER
+  PIX
+  TRANSFER
+}
+
+type OrderPrintCliente {
+  bairro: String
+  cep: String
+  cpf_cnpj: String
+  nome: String
+  telefone: String
+}
+
+type OrderPrintDto {
+  cliente: OrderPrintCliente!
+  empresa: OrderPrintEmpresa!
+  itens: [OrderPrintItem!]!
+  observacoes: String
+  pedido: OrderPrintPedido!
+  vendedor: String
+}
+
+type OrderPrintEmpresa {
+  cidade: String
+  cnpj: String
+  endereco: String
+  estado: String
+  inscricao_estadual: String
+  nome_fantasia: String
+  razao_social: String
+  telefone: String
+}
+
+type OrderPrintItem {
+  codigo: String
+  desconto: Float!
+  descricao: String!
+  marca: String
+  mostra_quantidade: Boolean!
+  quantidade: Float!
+  tipo: ProductKind!
+  tipo_label: String!
+  unidade: String!
+  valor_total: Float!
+  valor_unitario: Float!
+}
+
+type OrderPrintPedido {
+  data_emissao: String!
+  desconto: Float!
+  entrada: Float!
+  entrega_prevista: String
+  forma_pagamento: String!
+  hora_emissao: String!
+  itens_qtd: Int!
+  numero: String!
+  saldo_a_pagar: Float!
+  tipo: OrderType!
+  tipo_label: String!
+  valor_bruto: Float!
+  valor_total: Float!
+  vencimento: String
+}
+
+enum OrderStatus {
+  CANCELED
+  CONFIRMED
+  DRAFT
+  PAID
+  REFUNDED
+}
+
+type OrderSummary {
+  monthCount: Int!
+  monthTotal: Float!
+  todayCount: Int!
+  todayTotal: Float!
+}
+
+enum OrderType {
+  CUSTOM_ORDER
+  STANDARD
+}
+
+input PaginationInput {
+  limit: Int! = 50
+  page: Int! = 1
+}
+
+type PaymentReceiptEntity {
+  accountPayableId: String
+  accountReceivableId: String
+  amount: Float!
+  bankId: String
+  cashMovementId: String
+  createdAt: DateTime!
+  createdByUserId: String!
+  id: ID!
+  notes: String
+  paidAt: DateTime!
+  paymentMethod: String!
 }
 
 type PermissionDto {
@@ -141,11 +2454,47 @@ type PermissionDto {
   permissions: [String!]!
 }
 
+type PipelineStageEntity {
+  count: Int!
+  items: [OpportunityEntity!]!
+  stage: OpportunityStage!
+  totalValue: Float!
+}
+
+type PlanAdminDto {
+  companiesCount: Int!
+  createdAt: DateTime!
+  description: String
+  id: String!
+  isActive: Boolean!
+  modules: [PlanModuleAdminDto!]!
+  name: String!
+}
+
 type PlanDto {
   description: String
   id: String!
   modules: [ModuleDto!]!
   name: String!
+}
+
+type PlanModuleAdminDto {
+  id: String!
+  isActive: Boolean!
+  moduleId: String!
+  moduleName: String!
+  module_key: String!
+  permission: [String!]!
+}
+
+type PontoFluxoCaixa {
+  entradasConfirmadas: Float!
+  entradasPrevistas: Float!
+  periodo: String!
+  saidasConfirmadas: Float!
+  saidasPrevistas: Float!
+  saldoConfirmado: Float!
+  saldoProjetado: Float!
 }
 
 type ProductEntity {
@@ -155,6 +2504,7 @@ type ProductEntity {
   description: String
   id: ID!
   images: [ProductImageEntity!]!
+  kind: ProductKind!
   minStock: Int!
   nameProduct: String!
   quantity: Int!
@@ -183,6 +2533,20 @@ input ProductImageInput {
   url: String!
 }
 
+type ProductInventoryBalance {
+  isMain: Boolean!
+  minStock: Int!
+  quantity: Int!
+  warehouseId: String!
+  warehouseName: String!
+}
+
+enum ProductKind {
+  LABOR
+  PRODUCT
+  SERVICE
+}
+
 enum ProductStatus {
   ACTIVE
   DISCONTINUED
@@ -190,19 +2554,802 @@ enum ProductStatus {
 }
 
 type Query {
+  accountPayable(id: String!): AccountPayableEntity!
+  accountReceivable(id: String!): AccountReceivableEntity!
+  accountsPayable(search: String, status: AccountStatus): [AccountPayableEntity!]!
+  accountsPayableSummary: AccountPayableSummary!
+  accountsReceivable(search: String, status: AccountStatus): [AccountReceivableEntity!]!
+  accountsReceivableSummary: AccountReceivableSummary!
+  activeCategories: [CategoryEntity!]!
+  adminCompanies: [AdminCompanyEntity!]!
+  adminModules: [AdminModuleEntity!]!
+  adminPlans: [AdminPlanEntity!]!
+  adminUsers(search: String): [AdminUserEntity!]!
+  aiConversation(id: String!): AiConversationEntity!
+  aiConversations: [AiConversationEntity!]!
+  aiCreditPackages: [AiCreditPackageEntity!]!
+  auditLog(id: String!): AuditLogEntity
+  auditLogs(filter: AuditLogFilterInput): AuditLogPageEntity!
+  auditLogsExportCsv(filter: AuditLogFilterInput): String!
+  auditLogsForEntity(entity: String!, entityId: String!, limit: Int): [AuditLogEntity!]!
+  bank(id: String!): BankEntity!
+  bankIntegrationsStatus: [BankIntegrationStatus!]!
+  banks(activeOnly: Boolean, search: String): [BankEntity!]!
+  boleto(id: String!): BoletoEntity!
+  boletos(status: String): [BoletoEntity!]!
+  cashFlowProjection(days: Int): CashFlowProjectionEntity!
   cashMovements(input: FindAllCashMovementInput): [CashMovementGraphQL!]!
+  cashMovementsHistory(input: FindAllCashMovementInput): CashMovementPage!
+  categoriasConstrucao: [CategoriaConstrucaoEntity!]!
+  categories(filters: CategoryFiltersInput, pagination: PaginationInput): CategoryListEntity!
+  category(id: ID!): CategoryEntity!
+  centroCusto(id: String!): CentroCustoEntity!
+  centrosCusto: [CentroCustoEntity!]!
+  checkWhatsappNumber(phone: String!): WhatsappCheckExistsResult!
   company(id: String!): CompanyDto!
+  companyFiscalConfig: CompanyFiscalConfigEntity
+  companyReminders(category: String, pending: Boolean, priority: String): [CompanyReminderEntity!]!
+  companySettings: CompanySettingsEntity!
+
+  """
+  Feed unificado de novidades (vendas, contas, entregas, comunicações, alertas).
+  """
+  companyTimeline(categories: [TimelineCategory!], fromDate: DateTime, limit: Int, toDate: DateTime, types: [TimelineEventType!]): [TimelineEvent!]!
+  compararVersoesOrcamento(input: CompararVersoesInput!): ComparacaoVersoesEntity!
+  contract(id: String!): ContractEntity!
+  contractEvents(contractId: String!): [ContractEventEntity!]!
+  contracts(filter: ContractFilterInput): [ContractEntity!]!
+  customer(id: String!): CustomerEntity!
+  customers(search: String): [CustomerEntity!]!
+  dashboardOverview: DashboardOverviewEntity!
   dashboardStats(input: DashboardStatsInput): DashboardStats!
+  deliverableOrders: [DeliverableOrder!]!
+  deliveries(search: String, status: DeliveryStatus): [DeliveryEntity!]!
+  deliveriesSummary: DeliverySummary!
+  delivery(id: String!): DeliveryEntity!
+  dreReport(from: String, to: String): DREEntity!
+  driver(id: String!): DriverEntity!
+  drivers(activeOnly: Boolean, search: String): [DriverEntity!]!
+  exportTemplates: [ExportTemplateEntity!]!
+  financialAccount(id: String!): FinancialAccountEntity!
+  financialAccounts(filter: FinancialAccountFilterInput): [FinancialAccountEntity!]!
+  financialAccountsTree(filter: FinancialAccountFilterInput): [FinancialAccountTreeNode!]!
+  insights(kind: String, limit: Int): [InsightEntity!]!
+  invitations(status: String): [InvitationEntity!]!
+  invoice(id: String!): InvoiceEntity!
+  invoices(input: ListInvoicesInput = {skip: 0, take: 50}): [InvoiceEntity!]!
   me: UserResponseDto!
+  messageLogs(filter: MessageLogFilterInput): MessageLogPageEntity!
+  myAiCreditAccount: AiCreditAccountEntity!
+  myAiCreditPurchases: [AiCreditPurchaseEntity!]!
+  myAiCreditTransactions(limit: Int): [AiCreditTransactionEntity!]!
+  myCompany: CompanyDto
+  notificationTemplate(id: String!): NotificationTemplateEntity!
+  notificationTemplates(activeOnly: Boolean, channel: NotificationChannel): [NotificationTemplateEntity!]!
+  notifications(filter: NotificationFilterInput): NotificationPageEntity!
+  notificationsUnreadCount: Int!
+  obra(id: String!): ObraEntity!
+  obras(customerId: String, search: String, status: ObraStatus): [ObraEntity!]!
+  opportunities(filter: OpportunityFilterInput): [OpportunityEntity!]!
+  opportunity(id: String!): OpportunityEntity!
+  opportunityActivities(opportunityId: String!): [OpportunityActivityEntity!]!
+  order(id: String!): OrderEntity!
+  orderForPrint(id: String!): OrderPrintDto!
+  orders(fromDate: DateTime, search: String, status: OrderStatus, take: Int, toDate: DateTime): [OrderEntity!]!
+  ordersSummary: OrderSummary!
+  payablePayments(accountPayableId: String!): [PaymentReceiptEntity!]!
+  pendingAiCreditPurchases: [AiCreditPurchaseEntity!]!
+  pipeline(filter: OpportunityFilterInput): [PipelineStageEntity!]!
+  product(id: String!): ProductEntity
+  productInventory(productId: String!): [ProductInventoryBalance!]!
   products(categoryId: String, search: String, skip: Float, status: ProductStatus, take: Float): [ProductEntity!]!
+  receivablePayments(accountReceivableId: String!): [PaymentReceiptEntity!]!
+  recurringBills: [RecurringBillEntity!]!
+  relatorioDesvio(filter: RelatorioFiltroInput!): RelatorioDesvio!
+  relatorioFluxoCaixa(input: RelatorioFluxoCaixaInput!): RelatorioFluxoCaixa!
+  relatorioPrevistoVsRealizado(filter: RelatorioFiltroInput!): RelatorioPrevistoVsRealizado!
+  relatorioQuebraCustos(filter: RelatorioFiltroInput!): RelatorioQuebraCustos!
+  seller(id: String!): SellerEntity!
+  sellers(activeOnly: Boolean, search: String): [SellerEntity!]!
+  serviceLevelEvents(serviceLevelId: String!): [ServiceLevelEventEntity!]!
+  statementImport(id: String!): StatementImportEntity!
+  statementImports: [StatementImportEntity!]!
+  superAdminAiOverview: AiOverview!
+  superAdminAiPurchases(status: String, take: Int): [AiPurchaseAdminDto!]!
+  superAdminAiTransactions(take: Int): [AiTransactionAdminDto!]!
+  superAdminCompanies(input: ListCompaniesInput): [CompanyAdminDto!]!
+  superAdminLogs(input: ListLogsInput): [LogEntryDto!]!
+  superAdminModules: [ModuleAdminDto!]!
+  superAdminOverview: SuperAdminOverview!
+  superAdminPlans: [PlanAdminDto!]!
+  superAdminUsers(input: ListUsersInput): [UserAdminDto!]!
+  superAdminWebhookConnections: [WebhookConnectionDto!]!
+  superAdminWebhookEvents(provider: String, take: Int): [WebhookEventDto!]!
+  superAdminWebhooksOverview: WebhooksOverview!
+  transacao(id: String!): TransacaoFinanceiraEntity!
+  transacoes(filter: ListTransacoesFilterInput!): [TransacaoFinanceiraEntity!]!
+  versaoOrcamento(id: String!): VersaoOrcamentoEntity!
+  versoesOrcamento(obraId: String!): [VersaoOrcamentoEntity!]!
+  warehouses(activeOnly: Boolean): [WarehouseEntity!]!
+  whatsappActivityTimeline(limit: Int, peerNumber: String!): [WhatsappActivityEvent!]!
+  whatsappChatbotRules: [WhatsappChatbotRuleEntity!]!
+  whatsappContact(peerNumber: String!): WhatsappContactEntity!
+  whatsappContactAbout(peerNumber: String!): String
+  whatsappContactsList: [WhatsappContactCard!]!
+  whatsappConversations: [WhatsappConversationEntity!]!
+  whatsappGroupParticipants(peerNumber: String!): [WhatsappGroupParticipant!]!
+  whatsappMediaSummary(peerNumber: String!): WhatsappMediaSummary!
+  whatsappMessages(limit: Int, peerNumber: String!): [WhatsappMessageEntity!]!
+  whatsappPeerPresence(peerNumber: String!): WhatsappPresenceResult
+  whatsappReminders(peerNumber: String, pending: Boolean, tag: String): [WhatsappReminderEntity!]!
+  whatsappSession: WhatsappInstanceEntity!
+  whatsappWebhookConfig: String!
+}
+
+input RecordPaymentInput {
+  accountId: String!
+  amount: Float!
+  bankId: String
+  notes: String
+  paidAt: String
+  paymentMethod: MovementTypePayment!
+}
+
+type RecordPaymentResult {
+  accountId: String!
+  fullyPaid: Boolean!
+  newPaidAmount: Float!
+  receipt: PaymentReceiptEntity!
+  status: String!
+}
+
+type RecurringBillEntity {
+  active: Boolean!
+  amount: Float!
+  createdAt: DateTime!
+  dayOfMonth: Int!
+  description: String!
+  id: String!
+  interestRate: Float!
+  lastGeneratedFor: String
+  notes: String
+  supplierName: String!
+  updatedAt: DateTime!
+}
+
+type RelatorioDesvio {
+  porCategoria: [LinhaDesvio!]!
+  porEtapa: [LinhaDesvio!]!
+  porObra: [LinhaDesvio!]!
+  totalDesvios: Int!
+}
+
+input RelatorioFiltroInput {
+  categoriaId: String
+  centroCustoId: String
+  dataFim: DateTime
+  dataInicio: DateTime
+  etapaId: String
+  obraId: String
+  tipoData: TipoData! = COMPETENCIA
+}
+
+type RelatorioFluxoCaixa {
+  pontos: [PontoFluxoCaixa!]!
+  saldoFinalConfirmado: Float!
+  saldoFinalProjetado: Float!
+  totalEntradasConfirmadas: Float!
+  totalEntradasPrevistas: Float!
+  totalSaidasConfirmadas: Float!
+  totalSaidasPrevistas: Float!
+}
+
+input RelatorioFluxoCaixaInput {
+  dataFim: DateTime!
+  dataInicio: DateTime!
+  granularidade: GranularidadeFluxo! = MES
+  obraId: String
+  tipoData: TipoData! = COMPETENCIA
+}
+
+type RelatorioPrevistoVsRealizado {
+  percentExecutado: Float
+  porCategoria: [LinhaPrevistoVsRealizado!]!
+  porEtapa: [LinhaPrevistoVsRealizado!]!
+  porObra: [LinhaPrevistoVsRealizado!]!
+  saldo: Float!
+  totalPendente: Float!
+  totalPrevisto: Float!
+  totalRealizado: Float!
+}
+
+type RelatorioQuebraCustos {
+  porCategoria: [LinhaQuebraCustos!]!
+  porCentroCusto: [LinhaQuebraCustos!]!
+  porFornecedor: [LinhaQuebraCustos!]!
+  porTipoCategoria: [LinhaQuebraCustos!]!
+  total: Float!
+}
+
+type RevExpMonth {
+  expenses: Float!
+  month: String!
+  revenue: Float!
+}
+
+type SalesDay {
+  date: String!
+  orders: Int!
+  sales: Float!
+}
+
+type SellerEntity {
+  active: Boolean!
+  commissionPercent: Float!
+  createdAt: DateTime!
+  document: String
+  email: String
+  id: ID!
+  name: String!
+  phone: String
+  totalCommission: Float!
+  updatedAt: DateTime!
+}
+
+type ServiceLevelEntity {
+  active: Boolean!
+  contractId: String!
+  createdAt: DateTime!
+  description: String
+  id: ID!
+  kind: ServiceLevelKind!
+  name: String!
+  penaltyPercent: Float!
+  targetValue: Float!
+  unit: String!
+  updatedAt: DateTime!
+}
+
+type ServiceLevelEventEntity {
+  createdAt: DateTime!
+  createdById: String
+  id: ID!
+  measuredValue: Float!
+  met: Boolean!
+  notes: String
+  occurredAt: DateTime!
+  serviceLevelId: String!
+}
+
+enum ServiceLevelKind {
+  CUSTOM
+  DELIVERY_TIME_HOURS
+  QUALITY_SCORE
+  RESPONSE_TIME_HOURS
+  UPTIME_PERCENT
+}
+
+enum SortDirection {
+  ASC
+  DESC
+}
+
+type StatementImportEntity {
+  bankId: String!
+  createdAt: DateTime!
+  fileName: String!
+  format: String!
+  id: ID!
+  items: [StatementItemEntity!]
+  matchedItems: Int!
+  rangeEnd: DateTime!
+  rangeStart: DateTime!
+  totalItems: Int!
+}
+
+type StatementItemEntity {
+  amount: Float!
+  bankId: String!
+  cashMovementId: String
+  fitId: String
+  id: ID!
+  importId: String!
+  matchedStatus: String!
+  memo: String
+  postedAt: DateTime!
+  trnType: String!
+}
+
+enum StatusTransacao {
+  CANCELADO
+  CONFIRMADO
+  ESTORNADO
+  PENDENTE
+}
+
+type Subscription {
+  companyReminderDue: CompanyReminderEntity!
+  whatsappMessageReceived: WhatsappMessageEntity!
+  whatsappMessageUpdated: WhatsappMessageEntity!
+  whatsappPresenceChanged(peerNumber: String): WhatsappPresenceUpdate!
+  whatsappReminderDue: WhatsappReminderEntity!
+}
+
+type SuperAdminOverview {
+  growth30d: [GrowthPoint!]!
+  health: [HealthStatus!]!
+  kpis: SuperAdminOverviewKpis!
+  recentActivity: [ActivityItem!]!
+}
+
+type SuperAdminOverviewKpis {
+  activePlans: Int!
+  aiCreditsRevenue30d: Float!
+  companies: Int!
+  companiesNewThisMonth: Int!
+  eventsToday: Int!
+  pendingInvites: Int!
+  users: Int!
+  usersNewThisMonth: Int!
+  webhooksFailing: Int!
+}
+
+type SupplierMiniEntity {
+  email: String
+  id: ID!
+  name: String!
+  phone: String
+}
+
+enum TaxRegime {
+  MEI
+  REGIME_NORMAL
+  SIMPLES_NACIONAL
+  SIMPLES_NACIONAL_EXCESSO
+}
+
+enum TimelineCategory {
+  ACTIVITY
+  ALERTS
+  COMMERCIAL
+  COMMUNICATIONS
+  FINANCIAL
+  OPERATIONAL
+}
+
+type TimelineEvent {
+  actor: String
+  amount: Float
+  at: DateTime!
+  categories: [TimelineCategory!]!
+  colorKey: String!
+  description: String
+  entityId: String
+  entityType: String
+
+  """
+  sale | receivable | payable | cash | customer | delivery | stock | message | reminder | call | chatbot
+  """
+  iconKey: String!
+  id: ID!
+  peerNumber: String
+  title: String!
+  type: TimelineEventType!
+}
+
+enum TimelineEventType {
+  CASH_ENTRY
+  CASH_EXIT
+  CUSTOMER_CREATED
+  DELIVERY_CREATED
+  DELIVERY_DELIVERED
+  ORDER_CANCELED
+  ORDER_CREATED
+  ORDER_PAID
+  PAYABLE_CREATED
+  PAYABLE_PAID
+  RECEIVABLE_CREATED
+  RECEIVABLE_OVERDUE
+  RECEIVABLE_PAID
+  STOCK_LOW
+  WHATSAPP_CALL
+  WHATSAPP_CHATBOT_FIRED
+  WHATSAPP_MESSAGE_IN
+  WHATSAPP_REMINDER_DUE
+}
+
+enum TipoData {
+  COMPETENCIA
+  REAL
+}
+
+enum TipoTransacao {
+  DESPESA
+  RECEITA
+}
+
+type TopCategory {
+  categoryId: String
+  name: String!
+  revenue: Float!
+}
+
+type TopProduct {
+  name: String!
+  productId: String!
+  quantity: Int!
+  revenue: Float!
+}
+
+type TransacaoFinanceiraEntity {
+  accountPayableId: String
+  accountReceivableId: String
+  categoriaId: String!
+  centroCustoId: String!
+  companyId: String!
+  confirmadoEm: DateTime
+  createdAt: DateTime!
+  dataCompetencia: DateTime!
+  dataPrevistaPgto: DateTime
+  dataReal: DateTime
+  descricao: String!
+  documento: String
+  estornoDeId: String
+  etapaId: String
+  id: ID!
+  itemWbsId: String
+  obraId: String!
+  observacoes: String
+  status: StatusTransacao!
+  subetapaId: String
+  supplierId: String
+  tipo: TipoTransacao!
+  updatedAt: DateTime!
+  valor: Float!
+}
+
+input UpdateAccountPayableInput {
+  amount: Float
+  bankId: String
+  description: String
+  dueDate: String
+  id: String!
+  interestRate: Float
+  notes: String
+  paidAt: String
+  paymentMethod: MovementTypePayment
+  productId: String
+  status: AccountStatus
+  supplierId: String
+  supplierName: String
+}
+
+input UpdateAccountReceivableInput {
+  amount: Float
+  bankId: String
+  customerId: String
+  description: String
+  dueDate: String
+  id: String!
+  interestRate: Float
+  notes: String
+  paidAt: String
+  paymentMethod: MovementTypePayment
+  productId: String
+  status: AccountStatus
+}
+
+input UpdateActivityInput {
+  assignedToUserId: String
+  description: String
+  dueDate: DateTime
+  status: OpportunityActivityStatus
+  title: String
+  type: OpportunityActivityType
+}
+
+input UpdateBankInput {
+  agencia: String
+  ativo: Boolean
+  conta: String
+  corHex: String
+  digito: String
+  documento: String
+  name: String
+  observacoes: String
+  pixKey: String
+  saldoInicial: Float
+  tipo: BankAccountType
+  titular: String
 }
 
 input UpdateCashMovementInput {
-  category: String!
+  attachmentUrl: String
+  bankId: String
+  category: CashMovementCategory
+  counterpartyDocument: String
+  counterpartyName: String
   date: DateTime
-  description: String!
-  type: String!
-  value: Float!
+  description: String
+  dueDate: DateTime
+  notes: String
+  paidAt: DateTime
+  referenceCode: String
+  status: CashMovementStatus
+  type: CashMovementType
+  typePayment: MovementTypePayment
+  value: Float
+}
+
+input UpdateCategoriaConstrucaoInput {
+  ativo: Boolean
+  nome: String
+  parentId: String
+}
+
+input UpdateCategoryInput {
+  active: Boolean
+  color: String
+  description: String
+  name: String
+}
+
+input UpdateCentroCustoInput {
+  ativo: Boolean
+  descricao: String
+  nome: String
+}
+
+input UpdateCompanyInput {
+  address: String
+  bairro: String
+  cep: String
+  cidade: String
+  cnpj: String
+  email: String
+  estado: String
+  inscricaoEstadual: String
+  latitude: Float
+  logoUrl: String
+  longitude: Float
+  name: String
+  nomeFantasia: String
+  phone: String
+  razaoSocial: String
+}
+
+input UpdateContractInput {
+  autoRenew: Boolean
+  billingCycle: BillingCycle
+  description: String
+  endDate: DateTime
+  number: String
+  sellerId: String
+  startDate: DateTime
+  status: ContractStatus
+  terms: String
+  title: String
+  value: Float
+}
+
+input UpdateDeliveryInput {
+  destination: String
+  driver: String
+  driverId: String
+  id: String!
+  kind: DeliveryKind
+  notes: String
+  scheduledDate: String
+  status: DeliveryStatus
+  vehicle: String
+}
+
+input UpdateDriverInput {
+  active: Boolean
+  cnh: String
+  cnhCategory: String
+  document: String
+  name: String
+  notes: String
+  phone: String
+  photoUrl: String
+  vehicle: String
+  vehiclePlate: String
+}
+
+input UpdateExportTemplateInput {
+  columns: [String!]
+  filtersJson: String
+  format: String
+  id: String!
+  module: String
+  name: String
+  schedule: String
+}
+
+input UpdateFinancialAccountInput {
+  active: Boolean
+  code: String
+  description: String
+  name: String
+  parentId: String
+  type: FinancialAccountType
+}
+
+input UpdateNotificationTemplateInput {
+  active: Boolean
+  body: String
+  channel: NotificationChannel
+  key: String
+  name: String
+  subject: String
+}
+
+input UpdateObraInput {
+  cep: String
+  cidade: String
+  customerId: String
+  dataFimPrev: DateTime
+  dataFimReal: DateTime
+  dataInicio: DateTime
+  descricao: String
+  endereco: String
+  estado: String
+  latitude: Float
+  longitude: Float
+  nome: String
+  status: ObraStatus
+  valorContrato: Float
+}
+
+input UpdateOpportunityInput {
+  customerEmail: String
+  customerId: String
+  customerName: String
+  customerPhone: String
+  expectedCloseDate: DateTime
+  lostReason: String
+  notes: String
+  ownerUserId: String
+  probability: Int
+  sellerId: String
+  source: String
+  stage: OpportunityStage
+  title: String
+  value: Float
+}
+
+input UpdateProductInput {
+  active: Boolean
+  categoryId: String
+  costPrice: Float
+  description: String
+  id: String!
+  images: [ProductImageInput!]
+  kind: ProductKind
+  minStock: Int
+  nameProduct: String
+  quantity: Int
+  salePrice: Float
+  sku: String
+  supplierId: String
+  unit: String
+  weight: Float
+}
+
+input UpdateProfileInput {
+  avatarUrl: String
+  email: String
+  name: String
+  phone: String
+}
+
+input UpdateRecurringBillInput {
+  active: Boolean
+  amount: Float
+  dayOfMonth: Int
+  description: String
+  id: String!
+  interestRate: Float
+  notes: String
+  supplierName: String
+}
+
+input UpdateSellerInput {
+  active: Boolean
+  commissionPercent: Float
+  document: String
+  email: String
+  name: String
+  phone: String
+}
+
+input UpdateServiceLevelInput {
+  active: Boolean
+  description: String
+  kind: ServiceLevelKind
+  name: String
+  penaltyPercent: Float
+  targetValue: Float
+  unit: String
+}
+
+input UpdateWarehouseInput {
+  active: Boolean
+  address: String
+  code: String
+  id: String!
+  isMain: Boolean
+  name: String
+}
+
+input UpsertCompanyFiscalConfigInput {
+  ambiente: FiscalEnvironment! = HOMOLOG
+  ativo: Boolean! = true
+  bairro: String
+  cep: String
+  certificadoB64: String
+  certificadoSenha: String
+  certificadoValidoAte: DateTime
+  cidade: String
+  cnpj: String!
+  codigoMunicipioIbge: String
+  complemento: String
+  cscIdNfce: String
+  cscNfce: String
+  endereco: String
+  inscricaoEstadual: String
+  inscricaoMunicipal: String
+  nomeFantasia: String
+  numero: String
+  providerApiToken: String
+  providerCnpjReference: String
+  providerName: String
+  providerWebhookSecret: String
+  proximoNumeroNfce: Int! = 1
+  proximoNumeroNfe: Int! = 1
+  proximoNumeroNfse: Int! = 1
+  razaoSocial: String
+  regimeTributario: TaxRegime! = SIMPLES_NACIONAL
+  serieNfce: Int! = 1
+  serieNfe: Int! = 1
+  serieNfse: Int! = 1
+  uf: String
+}
+
+input UpsertCompanySettingsInput {
+  companyWhatsappName: String
+  companyWhatsappNumber: String
+  currency: String
+  dateFormat: String
+  defaultPageSize: Int
+  fiscalYearStartMonth: Int
+  locale: String
+  numberDecimalSep: String
+  numberDecimals: Int
+  numberThousandSep: String
+  timeFormat: String
+  timezone: String
+  weekStartsOn: Int
+}
+
+input UpsertPlanModuleInput {
+  module_key: String!
+  permission: [String!]!
+  planId: String!
+}
+
+type UserAdminDto {
+  companyId: String
+  companyName: String
+  createdAt: DateTime!
+  email: String!
+  id: String!
+  isActive: Boolean!
+  isSuperAdmin: Boolean!
+  name: String!
+  plan: String
+  role: String!
 }
 
 type UserDto {
@@ -219,12 +3366,363 @@ type UserDto {
 }
 
 type UserResponseDto {
+  avatarUrl: String
   company_id: String
   email: String!
   id: String!
+  isSuperAdmin: Boolean!
   is_active: Boolean!
   name: String!
   permissions: [PermissionDto]!
+  phone: String
   plan: PlanDto
   role: String!
+}
+
+type VersaoOrcamentoEntity {
+  ativadoEm: DateTime
+  baseVersaoId: String
+  companyId: String!
+  congeladoEm: DateTime
+  createdAt: DateTime!
+  descricao: String
+  id: ID!
+  itens: [ItemOrcamentoEntity!]
+  nome: String!
+  numero: Int!
+  obraId: String!
+  status: VersaoOrcamentoStatus!
+  total: Float!
+  updatedAt: DateTime!
+}
+
+enum VersaoOrcamentoStatus {
+  ARQUIVADO
+  ATIVO
+  RASCUNHO
+  SUBSTITUIDO
+}
+
+type WarehouseEntity {
+  active: Boolean!
+  address: String
+  code: String
+  companyId: String!
+  createdAt: DateTime!
+  id: ID!
+  isMain: Boolean!
+  name: String!
+  notes: String
+  updatedAt: DateTime!
+}
+
+type WebhookConfigResult {
+  format: String
+  ok: Boolean!
+  webhookUrl: String
+}
+
+type WebhookConnectionDto {
+  bankId: String
+  companyId: String!
+  companyName: String
+  createdAt: DateTime!
+  eventsToday: Int!
+  id: String!
+  lastErrorAt: DateTime
+  lastErrorMsg: String
+  lastSyncAt: DateTime
+  provider: String!
+  status: String!
+}
+
+type WebhookEventDto {
+  createdAt: DateTime!
+  errorMsg: String
+  event: String!
+  id: String!
+  payloadJson: String
+  processed: Boolean!
+  provider: String!
+  refId: String
+  refType: String
+}
+
+type WebhookLogEntity {
+  createdAt: DateTime!
+  errorMsg: String
+  event: String!
+  id: ID!
+  processed: Boolean!
+  provider: String!
+  refId: String
+  refType: String
+}
+
+type WebhooksOverview {
+  connected: Int!
+  eventsToday: Int!
+  failing: Int!
+  pixInLast24h: Float!
+}
+
+type WhatsappActivityEvent {
+  actor: String
+  at: DateTime!
+  description: String
+  icon: String
+  id: String!
+
+  """
+  message | call | reaction | revoked | edited | linked | unlinked | block | tag | note
+  """
+  type: String!
+}
+
+type WhatsappChatbotRuleEntity {
+  applyTags: [String!]!
+  businessHoursEnd: String
+  businessHoursOnly: Boolean!
+  businessHoursStart: String
+  cooldownMinutes: Int!
+  createdAt: DateTime!
+  enabled: Boolean!
+  id: ID!
+  name: String!
+  pattern: String
+  priority: Int!
+  responseBody: String!
+
+  """keyword | regex | first_message | out_of_hours"""
+  trigger: String!
+  updatedAt: DateTime!
+}
+
+input WhatsappChatbotRuleInput {
+  applyTags: [String!]
+  businessHoursEnd: String
+  businessHoursOnly: Boolean
+  businessHoursStart: String
+  cooldownMinutes: Int
+  enabled: Boolean
+  name: String!
+  pattern: String
+  priority: Int
+  responseBody: String!
+
+  """keyword | regex | first_message | out_of_hours"""
+  trigger: String!
+}
+
+input WhatsappChatbotRulePatchInput {
+  applyTags: [String!]
+  businessHoursEnd: String
+  businessHoursOnly: Boolean
+  businessHoursStart: String
+  cooldownMinutes: Int
+  enabled: Boolean
+  name: String
+  pattern: String
+  priority: Int
+  responseBody: String
+  trigger: String
+}
+
+type WhatsappCheckExistsResult {
+  chatId: String
+  exists: Boolean!
+}
+
+type WhatsappContactCard {
+  customerId: String
+  customerName: String
+  isGroup: Boolean!
+  jid: String!
+  lastInteractionAt: DateTime
+  messageCount: Int!
+  name: String
+  number: String
+  profilePicUrl: String
+}
+
+type WhatsappContactEntity {
+  about: String
+  assignedUserId: String
+  assignedUserName: String
+
+  """Tempo médio de resposta em minutos (mediana das últimas 50 trocas)"""
+  avgResponseMinutes: Int
+  businessCategory: String
+  businessDescription: String
+
+  """Quantidade de chamadas (recebidas/feitas)"""
+  callCount: Int!
+
+  """open | pending | resolved | snoozed"""
+  conversationStatus: String
+  customerId: String
+  customerName: String
+
+  """Dias desde o último contato"""
+  daysSinceLastMessage: Int!
+  displayName: String!
+  firstMessageAt: DateTime
+  inboundCount: Int!
+  internalNotes: String
+  isBusiness: Boolean!
+  isGroup: Boolean!
+  lastMessageAt: DateTime
+
+  """Quantidade de anexos enviados/recebidos"""
+  mediaCount: Int!
+
+  """Mensagens últimos 7 dias"""
+  messages7d: Int!
+
+  """Mensagens últimos 30 dias"""
+  messages30d: Int!
+  outboundCount: Int!
+  peerNumber: String!
+  phoneFormatted: String
+  picFetchedAt: DateTime
+  profilePicUrl: String
+
+  """Saudação automática deve ser oferecida (sem mensagens últimas 24h)"""
+  shouldGreet: Boolean!
+  tags: [String!]!
+  totalMessages: Int!
+
+  """Mensagens enviadas sem retorno (sequência atual)"""
+  unansweredOutbound: Int!
+  verifiedName: String
+  waLink: String!
+}
+
+type WhatsappConversationEntity {
+  customerId: String
+  isGroup: Boolean!
+
+  """Contato @lid — telefone oculto pela privacidade do WhatsApp"""
+  isHiddenNumber: Boolean!
+  lastMessage: String
+  lastMessageAt: DateTime
+  peerName: String
+  peerNumber: String!
+  profilePicUrl: String
+  totalMessages: Int!
+  unreadCount: Int!
+}
+
+input WhatsappCrmInput {
+  assignedUserId: String
+  assignedUserName: String
+
+  """open | pending | resolved | snoozed"""
+  conversationStatus: String
+  internalNotes: String
+  tags: [String!]
+}
+
+type WhatsappGroupParticipant {
+  isAdmin: Boolean!
+  jid: String!
+  phone: String!
+}
+
+type WhatsappInstanceEntity {
+  companyId: String!
+  connectedAt: DateTime
+  createdAt: DateTime!
+  id: ID!
+  instanceName: String!
+  lastError: String
+  lastSeenAt: DateTime
+  phone: String
+  profileName: String
+  profilePicUrl: String
+
+  """PNG base64 (data URL)"""
+  qrCode: String
+  status: WhatsappInstanceStatus!
+  updatedAt: DateTime!
+}
+
+enum WhatsappInstanceStatus {
+  CONNECTED
+  CONNECTING
+  DISCONNECTED
+  ERROR
+  QR_PENDING
+}
+
+type WhatsappLinkEntity {
+  body: String!
+  messageLogId: String
+  toAddress: String!
+  url: String!
+}
+
+input WhatsappMediaInput {
+  """Conteúdo em base64 (sem prefixo data:)"""
+  data: String
+  filename: String
+  mimetype: String
+
+  """URL pública pra WAHA baixar"""
+  url: String
+}
+
+type WhatsappMediaSummary {
+  audios: Int!
+  documents: Int!
+  images: Int!
+  locations: Int!
+  stickers: Int!
+  videos: Int!
+}
+
+type WhatsappMessageEntity {
+  body: String!
+  createdAt: DateTime!
+  deliveredAt: DateTime
+  externalId: String
+  fromMe: Boolean!
+  id: ID!
+  mediaMimetype: String
+
+  """sticker | image | video | audio | ptt | document | location | contact"""
+  mediaType: String
+  mediaUrl: String
+  participantName: String
+  participantNumber: String
+  peerNumber: String!
+  quotedBody: String
+  quotedMessageId: String
+  quotedParticipant: String
+  readAt: DateTime
+  sentAt: DateTime
+  status: String!
+}
+
+type WhatsappPresenceResult {
+  lastSeen: DateTime
+  presence: String
+}
+
+type WhatsappPresenceUpdate {
+  lastSeen: DateTime
+  peerNumber: String!
+  presence: String
+}
+
+type WhatsappReminderEntity {
+  createdAt: DateTime!
+  createdBy: String
+  description: String
+  doneAt: DateTime
+  dueAt: DateTime!
+  id: ID!
+  peerNumber: String!
+  tag: String
+  title: String!
 }
