@@ -88,7 +88,6 @@ export class ItauBoletoProvider implements BoletoProvider {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
-      // @ts-expect-error — agent não está nos types do fetch nativo do Node
       agent: this.buildAgent(),
     } as any);
     if (!res.ok) {
@@ -152,7 +151,6 @@ export class ItauBoletoProvider implements BoletoProvider {
         'x-itau-correlationID': input.externalRef ?? '',
       },
       body: JSON.stringify(body),
-      // @ts-expect-error
       agent: this.buildAgent(),
     } as any);
 
@@ -184,7 +182,6 @@ export class ItauBoletoProvider implements BoletoProvider {
       {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
-        // @ts-expect-error
         agent: this.buildAgent(),
       } as any,
     );
