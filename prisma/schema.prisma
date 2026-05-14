@@ -736,6 +736,7 @@ model Company {
   contracts             Contract[]
   whatsappInstance      WhatsappInstance?
   whatsappContacts      WhatsappContact[]
+  moduleOverrides       CompanyModuleOverride[]
 }
 
 model Modules {
@@ -813,6 +814,47 @@ model CompanyPlan {
   plan       Plan      @relation(fields: [planId], references: [id])
 
   @@index([id], map: "idx_company_id")
+}
+
+/// Override por empresa: liga/desliga módulo específico independente do plano.
+/// `config` guarda parâmetros sensíveis (tokens, URLs) criptografados pela aplicação.
+model CompanyModuleOverride {
+  id         String   @id @default(cuid())
+  companyId  String
+  module_key String
+  enabled    Boolean  @default(true)
+  config     Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, module_key])
+  @@index([companyId])
+  @@index([module_key])
+}
+
+/// Template de negócio (Lanchonete, Oficina, Construtora...) com lista pré-definida
+/// de módulos. SuperAdmin aplica o template numa empresa para popular overrides.
+model BusinessTemplate {
+  id            String           @id @default(cuid())
+  template_key  String           @unique
+  name          String
+  description   String?
+  icon          String?
+  isActive      Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+  modules       TemplateModule[]
+}
+
+model TemplateModule {
+  id          String           @id @default(cuid())
+  templateId  String
+  module_key  String
+  enabled     Boolean          @default(true)
+  template    BusinessTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, module_key])
+  @@index([templateId])
 }
 
 model CashMovement {

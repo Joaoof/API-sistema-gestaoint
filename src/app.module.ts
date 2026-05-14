@@ -60,6 +60,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { InvitationsModule } from './modules/invitations/invitations.module';
 import { EmailModule } from './modules/email/email.module';
 import { SuperAdminModule } from './modules/superAdmin/super-admin.module';
+import { FeatureFlagModule } from './modules/featureFlag/feature-flag.module';
 
 @Module({
   imports: [
@@ -145,6 +146,7 @@ import { SuperAdminModule } from './modules/superAdmin/super-admin.module';
     InvitationsModule,
     EmailModule,
     SuperAdminModule,
+    FeatureFlagModule,
   ],
   controllers: [AppController],
   providers: [
