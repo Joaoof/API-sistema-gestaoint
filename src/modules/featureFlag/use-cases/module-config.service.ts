@@ -20,6 +20,7 @@ import { FeatureFlagService } from './feature-flag.service';
 const SECRET_FIELDS_BY_MODULE: Record<string, string[]> = {
   ai_assistant: ['apiKey'],            // chave OpenAI/Anthropic
   chatbot_typebot: ['apiToken'],       // token Typebot
+  chatbot_evolution: ['apiKey'],       // API key do Evolution server da empresa
   whatsapp: ['accessToken', 'apiKey'], // tokens Cloud API
   whatsapp_session: ['apiToken'],
 };

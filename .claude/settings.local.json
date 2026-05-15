@@ -15,7 +15,9 @@
       "Bash(npx nest *)",
       "Bash(npx tsc *)",
       "Bash(node *)",
-      "Bash(echo \"EXIT=$?\")"
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(npm install *)",
+      "Bash(npx vite *)"
     ]
   }
 }

@@ -1980,6 +1980,10 @@ model WhatsappInstance {
   id            String                  @id @default(uuid())
   companyId     String                  @unique
   instanceName  String                  @unique
+  /// Server-URL do Evolution dedicado dessa empresa. Null = usa env global (legado).
+  serverUrl     String?
+  /// Última vez que conseguimos contato com o Evolution dessa empresa.
+  lastSyncAt    DateTime?
   status        WhatsappInstanceStatus  @default(DISCONNECTED)
   qrCode        String?
   phone         String?
