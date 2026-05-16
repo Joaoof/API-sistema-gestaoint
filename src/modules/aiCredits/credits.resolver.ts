@@ -31,6 +31,63 @@ export class AiCreditsResolver {
       id: acc.id,
       companyId: acc.companyId,
       balance: acc.balance,
+      whatsappBalance: acc.whatsappBalance,
+      lowThreshold: acc.lowThreshold,
+      totalPurchased: acc.totalPurchased,
+      totalConsumed: acc.totalConsumed,
+      isLow: acc.balance <= acc.lowThreshold,
+      isEmpty: acc.balance <= 0,
+    };
+  }
+
+  /**
+   * Super-admin: credita manualmente o pool WhatsApp de uma empresa.
+   * Bypassa o fluxo de Pix (que recarrega o pool web). Útil enquanto não há
+   * pacotes/SKU dedicados pro pool WhatsApp.
+   */
+  @Mutation(() => AiCreditAccountEntity)
+  @UseGuards(GqlAuthGuard, SuperAdminGuard)
+  async superAdminAddWhatsappCredits(
+    @CurrentUser() user: User,
+    @Args('companyId') companyId: string,
+    @Args('amount', { type: () => Int }) amount: number,
+    @Args('reason', { nullable: true }) reason?: string,
+  ): Promise<AiCreditAccountEntity> {
+    if (amount <= 0) {
+      throw new Error('amount deve ser > 0');
+    }
+    const acc = await this.prisma.$transaction(async (tx) => {
+      const upserted = await tx.aiCreditAccount.upsert({
+        where: { companyId },
+        update: {},
+        create: { companyId },
+      });
+      const updated = await tx.aiCreditAccount.update({
+        where: { id: upserted.id },
+        data: {
+          whatsappBalance: upserted.whatsappBalance + amount,
+          totalPurchased: upserted.totalPurchased + amount,
+        },
+      });
+      await tx.aiCreditTransaction.create({
+        data: {
+          accountId: updated.id,
+          companyId,
+          kind: 'ADJUSTMENT',
+          channel: 'whatsapp',
+          amount,
+          balanceAfter: updated.whatsappBalance,
+          description: reason ?? `Recarga manual WhatsApp por super-admin ${user.id}`,
+          userId: user.id,
+        },
+      });
+      return updated;
+    });
+    return {
+      id: acc.id,
+      companyId: acc.companyId,
+      balance: acc.balance,
+      whatsappBalance: acc.whatsappBalance,
       lowThreshold: acc.lowThreshold,
       totalPurchased: acc.totalPurchased,
       totalConsumed: acc.totalConsumed,

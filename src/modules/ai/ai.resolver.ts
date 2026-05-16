@@ -3,11 +3,13 @@ import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { GqlAuthGuard } from '../../auth/guards/auth.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { User } from '../../core/entities/user.entity';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { TenancyService } from '../construction/shared/tenancy.service';
 import {
   AiActionExecutionResult,
   AiChatResultEntity,
   AiConversationEntity,
+  AiPendingActionFullEntity,
 } from './entities/ai.entities';
 import { AiChatService } from './use-cases/ai-chat.service';
 
@@ -17,6 +19,7 @@ export class AiResolver {
   constructor(
     private readonly chat: AiChatService,
     private readonly tenancy: TenancyService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Mutation(() => AiChatResultEntity)
@@ -62,6 +65,42 @@ export class AiResolver {
   @Mutation(() => Boolean)
   async cancelAiAction(@CurrentUser() user: User, @Args('actionId') actionId: string) {
     return this.chat.cancelAction(user.id, actionId);
+  }
+
+  /**
+   * Lista AiPendingAction PENDENTES da empresa do usuário corrente.
+   * Inclui ações criadas pelo bot do WhatsApp (channel='whatsapp', userId=null)
+   * que qualquer admin pode aprovar pelo painel.
+   */
+  @Query(() => [AiPendingActionFullEntity])
+  async aiPendingActions(
+    @CurrentUser() user: User,
+    @Args('channel', { nullable: true }) channel?: string,
+  ): Promise<AiPendingActionFullEntity[]> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    const rows = await this.prisma.aiPendingAction.findMany({
+      where: {
+        companyId,
+        status: 'PENDING',
+        ...(channel ? { channel } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      tool: r.tool,
+      description: r.description,
+      paramsJson: JSON.stringify(r.params),
+      status: r.status,
+      channel: r.channel,
+      peerNumber: r.peerNumber ?? null,
+      userId: r.userId ?? null,
+      conversationId: r.conversationId ?? null,
+      createdAt: r.createdAt,
+      resolvedAt: r.resolvedAt ?? null,
+      error: r.error ?? null,
+    }));
   }
 
   @Query(() => [AiConversationEntity])

@@ -57,6 +57,10 @@ export class AiCreditsService {
   /**
    * Debita créditos. Lança `InsufficientCreditsError` se faltar saldo.
    * Idempotência: se `refId` já existir como CONSUMPTION, não duplica.
+   *
+   * `channel`:
+   *  - 'web'      → debita do pool `balance` (chat web do operador)
+   *  - 'whatsapp' → debita do pool `whatsappBalance` (bot Evolution)
    */
   async consume(args: {
     companyId: string;
@@ -65,8 +69,10 @@ export class AiCreditsService {
     userId?: string;
     refType?: string;
     refId?: string;
+    channel?: 'web' | 'whatsapp';
   }) {
     if (args.amount <= 0) return null;
+    const channel = args.channel ?? 'web';
 
     return this.prisma.$transaction(async (tx) => {
       const acc = await tx.aiCreditAccount.upsert({
@@ -82,15 +88,18 @@ export class AiCreditsService {
         if (dup) return dup;
       }
 
-      if (acc.balance < args.amount) {
-        throw new InsufficientCreditsError(acc.balance, args.amount);
+      const currentBalance = channel === 'whatsapp' ? acc.whatsappBalance : acc.balance;
+      if (currentBalance < args.amount) {
+        throw new InsufficientCreditsError(currentBalance, args.amount);
       }
 
-      const newBalance = acc.balance - args.amount;
+      const newBalance = currentBalance - args.amount;
       await tx.aiCreditAccount.update({
         where: { id: acc.id },
         data: {
-          balance: newBalance,
+          ...(channel === 'whatsapp'
+            ? { whatsappBalance: newBalance }
+            : { balance: newBalance }),
           totalConsumed: acc.totalConsumed + args.amount,
         },
       });
@@ -100,6 +109,7 @@ export class AiCreditsService {
           accountId: acc.id,
           companyId: args.companyId,
           kind: 'CONSUMPTION',
+          channel,
           amount: -args.amount,
           balanceAfter: newBalance,
           refType: args.refType ?? null,

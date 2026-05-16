@@ -69,62 +69,65 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ $env.GESTAOINT_API_URL }}/api/reports/daily",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
+        "url": "https://jc-production-6a4c.up.railway.app/api/reports/daily",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "gint_7nAy1trpuYMX-jUpOtmu3roNV_QAY-loIwjzUloL3KQ"
+            }
+          ]
+        },
         "options": {}
       },
       "id": "http-daily",
       "name": "GET /reports/daily",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [480, 240],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "GESTAOINT_API_KEY",
-          "name": "GestãoInt API Key"
-        }
-      }
+      "position": [480, 240]
     },
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ $env.GESTAOINT_API_URL }}/api/reports/weekly",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
+        "url": "https://jc-production-6a4c.up.railway.app/api/reports/weekly",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "gint_7nAy1trpuYMX-jUpOtmu3roNV_QAY-loIwjzUloL3KQ"
+            }
+          ]
+        },
         "options": {}
       },
       "id": "http-weekly",
       "name": "GET /reports/weekly",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [480, 440],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "GESTAOINT_API_KEY",
-          "name": "GestãoInt API Key"
-        }
-      }
+      "position": [480, 440]
     },
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ $env.GESTAOINT_API_URL }}/api/reports/alerts",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
+        "url": "https://jc-production-6a4c.up.railway.app/api/reports/alerts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "gint_7nAy1trpuYMX-jUpOtmu3roNV_QAY-loIwjzUloL3KQ"
+            }
+          ]
+        },
         "options": {}
       },
       "id": "http-alerts",
       "name": "GET /reports/alerts",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [480, 640],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "GESTAOINT_API_KEY",
-          "name": "GestãoInt API Key"
-        }
-      }
+      "position": [480, 640]
     },
     {
       "parameters": {
@@ -167,22 +170,23 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ $env.GESTAOINT_API_URL }}/api/reports/daily",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
+        "url": "https://jc-production-6a4c.up.railway.app/api/reports/daily",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "gint_7nAy1trpuYMX-jUpOtmu3roNV_QAY-loIwjzUloL3KQ"
+            }
+          ]
+        },
         "options": {}
       },
       "id": "http-on-demand",
       "name": "GET /reports/daily (sob demanda)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [720, 840],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "GESTAOINT_API_KEY",
-          "name": "GestãoInt API Key"
-        }
-      }
+      "position": [720, 840]
     },
     {
       "parameters": {

@@ -50,3 +50,19 @@ export class AiActionExecutionResult {
   @Field(() => String, { nullable: true })
   resultJson?: string | null;
 }
+
+@ObjectType()
+export class AiPendingActionFullEntity {
+  @Field(() => ID) id!: string;
+  @Field() tool!: string;
+  @Field() description!: string;
+  @Field(() => String) paramsJson!: string;
+  @Field() status!: string;
+  @Field() channel!: string; // 'web' | 'whatsapp'
+  @Field(() => String, { nullable: true }) peerNumber?: string | null;
+  @Field(() => String, { nullable: true }) userId?: string | null;
+  @Field(() => String, { nullable: true }) conversationId?: string | null;
+  @Field() createdAt!: Date;
+  @Field(() => Date, { nullable: true }) resolvedAt?: Date | null;
+  @Field(() => String, { nullable: true }) error?: string | null;
+}

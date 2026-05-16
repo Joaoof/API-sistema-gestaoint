@@ -17,7 +17,14 @@
       "Bash(node *)",
       "Bash(echo \"EXIT=$?\")",
       "Bash(npm install *)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(curl *)",
+      "Read(//tmp/**)",
+      "Bash(git -C /home/joaoof/API-sistema-gestaoint log --oneline -20 -- src/modules/reports)",
+      "Bash(git -C /home/joaoof/API-sistema-gestaoint status --short)",
+      "Bash(git -C /home/joaoof/API-sistema-gestaoint log origin/master..HEAD --oneline)",
+      "Bash(git -C /home/joaoof/API-sistema-gestaoint branch -vv)",
+      "Bash(git -C /home/joaoof/API-sistema-gestaoint log --oneline origin/master -10)"
     ]
   }
 }

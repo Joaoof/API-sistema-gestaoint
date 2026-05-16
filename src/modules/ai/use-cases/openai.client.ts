@@ -43,11 +43,13 @@ export class OpenAiClient {
     tools?: OpenAiTool[];
     toolChoice?: 'auto' | 'none' | 'required';
     temperature?: number;
+    /** Override BYOK — quando vier, ignora OPENAI_API_KEY do env. */
+    apiKey?: string;
   }): Promise<OpenAiResponse> {
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = args.apiKey?.trim() || process.env.OPENAI_API_KEY;
     if (!apiKey) {
       throw new InternalServerErrorException(
-        'OPENAI_API_KEY não configurada. Adicione no .env.',
+        'OPENAI_API_KEY não configurada (nem no .env, nem via BYOK do tenant).',
       );
     }
 

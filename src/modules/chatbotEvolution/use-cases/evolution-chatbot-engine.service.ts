@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { EvolutionTenantClient } from './evolution-tenant.client';
 import { ModuleConfigService } from '../../featureFlag/use-cases/module-config.service';
+import { AiChatService } from '../../ai/use-cases/ai-chat.service';
 
 /**
  * Motor de chatbot por empresa.
@@ -10,7 +11,8 @@ import { ModuleConfigService } from '../../featureFlag/use-cases/module-config.s
  *    pra casar a mensagem recebida.
  *  - Se nenhum rule casar e o módulo `ai_assistant` estiver habilitado
  *    para a empresa COM apiKey configurada, gera resposta via IA
- *    (OpenAI/Anthropic) usando a key da empresa.
+ *    usando o AiChatService — com tool-calling (vendas, AR, estoque)
+ *    e BYOK do tenant.
  *  - Registra a interação em WhatsappChatbotLog.
  */
 @Injectable()
@@ -21,6 +23,7 @@ export class EvolutionChatbotEngineService {
     private readonly prisma: PrismaService,
     private readonly evolution: EvolutionTenantClient,
     private readonly moduleConfig: ModuleConfigService,
+    private readonly aiChat: AiChatService,
   ) {}
 
   /**
@@ -59,7 +62,7 @@ export class EvolutionChatbotEngineService {
     }
 
     // 2) Fallback IA, se habilitado
-    const aiReply = await this.tryAiReply(companyId, text).catch((e) => {
+    const aiReply = await this.tryAiReply(companyId, peerNumber, text).catch((e) => {
       this.logger.warn(`Falha IA fallback para ${companyId}: ${e?.message}`);
       return null;
     });
@@ -134,89 +137,49 @@ export class EvolutionChatbotEngineService {
   }
 
   /**
-   * Tenta gerar resposta via IA usando a chave da empresa (BYOK).
-   * Volta null se módulo não habilitado ou chave ausente.
+   * Gera resposta IA com tool-calling completo via AiChatService.
+   *  - BYOK: usa a apiKey da empresa (CompanyModuleOverride.ai_assistant.apiKey).
+   *    Se ausente, cai pro OPENAI_API_KEY global do .env.
+   *  - Histórico contínuo por peerNumber (sessão de 24h).
+   *  - Tools de escrita criam AiPendingAction pro admin aprovar pelo painel.
+   *  - Provider 'anthropic' não suportado por aqui (tool-calling é OpenAI-only
+   *    no AiChatService) — cai pra OpenAI/env como fallback.
    */
-  private async tryAiReply(companyId: string, userText: string): Promise<string | null> {
+  private async tryAiReply(companyId: string, peerNumber: string, userText: string): Promise<string | null> {
     const cfg = await this.moduleConfig.getDecryptedConfig(companyId, 'ai_assistant').catch(() => null);
     if (!cfg) return null;
-    const apiKey = (cfg.apiKey as string | undefined)?.trim();
-    if (!apiKey) return null;
 
+    const apiKey = (cfg.apiKey as string | undefined)?.trim() || undefined;
+    const model = (cfg.model as string | undefined) ?? process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
     const provider = ((cfg.provider as string | undefined) ?? 'openai').toLowerCase();
-    const model = (cfg.model as string | undefined) ?? 'gpt-4o-mini';
 
-    if (provider === 'openai') {
-      return this.openAiReply(apiKey, model, userText);
-    }
     if (provider === 'anthropic') {
-      return this.anthropicReply(apiKey, model, userText);
+      this.logger.warn(
+        `Provider 'anthropic' no canal whatsapp ainda não suporta tools — usando OPENAI_API_KEY global.`,
+      );
     }
-    this.logger.warn(`Provider IA "${provider}" não suportado.`);
-    return null;
-  }
 
-  private async openAiReply(apiKey: string, model: string, userText: string): Promise<string | null> {
     try {
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            {
-              role: 'system',
-              content: 'Você é um atendente automatizado simpático e direto. Responda em pt-BR, no máximo 2 parágrafos.',
-            },
-            { role: 'user', content: userText },
-          ],
-          temperature: 0.7,
-        }),
+      const result = await this.aiChat.chat({
+        companyId,
+        channel: 'whatsapp',
+        peerNumber,
+        userMessage: userText,
+        model,
+        apiKey: provider === 'openai' ? apiKey : undefined,
       });
-      if (!res.ok) {
-        this.logger.warn(`OpenAI ${res.status}: ${await res.text()}`);
-        return null;
-      }
-      const json = (await res.json()) as {
-        choices?: { message?: { content?: string } }[];
-      };
-      return json.choices?.[0]?.message?.content?.trim() ?? null;
-    } catch (e) {
-      this.logger.warn(`OpenAI exception: ${(e as Error).message}`);
-      return null;
-    }
-  }
 
-  private async anthropicReply(apiKey: string, model: string, userText: string): Promise<string | null> {
-    try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: 600,
-          system: 'Você é um atendente automatizado simpático e direto. Responda em pt-BR, no máximo 2 parágrafos.',
-          messages: [{ role: 'user', content: userText }],
-        }),
-      });
-      if (!res.ok) {
-        this.logger.warn(`Anthropic ${res.status}: ${await res.text()}`);
-        return null;
+      let text = result.assistantMessage.content?.trim() || '';
+      // Se a IA criou ações pendentes, lembra o cliente que precisa aprovação.
+      if (result.pendingActions.length > 0) {
+        const lines = result.pendingActions.map((p, i) => `${i + 1}. ${p.description}`).join('\n');
+        text =
+          (text ? text + '\n\n' : '') +
+          `⚠️ Pedi a(s) seguinte(s) ação(ões), aprove no painel:\n${lines}`;
       }
-      const json = (await res.json()) as {
-        content?: { type: string; text?: string }[];
-      };
-      const text = json.content?.find((c) => c.type === 'text')?.text;
-      return text?.trim() ?? null;
+      return text || null;
     } catch (e) {
-      this.logger.warn(`Anthropic exception: ${(e as Error).message}`);
+      this.logger.warn(`AiChatService falhou no whatsapp (${companyId}): ${(e as Error).message}`);
       return null;
     }
   }

@@ -4,7 +4,8 @@ import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
 export class AiCreditAccountEntity {
   @Field(() => ID) id!: string;
   @Field() companyId!: string;
-  @Field(() => Int) balance!: number;
+  @Field(() => Int) balance!: number; // pool web
+  @Field(() => Int) whatsappBalance!: number; // pool bot WhatsApp (separado)
   @Field(() => Int) lowThreshold!: number;
   @Field(() => Int) totalPurchased!: number;
   @Field(() => Int) totalConsumed!: number;

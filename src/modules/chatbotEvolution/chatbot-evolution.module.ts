@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../../prisma/prisma.module';
+import { AiModule } from '../ai/ai.module';
 import { FeatureFlagModule } from '../featureFlag/feature-flag.module';
 import { ChatbotEvolutionResolver } from './chatbot-evolution.resolver';
 import { ChatbotEvolutionWebhookController } from './chatbot-evolution.controller';
@@ -9,7 +10,7 @@ import { SuperAdminEvolutionFlowsService } from './use-cases/super-admin-evoluti
 import { SuperAdminEvolutionService } from './use-cases/super-admin-evolution.service';
 
 @Module({
-  imports: [PrismaModule, FeatureFlagModule],
+  imports: [PrismaModule, FeatureFlagModule, AiModule],
   controllers: [ChatbotEvolutionWebhookController],
   providers: [
     EvolutionTenantClient,

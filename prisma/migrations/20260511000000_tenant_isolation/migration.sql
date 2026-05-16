@@ -11,15 +11,31 @@
 --    4) Torna NOT NULL e cria índices
 -- =====================================================================
 
--- Aborta logo no início se não houver nenhuma Company (não dá pra
--- fazer backfill sem destino).
+-- Aborta se há rows nas tabelas-alvo (Product/Customer/Order/AR/AP/CashMovement)
+-- mas nenhuma Company pra usar como destino do backfill.
+-- Em DB vazio (ex: shadow database do Prisma) passa sem erro, o que permite
+-- `prisma migrate dev` reconciliar diffs sem falhar.
 DO $$
 DECLARE
-  v_count INTEGER;
+  v_company INTEGER;
+  v_rows INTEGER;
 BEGIN
-  SELECT COUNT(*) INTO v_count FROM "Company";
-  IF v_count = 0 THEN
-    RAISE EXCEPTION 'Sem Company no banco — crie pelo menos uma antes de aplicar esta migration.';
+  SELECT COUNT(*) INTO v_company FROM "Company";
+  IF v_company > 0 THEN
+    RETURN;
+  END IF;
+
+  SELECT
+    (SELECT COUNT(*) FROM "Product") +
+    (SELECT COUNT(*) FROM "Customer") +
+    (SELECT COUNT(*) FROM "Order") +
+    (SELECT COUNT(*) FROM "AccountReceivable") +
+    (SELECT COUNT(*) FROM "AccountPayable") +
+    (SELECT COUNT(*) FROM "CashMovement")
+    INTO v_rows;
+
+  IF v_rows > 0 THEN
+    RAISE EXCEPTION 'Sem Company no banco mas há % rows pra backfill — crie pelo menos uma Company antes de aplicar esta migration.', v_rows;
   END IF;
 END $$;
 
