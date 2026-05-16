@@ -68,3 +68,6 @@ src/schema.gql
 
 # .eslintignore
 tests__/**
+
+# Arquivos com credenciais embarcadas (n8n workflows ready-to-import etc.)
+*.ready.json

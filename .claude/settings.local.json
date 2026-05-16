@@ -24,7 +24,8 @@
       "Bash(git -C /home/joaoof/API-sistema-gestaoint status --short)",
       "Bash(git -C /home/joaoof/API-sistema-gestaoint log origin/master..HEAD --oneline)",
       "Bash(git -C /home/joaoof/API-sistema-gestaoint branch -vv)",
-      "Bash(git -C /home/joaoof/API-sistema-gestaoint log --oneline origin/master -10)"
+      "Bash(git -C /home/joaoof/API-sistema-gestaoint log --oneline origin/master -10)",
+      "Bash(git *)"
     ]
   }
 }
