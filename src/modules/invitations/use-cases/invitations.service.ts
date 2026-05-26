@@ -250,13 +250,15 @@ export class InvitationsService {
 
     return {
       valid: true as const,
-      email: inv.email,
-      role: inv.role,
-      message: inv.message,
-      company,
-      plan,
-      invitedBy: inviter,
-      expiresAt: inv.expiresAt,
+      invitation: {
+        email: inv.email,
+        role: inv.role,
+        companyName: company?.name ?? null,
+        planName: plan?.name ?? null,
+        invitedByName: inviter?.name ?? null,
+        message: inv.message,
+        expiresAt: inv.expiresAt,
+      },
     };
   }
 
