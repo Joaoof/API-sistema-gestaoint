@@ -41,7 +41,13 @@ export class AuthService {
     if (cached) {
       try {
         const viewData = JSON.parse(cached);
-        if (viewData?.user_id && viewData?.user_email) {
+        // 'is_super_admin' in viewData invalida caches antigos (anteriores ao
+        // fix) que não carregavam a flag — senão o token sairia sem ela.
+        if (
+          viewData?.user_id &&
+          viewData?.user_email &&
+          'is_super_admin' in viewData
+        ) {
           return this.buildResponseFromView(viewData);
         } else {
           await this.redisService.delete(cacheKey);
@@ -91,6 +97,7 @@ export class AuthService {
       user_id: userRow.id,
       user_email: userRow.email,
       user_role: userRow.role,
+      is_super_admin: userRow.isSuperAdmin === true,
       company_id: userRow.company_id,
       company_name: userRow.company?.name ?? null,
       company_logo: userRow.company?.logoUrl ?? null,
@@ -122,6 +129,7 @@ export class AuthService {
         id: viewData.user_id,
         email: viewData.user_email,
         role: viewData.user_role ?? 'user',
+        isSuperAdmin: viewData.is_super_admin === true,
       }),
       this.buildUserDto.buildUserDto(
         {
