@@ -24,7 +24,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand --config jest.config.js",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "reindex-product-urls": "ts-node scripts/reindex-product-urls.ts",
-    "promote-superadmin": "ts-node scripts/promote-superadmin.ts"
+    "promote-superadmin": "ts-node scripts/promote-superadmin.ts",
+    "clear-login-cache": "ts-node scripts/clear-login-cache.ts"
   },
   "dependencies": {
     "@anatine/zod-openapi": "^2.2.8",

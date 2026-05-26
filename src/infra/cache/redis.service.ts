@@ -41,7 +41,9 @@ export class RedisService implements OnModuleDestroy {
   }
 
   async delete(key: string): Promise<void> {
-    await this.redisClient.del(`:${key}`);
+    // Apaga exatamente a chave gravada por set/setWithPipeline.
+    // (Antes prefixava ":" e nunca apagava a chave certa.)
+    await this.redisClient.del(key);
   }
 
   async setWithExpiry(

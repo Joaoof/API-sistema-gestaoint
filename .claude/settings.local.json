@@ -25,7 +25,12 @@
       "Bash(git -C /home/joaoof/API-sistema-gestaoint log origin/master..HEAD --oneline)",
       "Bash(git -C /home/joaoof/API-sistema-gestaoint branch -vv)",
       "Bash(git -C /home/joaoof/API-sistema-gestaoint log --oneline origin/master -10)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Read(//home/joaoof/FRONT-sistema-gestaoint/**)",
+      "Read(//home/joaoof/**)",
+      "Bash(awk '$1 == 0 {print $2}')",
+      "Bash(grep -E \"\\\\.\\(ts|js\\)$\")",
+      "Bash(npx jest *)"
     ]
   }
 }

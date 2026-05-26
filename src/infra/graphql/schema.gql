@@ -224,6 +224,7 @@ type AiCreditAccountEntity {
   lowThreshold: Int!
   totalConsumed: Int!
   totalPurchased: Int!
+  whatsappBalance: Int!
 }
 
 type AiCreditPackageEntity {
@@ -290,6 +291,21 @@ type AiPendingActionEntity {
   tool: String!
 }
 
+type AiPendingActionFullEntity {
+  channel: String!
+  conversationId: String
+  createdAt: DateTime!
+  description: String!
+  error: String
+  id: ID!
+  paramsJson: String!
+  peerNumber: String
+  resolvedAt: DateTime
+  status: String!
+  tool: String!
+  userId: String
+}
+
 type AiPurchaseAdminDto {
   companyId: String!
   companyName: String
@@ -314,6 +330,12 @@ type AiTransactionAdminDto {
   description: String!
   id: String!
   kind: String!
+}
+
+input ApplyBusinessTemplateInput {
+  companyId: String!
+  replaceExisting: Boolean! = false
+  template_key: String!
 }
 
 type AuditAccessTokenEntity {
@@ -482,6 +504,16 @@ input BuildWhatsappLinkInput {
 
   """JSON serializado de variáveis do template."""
   varsJson: String
+}
+
+type BusinessTemplateDtoGql {
+  description: String
+  icon: String
+  id: ID!
+  isActive: Boolean!
+  modules: [TemplateModuleDto!]!
+  name: String!
+  template_key: String!
 }
 
 input CancelInvoiceInput {
@@ -710,6 +742,15 @@ type CompanyFiscalConfigEntity {
   serieNfe: Int!
   serieNfse: Int!
   uf: String
+  updatedAt: DateTime!
+}
+
+type CompanyModuleOverrideDto {
+  companyId: String!
+  enabled: Boolean!
+  hasConfig: Boolean!
+  id: ID!
+  module_key: String!
   updatedAt: DateTime!
 }
 
@@ -998,6 +1039,17 @@ input CreateEtapaInput {
   nome: String!
   obraId: String!
   ordem: Int! = 0
+}
+
+input CreateEvolutionFlowInput {
+  companyId: String!
+  cooldownMinutes: Int
+  enabled: Boolean
+  name: String!
+  pattern: String
+  priority: Int
+  responseBody: String!
+  trigger: String!
 }
 
 input CreateExportTemplateInput {
@@ -1381,6 +1433,38 @@ input EstornarTransacaoInput {
   motivo: String!
 }
 
+type EvolutionFlowGqlDto {
+  companyId: String!
+  cooldownMinutes: Int!
+  createdAt: DateTime!
+  enabled: Boolean!
+  id: ID!
+  name: String!
+  pattern: String
+  priority: Int!
+  responseBody: String!
+  trigger: String!
+  updatedAt: DateTime!
+}
+
+type EvolutionStatusGqlDto {
+  apiKeyHint: String
+  configured: Boolean!
+  connectionState: String
+  hasApiKey: Boolean!
+  instanceName: String
+  lastError: String
+  lastSyncAt: DateTime
+  phone: String
+  profileName: String
+  profilePicUrl: String
+  qrCodeBase64: String
+  serverUrl: String
+  status: String!
+  webhookToken: String
+  webhookUrl: String
+}
+
 type ExpenseCategory {
   amount: Float!
   category: String!
@@ -1402,6 +1486,15 @@ type ExportTemplateEntity {
   name: String!
   schedule: String
   updatedAt: DateTime!
+}
+
+type FeatureDto {
+  enabled: Boolean!
+  hasConfig: Boolean!
+  module_key: String!
+  name: String!
+  permission: [String!]!
+  source: String!
 }
 
 type FinancialAccountEntity {
@@ -2042,13 +2135,24 @@ type Mutation {
   setWhatsappTyping(peerNumber: String!, typing: Boolean!): Boolean!
   snoozeCompanyReminder(id: String!, minutes: Int!): Boolean!
   starWhatsappMessage(messageId: String!, star: Boolean!): Boolean!
+  superAdminAddWhatsappCredits(amount: Int!, companyId: String!, reason: String): AiCreditAccountEntity!
+  superAdminApplyBusinessTemplate(input: ApplyBusinessTemplateInput!): Boolean!
   superAdminConfirmAiPurchase(purchaseId: ID!): Boolean!
   superAdminCreateCompany(input: CreateCompanyAdminInput!): CompanyAdminDto!
+  superAdminCreateEvolutionFlow(input: CreateEvolutionFlowInput!): EvolutionFlowGqlDto!
   superAdminCreatePlan(input: CreatePlanInput!): PlanAdminDto!
+  superAdminDeleteEvolutionFlow(companyId: String!, id: ID!): Boolean!
   superAdminDeletePlan(planId: ID!): Boolean!
+  superAdminEvolutionConnect(companyId: String!): EvolutionStatusGqlDto!
+  superAdminEvolutionDisconnect(companyId: String!): EvolutionStatusGqlDto!
+  superAdminEvolutionRefreshStatus(companyId: String!): EvolutionStatusGqlDto!
+  superAdminSaveEvolutionConfig(input: SaveEvolutionConfigInput!): EvolutionStatusGqlDto!
   superAdminSetCompanyActive(id: ID!, isActive: Boolean!): Boolean!
+  superAdminSetCompanyModuleConfig(input: SetCompanyModuleConfigInput!): Boolean!
   superAdminSetPlanActive(isActive: Boolean!, planId: ID!): Boolean!
   superAdminSetUserActive(id: ID!, isActive: Boolean!): Boolean!
+  superAdminToggleCompanyModule(input: ToggleCompanyModuleInput!): Boolean!
+  superAdminUpdateEvolutionFlow(input: UpdateEvolutionFlowInput!): EvolutionFlowGqlDto!
   superAdminUpsertPlanModule(input: UpsertPlanModuleInput!): Boolean!
   suspendContract(id: String!, reason: String): ContractEntity!
   syncWhatsappContacts: Int!
@@ -2553,6 +2657,14 @@ enum ProductStatus {
   INACTIVE
 }
 
+type PublicConfigFieldDto {
+  hasValue: Boolean
+  hint: String
+  key: String!
+  type: String!
+  valueJson: String
+}
+
 type Query {
   accountPayable(id: String!): AccountPayableEntity!
   accountReceivable(id: String!): AccountReceivableEntity!
@@ -2568,6 +2680,7 @@ type Query {
   aiConversation(id: String!): AiConversationEntity!
   aiConversations: [AiConversationEntity!]!
   aiCreditPackages: [AiCreditPackageEntity!]!
+  aiPendingActions(channel: String): [AiPendingActionFullEntity!]!
   auditLog(id: String!): AuditLogEntity
   auditLogs(filter: AuditLogFilterInput): AuditLogPageEntity!
   auditLogsExportCsv(filter: AuditLogFilterInput): String!
@@ -2624,6 +2737,7 @@ type Query {
   myAiCreditPurchases: [AiCreditPurchaseEntity!]!
   myAiCreditTransactions(limit: Int): [AiCreditTransactionEntity!]!
   myCompany: CompanyDto
+  myFeatures: [FeatureDto!]!
   notificationTemplate(id: String!): NotificationTemplateEntity!
   notificationTemplates(activeOnly: Boolean, channel: NotificationChannel): [NotificationTemplateEntity!]!
   notifications(filter: NotificationFilterInput): NotificationPageEntity!
@@ -2657,7 +2771,13 @@ type Query {
   superAdminAiOverview: AiOverview!
   superAdminAiPurchases(status: String, take: Int): [AiPurchaseAdminDto!]!
   superAdminAiTransactions(take: Int): [AiTransactionAdminDto!]!
+  superAdminBusinessTemplates: [BusinessTemplateDtoGql!]!
   superAdminCompanies(input: ListCompaniesInput): [CompanyAdminDto!]!
+  superAdminCompanyFeatures(companyId: String!): [FeatureDto!]!
+  superAdminCompanyModuleConfig(companyId: String!, module_key: String!): [PublicConfigFieldDto!]!
+  superAdminCompanyOverrides(companyId: String!): [CompanyModuleOverrideDto!]!
+  superAdminEvolutionFlows(companyId: String!): [EvolutionFlowGqlDto!]!
+  superAdminEvolutionStatus(companyId: String!): EvolutionStatusGqlDto!
   superAdminLogs(input: ListLogsInput): [LogEntryDto!]!
   superAdminModules: [ModuleAdminDto!]!
   superAdminOverview: SuperAdminOverview!
@@ -2783,6 +2903,13 @@ type SalesDay {
   sales: Float!
 }
 
+input SaveEvolutionConfigInput {
+  apiKey: String
+  companyId: String!
+  instanceName: String
+  serverUrl: String!
+}
+
 type SellerEntity {
   active: Boolean!
   commissionPercent: Float!
@@ -2827,6 +2954,12 @@ enum ServiceLevelKind {
   QUALITY_SCORE
   RESPONSE_TIME_HOURS
   UPTIME_PERCENT
+}
+
+input SetCompanyModuleConfigInput {
+  companyId: String!
+  configJson: String!
+  module_key: String!
 }
 
 enum SortDirection {
@@ -2908,6 +3041,11 @@ enum TaxRegime {
   SIMPLES_NACIONAL_EXCESSO
 }
 
+type TemplateModuleDto {
+  enabled: Boolean!
+  module_key: String!
+}
+
 enum TimelineCategory {
   ACTIVITY
   ALERTS
@@ -2966,6 +3104,12 @@ enum TipoData {
 enum TipoTransacao {
   DESPESA
   RECEITA
+}
+
+input ToggleCompanyModuleInput {
+  companyId: String!
+  enabled: Boolean!
+  module_key: String!
 }
 
 type TopCategory {
@@ -3155,6 +3299,18 @@ input UpdateDriverInput {
   photoUrl: String
   vehicle: String
   vehiclePlate: String
+}
+
+input UpdateEvolutionFlowInput {
+  companyId: String!
+  cooldownMinutes: Int
+  enabled: Boolean
+  id: String!
+  name: String
+  pattern: String
+  priority: Int
+  responseBody: String
+  trigger: String
 }
 
 input UpdateExportTemplateInput {
