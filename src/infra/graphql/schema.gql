@@ -1634,6 +1634,7 @@ type InventoryTransferResult {
 type InvitationEntity {
   acceptedAt: DateTime
   companyId: String
+  companyName: String
   createdAt: DateTime!
   email: String!
   expiresAt: DateTime!
@@ -1641,8 +1642,10 @@ type InvitationEntity {
   invitedBy: String!
   message: String
   planId: String
+  planName: String
   revokedAt: DateTime
   role: String!
+  status: String!
   token: String!
 }
 

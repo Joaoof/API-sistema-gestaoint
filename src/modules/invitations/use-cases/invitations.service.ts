@@ -124,7 +124,15 @@ export class InvitationsService {
       );
     }
 
-    return { invitation, acceptUrl, emailSent: emailResult.ok };
+    return {
+      invitation: {
+        ...invitation,
+        companyName: company?.name ?? null,
+        planName: plan?.name ?? null,
+      },
+      acceptUrl,
+      emailSent: emailResult.ok,
+    };
   }
 
   async list(actor: ActorContext, args?: { status?: 'PENDING' | 'ACCEPTED' | 'REVOKED' | 'EXPIRED' }) {
@@ -150,11 +158,45 @@ export class InvitationsService {
         break;
     }
 
-    return this.prisma.invitation.findMany({
+    const rows = await this.prisma.invitation.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       take: 200,
     });
+
+    // Enriquece com nomes de empresa/plano (Invitation guarda só os IDs).
+    const companyIds = [
+      ...new Set(rows.map((r) => r.companyId).filter(Boolean) as string[]),
+    ];
+    const planIds = [
+      ...new Set(rows.map((r) => r.planId).filter(Boolean) as string[]),
+    ];
+    const [companies, plans] = await Promise.all([
+      companyIds.length
+        ? this.prisma.company.findMany({
+            where: { id: { in: companyIds } },
+            select: { id: true, name: true },
+          })
+        : Promise.resolve([]),
+      planIds.length
+        ? this.prisma.plan.findMany({
+            where: { id: { in: planIds } },
+            select: { id: true, name: true },
+          })
+        : Promise.resolve([]),
+    ]);
+    const companyName = new Map(
+      companies.map((c) => [c.id, c.name] as [string, string]),
+    );
+    const planName = new Map(
+      plans.map((p) => [p.id, p.name] as [string, string]),
+    );
+
+    return rows.map((r) => ({
+      ...r,
+      companyName: r.companyId ? companyName.get(r.companyId) ?? null : null,
+      planName: r.planId ? planName.get(r.planId) ?? null : null,
+    }));
   }
 
   async revoke(actor: ActorContext, id: string) {

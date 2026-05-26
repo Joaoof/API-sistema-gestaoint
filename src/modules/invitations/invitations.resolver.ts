@@ -32,7 +32,11 @@ class InvitationEntity {
   @Field() email!: string;
   @Field() role!: string;
   @Field(() => String, { nullable: true }) companyId?: string | null;
+  @Field(() => String, { nullable: true }) companyName?: string | null;
   @Field(() => String, { nullable: true }) planId?: string | null;
+  @Field(() => String, { nullable: true }) planName?: string | null;
+  /** Derivado: PENDING | ACCEPTED | REVOKED | EXPIRED */
+  @Field() status!: string;
   @Field() invitedBy!: string;
   @Field() token!: string;
   @Field(() => String, { nullable: true }) message?: string | null;
@@ -48,13 +52,23 @@ class CreatedInvitation {
   @Field() acceptUrl!: string;
 }
 
+function computeStatus(i: any): string {
+  if (i.acceptedAt) return 'ACCEPTED';
+  if (i.revokedAt) return 'REVOKED';
+  if (i.expiresAt && new Date(i.expiresAt) < new Date()) return 'EXPIRED';
+  return 'PENDING';
+}
+
 function toEntity(i: any): InvitationEntity {
   return {
     id: i.id,
     email: i.email,
     role: i.role,
     companyId: i.companyId,
+    companyName: i.companyName ?? null,
     planId: i.planId,
+    planName: i.planName ?? null,
+    status: computeStatus(i),
     invitedBy: i.invitedBy,
     token: i.token,
     message: i.message,
