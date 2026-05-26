@@ -77,8 +77,11 @@ export class ChatbotEvolutionWebhookController {
     const messages =
       payload?.data?.messages ??
       payload?.messages ??
-      (payload?.data ? [payload.data] : []) ??
-      (payload?.message ? [payload.message] : []);
+      (payload?.data
+        ? [payload.data]
+        : payload?.message
+          ? [payload.message]
+          : []);
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return { ok: true, skipped: 'no-messages' };
