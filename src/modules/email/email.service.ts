@@ -1,5 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+/**
+ * Mensagem padrão exibida no e-mail de convite quando o remetente não
+ * escreve uma mensagem personalizada. Pode ser sobrescrita por env
+ * (DEFAULT_INVITE_MESSAGE) sem precisar mexer no código.
+ */
+const DEFAULT_INVITE_MESSAGE =
+  process.env.DEFAULT_INVITE_MESSAGE ??
+  'Estamos felizes em ter você por aqui! Para começar, é só aceitar o convite, ' +
+    'criar sua senha e pronto — seu acesso ao GestãoInt já estará liberado.';
+
 interface SendInvitationParams {
   to: string;
   acceptUrl: string;
@@ -93,7 +103,9 @@ export class EmailService {
             ${p.companyName ? `<strong>${escapeHtml(p.companyName)}</strong>` : 'o GestãoInt'} como
             <strong>${escapeHtml(translateRole(p.role))}</strong>${p.planName ? ` no plano <strong>${escapeHtml(p.planName)}</strong>` : ''}.
           </p>
-          ${p.message ? `<div style="margin:16px 0;padding:14px 16px;background:#f8fafc;border-left:3px solid ${accent};border-radius:6px;color:#475569;font-style:italic;">"${escapeHtml(p.message)}"</div>` : ''}
+          ${p.message?.trim()
+            ? `<div style="margin:16px 0;padding:14px 16px;background:#f8fafc;border-left:3px solid ${accent};border-radius:6px;color:#475569;font-style:italic;">"${escapeHtml(p.message)}"</div>`
+            : `<p style="margin:0 0 16px;color:#475569;">${escapeHtml(DEFAULT_INVITE_MESSAGE)}</p>`}
           <div style="text-align:center;margin:28px 0;">
             <a href="${p.acceptUrl}" style="display:inline-block;padding:14px 32px;background:${accent};color:#fff;text-decoration:none;border-radius:10px;font-weight:600;font-size:14px;">
               Aceitar convite
@@ -122,7 +134,7 @@ export class EmailService {
       `${p.inviterName ?? 'Alguém'} convidou você para ${p.companyName ?? 'o GestãoInt'}.`,
       `Função: ${translateRole(p.role)}${p.planName ? ` (plano ${p.planName})` : ''}`,
       '',
-      p.message ? `Mensagem: "${p.message}"\n` : '',
+      p.message?.trim() ? `Mensagem: "${p.message}"\n` : `${DEFAULT_INVITE_MESSAGE}\n`,
       `Acesse: ${p.acceptUrl}`,
       '',
       `Este convite expira em ${expires}.`,
