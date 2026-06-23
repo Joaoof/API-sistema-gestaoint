@@ -117,7 +117,7 @@ export class WebPushService {
         Urgency: 'high',
         ...vapidHeaders,
       },
-      body: new Blob([encrypted]),
+      body: new Blob([new Uint8Array(encrypted)]),
     });
 
     if (!res.ok) {
