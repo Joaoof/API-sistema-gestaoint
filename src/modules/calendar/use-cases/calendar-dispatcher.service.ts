@@ -93,6 +93,9 @@ export class CalendarDispatcherService implements OnModuleInit, OnModuleDestroy 
 
     // ----- 3. AccountPayable / AccountReceivable vencendo HOJE -----
     await this.tickAccountsDueToday(now);
+
+    // ----- 4. Avisos antecipados de contas a pagar (3d / 1d / 2h antes) -----
+    await this.tickAccountsAdvanceWarning(now);
   }
 
   private async fireOnce(
@@ -291,8 +294,8 @@ export class CalendarDispatcherService implements OnModuleInit, OnModuleDestroy 
           companyId: p.companyId,
           type: NotificationType.INVOICE_DUE,
           severity: NotificationSeverity.WARNING,
-          title: `💸 Conta a pagar vence hoje`,
-          message: `${p.description} — ${p.supplierName} — R$ ${p.amount.toString()}`,
+          title: `💸 ${p.supplierName} vence hoje`,
+          message: `${p.description} — R$ ${p.amount.toString()}`,
           href: `/listar-contas-pagas?id=${p.id}`,
           entity: 'AccountPayable',
           entityId: p.id,
@@ -316,13 +319,90 @@ export class CalendarDispatcherService implements OnModuleInit, OnModuleDestroy 
           companyId: r.companyId,
           type: NotificationType.INVOICE_DUE,
           severity: NotificationSeverity.INFO,
-          title: `💰 Conta a receber vence hoje`,
-          message: `${r.description} — R$ ${r.amount.toString()}`,
+          title: `💰 ${r.description} vence hoje`,
+          message: `Conta a receber — R$ ${r.amount.toString()}`,
           href: `/listar-contas-receber?id=${r.id}`,
           entity: 'AccountReceivable',
           entityId: r.id,
         },
       });
+    }
+  }
+
+  /**
+   * Avisos antecipados de contas a pagar — TDAH-friendly:
+   *   - 3 dias antes do vencimento (dispara às 08h)
+   *   - 1 dia antes do vencimento (dispara às 08h)
+   *   - 2 horas antes do vencimento (qualquer momento, janela ±30min)
+   * Idempotência: usa o `title` como discriminador único por janela+conta.
+   */
+  private async tickAccountsAdvanceWarning(now: Date) {
+    const fireHour = Number(process.env.CALENDAR_DUE_FIRE_HOUR ?? 8);
+    const isMorningTick = now.getHours() === fireHour && now.getMinutes() <= 5;
+
+    type Win =
+      | { kind: 'days'; days: number; emoji: string; label: string; onlyMorning: true; severity: NotificationSeverity }
+      | { kind: 'hours'; hours: number; windowMin: number; emoji: string; label: string; onlyMorning: false; severity: NotificationSeverity };
+
+    const wins: Win[] = [
+      { kind: 'days', days: 3, emoji: '⏳', label: '3 dias pra vencer', onlyMorning: true, severity: NotificationSeverity.INFO },
+      { kind: 'days', days: 1, emoji: '⏰', label: 'vence amanhã', onlyMorning: true, severity: NotificationSeverity.WARNING },
+      { kind: 'hours', hours: 2, windowMin: 30, emoji: '🚨', label: 'vence em 2 horas', onlyMorning: false, severity: NotificationSeverity.CRITICAL },
+    ];
+
+    for (const w of wins) {
+      if (w.onlyMorning && !isMorningTick) continue;
+
+      let dueRange: { gte: Date; lte: Date };
+      if (w.kind === 'days') {
+        const start = new Date(now);
+        start.setHours(0, 0, 0, 0);
+        start.setDate(start.getDate() + w.days);
+        const end = new Date(start);
+        end.setHours(23, 59, 59, 999);
+        dueRange = { gte: start, lte: end };
+      } else {
+        const center = now.getTime() + w.hours * 60 * 60_000;
+        dueRange = {
+          gte: new Date(center - w.windowMin * 60_000),
+          lte: new Date(center + w.windowMin * 60_000),
+        };
+      }
+
+      const payables = await this.prisma.accountPayable.findMany({
+        where: {
+          dueDate: dueRange,
+          paidAt: null,
+          status: 'PENDING',
+        },
+        take: 200,
+      });
+
+      for (const p of payables) {
+        const title = `${w.emoji} ${p.supplierName} — ${w.label}`;
+        const exists = await this.prisma.notification.findFirst({
+          where: {
+            companyId: p.companyId,
+            entity: 'AccountPayable',
+            entityId: p.id,
+            title,
+          },
+          select: { id: true },
+        });
+        if (exists) continue;
+        await this.prisma.notification.create({
+          data: {
+            companyId: p.companyId,
+            type: NotificationType.INVOICE_DUE,
+            severity: w.severity,
+            title,
+            message: `${p.description} — R$ ${p.amount.toString()} — vence ${p.dueDate.toLocaleString('pt-BR')}`,
+            href: `/listar-contas-pagas?id=${p.id}`,
+            entity: 'AccountPayable',
+            entityId: p.id,
+          },
+        });
+      }
     }
   }
 }

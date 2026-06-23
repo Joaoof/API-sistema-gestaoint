@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { AccountStatus, AuditAction, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
+import { OpenAiClient } from '../../ai/use-cases/openai.client';
 import { AuditLogService } from '../../audit/use-cases/audit-log.service';
 import { AuditActor } from '../../audit/types/actor';
 import { CreateAccountPayableInput } from '../dto/create-account-payable.input';
@@ -89,7 +90,78 @@ export class AccountPayableUseCases {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditLogService,
+    private readonly openai: OpenAiClient,
   ) {}
+
+  /**
+   * Quick-capture TDAH-friendly: o usuário digita "pagar internet vivo 120
+   * reais sexta" e a IA extrai supplierName/description/amount/dueDate.
+   * Sem formulário, sem fricção. Erros voltam como BadRequestException pra
+   * o front mostrar o que faltou.
+   */
+  async quickCapture(
+    actor: AuditActor,
+    text: string,
+  ): Promise<AccountPayableEntity> {
+    const trimmed = text?.trim();
+    if (!trimmed) {
+      throw new BadRequestException('Texto vazio.');
+    }
+    const today = new Date();
+    const todayIso = today.toISOString().slice(0, 10);
+    const res = await this.openai.chat({
+      model: 'gpt-4o-mini',
+      temperature: 0.1,
+      messages: [
+        {
+          role: 'system',
+          content: `Você extrai dados de contas a pagar a partir de texto livre em português.
+Hoje é ${todayIso}.
+Responda APENAS com JSON válido, sem markdown, no formato:
+{"supplierName":"...","description":"...","amount":0,"dueDate":"YYYY-MM-DD","notes":null}
+- supplierName: a quem se paga (ex: "Vivo", "Energia ENEL", "João da padaria"). Se não souber, use o tema da despesa.
+- description: do que se trata (ex: "Internet de junho", "Conta de luz").
+- amount: valor em reais (número, sem R$).
+- dueDate: data ISO YYYY-MM-DD. Interprete "hoje", "amanhã", "sexta", "dia 15", "fim do mês" relativo a ${todayIso}.
+- notes: string ou null.
+Se faltar algo essencial (valor ou data), retorne {"error":"motivo"}.`,
+        },
+        { role: 'user', content: trimmed },
+      ],
+    });
+
+    const content = res.choices?.[0]?.message?.content?.trim() ?? '';
+    let parsed: any;
+    try {
+      parsed = JSON.parse(content.replace(/^```json\s*|\s*```$/g, ''));
+    } catch {
+      throw new BadRequestException(
+        `Não consegui entender. Tente algo como "pagar Vivo internet 120 reais sexta".`,
+      );
+    }
+    if (parsed.error) {
+      throw new BadRequestException(parsed.error);
+    }
+    if (!parsed.supplierName || !parsed.description || !parsed.amount || !parsed.dueDate) {
+      throw new BadRequestException(
+        'Faltou fornecedor, descrição, valor ou vencimento. Tente de novo com mais detalhes.',
+      );
+    }
+    const due = new Date(parsed.dueDate);
+    if (Number.isNaN(due.getTime())) {
+      throw new BadRequestException(`Data inválida: ${parsed.dueDate}`);
+    }
+
+    return this.create(actor, {
+      supplierName: String(parsed.supplierName),
+      description: String(parsed.description),
+      amount: Number(parsed.amount),
+      interestRate: 0.033,
+      dueDate: due.toISOString(),
+      status: AccountStatus.PENDING,
+      notes: parsed.notes ?? null,
+    } as CreateAccountPayableInput);
+  }
 
   async list(
     companyId: string,
@@ -245,6 +317,66 @@ export class AccountPayableUseCases {
       userId: actor.userId,
       entity: 'AccountPayable',
       entityId: updated.id,
+      action: AuditAction.UPDATE,
+      before: toAuditSnapshot(existing),
+      after: toAuditSnapshot(updated),
+    });
+
+    return toEntity(updated);
+  }
+
+  /**
+   * Snooze TDAH-friendly: empurra o vencimento da conta pra um dos presets
+   * (15min, 1h, amanhã 9h, 3 dias) e limpa as notificações já criadas pra
+   * aquela conta — assim o aviso é re-disparado na nova janela.
+   */
+  async snooze(
+    actor: AuditActor,
+    id: string,
+    preset: 'PLUS_15MIN' | 'PLUS_1H' | 'TOMORROW_9H' | 'PLUS_3D',
+  ): Promise<AccountPayableEntity> {
+    const existing = await this.prisma.accountPayable.findFirst({
+      where: { id, companyId: actor.companyId },
+      include: { supplier: true, product: { include: { images: true } } },
+    });
+    if (!existing) throw new NotFoundException('Conta a pagar não encontrada.');
+
+    const now = new Date();
+    let newDue: Date;
+    if (preset === 'PLUS_15MIN') {
+      newDue = new Date(now.getTime() + 15 * 60_000);
+    } else if (preset === 'PLUS_1H') {
+      newDue = new Date(now.getTime() + 60 * 60_000);
+    } else if (preset === 'TOMORROW_9H') {
+      newDue = new Date(now);
+      newDue.setDate(newDue.getDate() + 1);
+      newDue.setHours(9, 0, 0, 0);
+    } else {
+      newDue = new Date(now);
+      newDue.setDate(newDue.getDate() + 3);
+      newDue.setHours(9, 0, 0, 0);
+    }
+
+    await this.prisma.notification.deleteMany({
+      where: {
+        companyId: actor.companyId,
+        entity: 'AccountPayable',
+        entityId: id,
+        readAt: null,
+      },
+    });
+
+    const updated = await this.prisma.accountPayable.update({
+      where: { id },
+      data: { dueDate: newDue },
+      include: { supplier: true, product: { include: { images: true } } },
+    });
+
+    await this.audit.log({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      entity: 'AccountPayable',
+      entityId: id,
       action: AuditAction.UPDATE,
       before: toAuditSnapshot(existing),
       after: toAuditSnapshot(updated),

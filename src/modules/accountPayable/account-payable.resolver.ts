@@ -8,8 +8,20 @@ import {
   ObjectType,
   Query,
   Resolver,
+  registerEnumType,
 } from '@nestjs/graphql';
 import { AccountStatus } from '@prisma/client';
+
+export enum AccountPayableSnoozePreset {
+  PLUS_15MIN = 'PLUS_15MIN',
+  PLUS_1H = 'PLUS_1H',
+  TOMORROW_9H = 'TOMORROW_9H',
+  PLUS_3D = 'PLUS_3D',
+}
+registerEnumType(AccountPayableSnoozePreset, {
+  name: 'AccountPayableSnoozePreset',
+  description: 'Presets de snooze pra contas a pagar (TDAH-friendly).',
+});
 import { GqlAuthGuard } from '../../auth/guards/auth.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { User } from '../../core/entities/user.entity';
@@ -89,5 +101,28 @@ export class AccountPayableResolver {
   ): Promise<boolean> {
     const companyId = await this.tenancy.resolveCompanyId(user);
     return this.useCases.delete({ userId: user.id, companyId }, id);
+  }
+
+  @Mutation(() => AccountPayableEntity, {
+    description:
+      'Quick-capture TDAH-friendly: cria uma conta a pagar a partir de texto livre (ex: "pagar Vivo internet 120 sexta"). A IA extrai fornecedor, valor e vencimento.',
+  })
+  async quickCaptureAccountPayable(
+    @CurrentUser() user: User,
+    @Args('text') text: string,
+  ): Promise<AccountPayableEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.quickCapture({ userId: user.id, companyId }, text);
+  }
+
+  @Mutation(() => AccountPayableEntity)
+  async snoozeAccountPayable(
+    @CurrentUser() user: User,
+    @Args('id') id: string,
+    @Args('preset', { type: () => AccountPayableSnoozePreset })
+    preset: AccountPayableSnoozePreset,
+  ): Promise<AccountPayableEntity> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    return this.useCases.snooze({ userId: user.id, companyId }, id, preset);
   }
 }

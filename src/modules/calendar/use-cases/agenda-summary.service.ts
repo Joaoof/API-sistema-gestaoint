@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { OpenAiClient } from '../../ai/use-cases/openai.client';
+import { OpenAiClient, OpenAiVoice } from '../../ai/use-cases/openai.client';
 import { CalendarItemEntity } from '../entities/calendar-event.entity';
 import { CalendarService } from './calendar.service';
 
@@ -35,6 +35,36 @@ export class AgendaSummaryService {
     private readonly calendar: CalendarService,
     private readonly openai: OpenAiClient,
   ) {}
+
+  /**
+   * Gera o resumo em texto e converte pra áudio (mp3) — feature TDAH-friendly
+   * pra quem prefere ouvir o "bom dia, hoje você tem..." em vez de ler.
+   * Retorna { audioBase64, transcript } pro front tocar direto via <audio>.
+   */
+  async summarizeAudio(
+    args: SummaryArgs & { voice?: OpenAiVoice },
+  ): Promise<{ audioBase64: string; transcript: string; mimeType: string }> {
+    const transcript = await this.summarize(args);
+    const audio = await this.openai.tts({
+      text: this.stripFormattingForTts(transcript),
+      voice: args.voice ?? 'nova',
+      model: 'tts-1',
+      format: 'mp3',
+    });
+    return {
+      audioBase64: audio.toString('base64'),
+      transcript,
+      mimeType: 'audio/mpeg',
+    };
+  }
+
+  private stripFormattingForTts(text: string): string {
+    return text
+      .replace(/^[•\-]\s+/gm, '')
+      .replace(/\bR\$\s?/g, 'reais ')
+      .replace(/\n{2,}/g, '. ')
+      .replace(/\n/g, '. ');
+  }
 
   async summarize(args: SummaryArgs): Promise<string> {
     const { start, end, label } = this.computeRange(args.period, args.referenceDate);

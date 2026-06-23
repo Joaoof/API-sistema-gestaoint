@@ -1,5 +1,5 @@
 import { UseGuards } from '@nestjs/common';
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Field, Mutation, ObjectType, Query, Resolver } from '@nestjs/graphql';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { GqlAuthGuard } from '../../auth/guards/auth.guard';
 import { AuthUser, getUserId } from '../construction/shared/auth-user';
@@ -15,6 +15,13 @@ import {
 } from './entities/calendar-event.entity';
 import { AgendaSummaryService } from './use-cases/agenda-summary.service';
 import { CalendarService } from './use-cases/calendar.service';
+
+@ObjectType()
+class AgendaAudioResult {
+  @Field() audioBase64!: string;
+  @Field() transcript!: string;
+  @Field() mimeType!: string;
+}
 
 @Resolver(() => CalendarEventEntity)
 @UseGuards(GqlAuthGuard)
@@ -107,6 +114,34 @@ export class CalendarResolver {
       period: p,
       referenceDate: referenceDate ?? new Date(),
       sources: sources ?? null,
+    });
+  }
+
+  @Mutation(() => AgendaAudioResult, {
+    description:
+      'Gera o resumo da agenda em áudio (mp3 base64). Útil pra TDAH — ouvir o resumo enquanto faz outras coisas.',
+  })
+  async summarizeAgendaAudio(
+    @CurrentUser() user: AuthUser,
+    @Args('period') period: string,
+    @Args('referenceDate', { nullable: true }) referenceDate?: Date,
+    @Args('sources', { type: () => [String], nullable: true }) sources?: string[],
+    @Args('voice', {
+      nullable: true,
+      description: 'alloy | echo | fable | onyx | nova | shimmer (padrão nova)',
+    })
+    voice?: string,
+  ): Promise<AgendaAudioResult> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    const p = period?.toUpperCase() === 'WEEK' ? 'WEEK' : 'DAY';
+    const allowed = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'] as const;
+    const v = allowed.includes(voice as any) ? (voice as (typeof allowed)[number]) : 'nova';
+    return this.summary.summarizeAudio({
+      companyId,
+      period: p,
+      referenceDate: referenceDate ?? new Date(),
+      sources: sources ?? null,
+      voice: v,
     });
   }
 }

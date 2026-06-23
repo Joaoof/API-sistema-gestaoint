@@ -32,10 +32,13 @@ export interface OpenAiResponse {
   usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
 }
 
+export type OpenAiVoice = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
+
 @Injectable()
 export class OpenAiClient {
   private readonly logger = new Logger(OpenAiClient.name);
   private readonly endpoint = 'https://api.openai.com/v1/chat/completions';
+  private readonly ttsEndpoint = 'https://api.openai.com/v1/audio/speech';
 
   async chat(args: {
     model: string;
@@ -81,5 +84,47 @@ export class OpenAiClient {
     }
 
     return (await res.json()) as OpenAiResponse;
+  }
+
+  /**
+   * Text-to-speech via OpenAI /v1/audio/speech.
+   * Retorna o áudio em Buffer (mp3 por padrão). Usado pra resumo da agenda
+   * em voz alta — acessibilidade pra usuários com TDAH.
+   */
+  async tts(args: {
+    text: string;
+    voice?: OpenAiVoice;
+    model?: 'tts-1' | 'tts-1-hd';
+    format?: 'mp3' | 'opus' | 'aac' | 'flac';
+    apiKey?: string;
+  }): Promise<Buffer> {
+    const apiKey = args.apiKey?.trim() || process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new InternalServerErrorException(
+        'OPENAI_API_KEY não configurada (nem no .env, nem via BYOK do tenant).',
+      );
+    }
+    const res = await fetch(this.ttsEndpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: args.model ?? 'tts-1',
+        input: args.text.slice(0, 4000),
+        voice: args.voice ?? 'nova',
+        response_format: args.format ?? 'mp3',
+      }),
+    });
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      this.logger.error(`OpenAI TTS ${res.status}: ${errBody}`);
+      throw new InternalServerErrorException(
+        `OpenAI TTS retornou ${res.status}.`,
+      );
+    }
+    const arrayBuf = await res.arrayBuffer();
+    return Buffer.from(arrayBuf);
   }
 }
