@@ -2104,3 +2104,81 @@ model WhatsappReminder {
   @@index([companyId, peerNumber])
   @@index([companyId, doneAt])
 }
+
+// =====================================================================
+// CALENDÁRIO / AGENDA
+// =====================================================================
+
+model CalendarEvent {
+  id              String                    @id @default(cuid())
+  companyId       String
+  userId          String?
+  title           String
+  description     String?
+  location        String?
+  color           String                    @default("#3b82f6")
+  allDay          Boolean                   @default(false)
+  startAt         DateTime
+  endAt           DateTime
+  timezone        String                    @default("America/Sao_Paulo")
+  rrule           String?
+  recurrenceUntil DateTime?
+  category        String?
+  priority        String                    @default("normal")
+  link            String?
+  channelsJson    Json?
+  remindersJson   Json?
+  metadataJson    Json?
+  createdBy       String?
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  exceptions      CalendarEventException[]
+  reminderFires   CalendarReminderFire[]
+
+  @@index([companyId, startAt])
+  @@index([companyId, endAt])
+  @@index([companyId, userId])
+  @@index([companyId, category])
+}
+
+model CalendarEventException {
+  id          String        @id @default(cuid())
+  eventId     String
+  occurrence  DateTime
+  cancelled   Boolean       @default(false)
+  overrideJson Json?
+  createdAt   DateTime      @default(now())
+  event       CalendarEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, occurrence])
+  @@index([eventId])
+}
+
+model CalendarReminderFire {
+  id           String        @id @default(cuid())
+  eventId      String
+  occurrence   DateTime
+  channel      String
+  offsetMin    Int
+  firedAt      DateTime      @default(now())
+  status       String        @default("SENT")
+  errorMessage String?
+  event        CalendarEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, occurrence, channel, offsetMin])
+  @@index([eventId, occurrence])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  companyId String
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+  lastUsed  DateTime @default(now())
+
+  @@index([companyId, userId])
+}

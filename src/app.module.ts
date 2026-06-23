@@ -62,6 +62,7 @@ import { EmailModule } from './modules/email/email.module';
 import { SuperAdminModule } from './modules/superAdmin/super-admin.module';
 import { FeatureFlagModule } from './modules/featureFlag/feature-flag.module';
 import { ChatbotEvolutionModule } from './modules/chatbotEvolution/chatbot-evolution.module';
+import { CalendarModule } from './modules/calendar/calendar.module';
 
 @Module({
   imports: [
@@ -149,6 +150,7 @@ import { ChatbotEvolutionModule } from './modules/chatbotEvolution/chatbot-evolu
     SuperAdminModule,
     FeatureFlagModule,
     ChatbotEvolutionModule,
+    CalendarModule,
   ],
   controllers: [AppController],
   providers: [

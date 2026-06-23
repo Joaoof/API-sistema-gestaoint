@@ -34,6 +34,55 @@ export class EmailService {
   private readonly apiKey = process.env.RESEND_API_KEY;
   private readonly from = process.env.RESEND_FROM ?? 'GestãoInt <no-reply@send.joaoof.com.br>';
 
+  /**
+   * Envio genérico (notificações, lembretes etc.). Mesmo wrapper do Resend.
+   * Suporta html OU text — se passar só text, gera um html simples.
+   */
+  async sendGeneric(params: {
+    to: string;
+    subject: string;
+    html?: string;
+    text?: string;
+  }): Promise<{ ok: boolean; id?: string; error?: string }> {
+    const html =
+      params.html ??
+      `<!DOCTYPE html><html><body style="font-family:-apple-system,Segoe UI,sans-serif;font-size:14px;color:#0f172a;background:#f8fafc;padding:32px;"><div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,0.05);"><h2 style="margin:0 0 12px;font-size:18px;">${escapeHtml(params.subject)}</h2><p style="white-space:pre-wrap;color:#334155;line-height:1.6;">${escapeHtml(params.text ?? '')}</p></div></body></html>`;
+    const text = params.text ?? params.subject;
+
+    if (!this.apiKey) {
+      this.logger.warn(
+        `RESEND_API_KEY não configurada — e-mail "${params.subject}" para ${params.to} NÃO enviado.`,
+      );
+      return { ok: false, error: 'RESEND_API_KEY ausente' };
+    }
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify({
+          from: this.from,
+          to: [params.to],
+          subject: params.subject,
+          html,
+          text,
+        }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        return {
+          ok: false,
+          error: body?.message ?? body?.name ?? `HTTP ${res.status}`,
+        };
+      }
+      return { ok: true, id: body?.id };
+    } catch (err: any) {
+      return { ok: false, error: err?.message ?? 'erro de rede' };
+    }
+  }
+
   async sendInvitation(params: SendInvitationParams): Promise<{ ok: boolean; id?: string; error?: string }> {
     const subject = params.companyName
       ? `Convite para ${params.companyName} no GestãoInt`
