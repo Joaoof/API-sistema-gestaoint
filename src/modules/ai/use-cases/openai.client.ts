@@ -120,6 +120,16 @@ export class OpenAiClient {
     if (!res.ok) {
       const errBody = await res.text().catch(() => '');
       this.logger.error(`OpenAI TTS ${res.status}: ${errBody}`);
+      if (res.status === 429) {
+        throw new InternalServerErrorException(
+          'TTS_QUOTA_EXCEEDED: conta da OpenAI sem créditos ou limite de requisições atingido. Adicione saldo em https://platform.openai.com/account/billing — o resumo em texto continua funcionando.',
+        );
+      }
+      if (res.status === 401) {
+        throw new InternalServerErrorException(
+          'TTS_AUTH_FAILED: chave OpenAI inválida ou expirada.',
+        );
+      }
       throw new InternalServerErrorException(
         `OpenAI TTS retornou ${res.status}.`,
       );
