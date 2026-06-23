@@ -214,7 +214,7 @@ export class CalendarService {
 
     const items: CalendarItemEntity[] = [];
     for (const e of events) {
-      const exceptions = new Set(
+      const exceptions = new Set<string>(
         e.exceptions.filter((x) => x.cancelled).map((x) => x.occurrence.toISOString()),
       );
       const occurrences = expandRecurrence({

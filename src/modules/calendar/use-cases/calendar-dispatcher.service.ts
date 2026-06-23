@@ -59,7 +59,7 @@ export class CalendarDispatcherService implements OnModuleInit, OnModuleDestroy 
         (e.remindersJson as CalendarReminderEntity[] | null) ?? [];
       if (!Array.isArray(reminders) || reminders.length === 0) continue;
 
-      const exceptions = new Set(
+      const exceptions = new Set<string>(
         e.exceptions.filter((x) => x.cancelled).map((x) => x.occurrence.toISOString()),
       );
       const occurrences = e.rrule
