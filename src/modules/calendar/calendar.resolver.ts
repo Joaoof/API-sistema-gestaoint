@@ -13,6 +13,7 @@ import {
   CalendarEventEntity,
   CalendarItemEntity,
 } from './entities/calendar-event.entity';
+import { AgendaSummaryService } from './use-cases/agenda-summary.service';
 import { CalendarService } from './use-cases/calendar.service';
 
 @Resolver(() => CalendarEventEntity)
@@ -20,6 +21,7 @@ import { CalendarService } from './use-cases/calendar.service';
 export class CalendarResolver {
   constructor(
     private readonly service: CalendarService,
+    private readonly summary: AgendaSummaryService,
     private readonly tenancy: TenancyService,
   ) {}
 
@@ -81,5 +83,30 @@ export class CalendarResolver {
   ): Promise<boolean> {
     const companyId = await this.tenancy.resolveCompanyId(user);
     return this.service.cancelOccurrence(companyId, eventId, occurrence);
+  }
+
+  @Mutation(() => String, {
+    description:
+      'Gera um resumo executivo (via IA) da agenda do dia ou da semana. Inclui eventos, lembretes e contas.',
+  })
+  async summarizeAgenda(
+    @CurrentUser() user: AuthUser,
+    @Args('period', { description: 'DAY ou WEEK' }) period: string,
+    @Args('referenceDate', {
+      nullable: true,
+      description: 'Default = hoje',
+    })
+    referenceDate?: Date,
+    @Args('sources', { type: () => [String], nullable: true })
+    sources?: string[],
+  ): Promise<string> {
+    const companyId = await this.tenancy.resolveCompanyId(user);
+    const p = period?.toUpperCase() === 'WEEK' ? 'WEEK' : 'DAY';
+    return this.summary.summarize({
+      companyId,
+      period: p,
+      referenceDate: referenceDate ?? new Date(),
+      sources: sources ?? null,
+    });
   }
 }
